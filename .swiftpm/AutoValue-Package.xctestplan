@@ -1,0 +1,29 @@
+{
+  "configurations" : [
+    {
+      "id" : "DFC9115B-27A9-40DF-8C16-9204143C8989",
+      "name" : "Test Scheme Action",
+      "options" : {
+
+      }
+    }
+  ],
+  "defaultOptions" : {
+    "codeCoverage" : false,
+    "targetForVariableExpansion" : {
+      "containerPath" : "container:",
+      "identifier" : "AutoValueClient",
+      "name" : "AutoValueClient"
+    }
+  },
+  "testTargets" : [
+    {
+      "target" : {
+        "containerPath" : "container:",
+        "identifier" : "AutoValueTests",
+        "name" : "AutoValueTests"
+      }
+    }
+  ],
+  "version" : 1
+}
