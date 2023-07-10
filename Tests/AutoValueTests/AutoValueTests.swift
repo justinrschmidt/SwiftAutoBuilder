@@ -5,6 +5,7 @@ import AutoValueMacros
 
 let testMacros: [String: Macro.Type] = [
     "stringify": StringifyMacro.self,
+	"AutoValue": AutoValueMacro.self,
 ]
 
 final class AutoValueTests: XCTestCase {
@@ -31,4 +32,20 @@ final class AutoValueTests: XCTestCase {
             macros: testMacros
         )
     }
+
+	func testAutoValue_emptyStruct() {
+		assertMacroExpansion(
+			"""
+			@AutoValue
+			struct Foo {
+			}
+			""",
+			expandedSource:
+			"""
+			struct Foo {
+			    class Builder {
+			    }
+			}
+			""", macros: testMacros)
+	}
 }
