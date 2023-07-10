@@ -18,6 +18,8 @@ final class AutoValueTests: XCTestCase {
 			expandedSource:
 			"""
 			struct Foo {
+			    init(with builder: Builder) {
+			    }
 			    class Builder {
 			    }
 			}
@@ -38,6 +40,8 @@ final class AutoValueTests: XCTestCase {
 			struct Foo {
 				let a: Int
 				let b: Double
+				init(with builder: Builder) {
+				}
 				class Builder {
 				}
 			}
@@ -71,6 +75,8 @@ final class AutoValueTests: XCTestCase {
 					set {
 						a = newValue
 					}
+				}
+				init(with builder: Builder) {
 				}
 				class Builder {
 				}

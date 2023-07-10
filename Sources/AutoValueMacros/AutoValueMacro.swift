@@ -31,6 +31,8 @@ public struct AutoValueMacro: MemberMacro {
 		of node: AttributeSyntax,
 		in context: some MacroExpansionContext) throws -> [DeclSyntax] {
 			return [
+				try InitializerDeclSyntax("init(with builder: Builder)", bodyBuilder: {
+				}).as(DeclSyntax.self)!,
 				try ClassDeclSyntax("class Builder", membersBuilder: {
 				}).as(DeclSyntax.self)!
 			]
