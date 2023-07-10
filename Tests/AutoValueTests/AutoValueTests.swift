@@ -8,7 +8,7 @@ let testMacros: [String: Macro.Type] = [
 ]
 
 final class AutoValueTests: XCTestCase {
-	func testAutoValue_emptyStruct() {
+	func testEmptyStruct() {
 		assertMacroExpansion(
 			"""
 			@AutoValue
@@ -22,5 +22,21 @@ final class AutoValueTests: XCTestCase {
 			    }
 			}
 			""", macros: testMacros)
+	}
+
+	func testInvalidType() {
+		assertMacroExpansion(
+			"""
+			@AutoValue
+			class Foo {
+			}
+			""",
+			expandedSource:
+			"""
+			class Foo {
+			}
+			""", diagnostics: [
+				DiagnosticSpec(message: "@AutoValue can only be applied to structs", line: 1, column: 1)
+			], macros: testMacros)
 	}
 }
