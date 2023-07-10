@@ -24,6 +24,60 @@ final class AutoValueTests: XCTestCase {
 			""", macros: testMacros)
 	}
 
+	func testStructWithStoredProperties() {
+		assertMacroExpansion(
+			"""
+			@AutoValue
+			struct Foo {
+				let a: Int
+				let b: Double
+			}
+			""",
+			expandedSource:
+			"""
+			struct Foo {
+				let a: Int
+				let b: Double
+				class Builder {
+				}
+			}
+			""", macros: testMacros)
+	}
+
+	func testStructWithComputedProperties() {
+		assertMacroExpansion(
+			"""
+			@AutoValue
+			struct Foo {
+				let a: Int
+				var b: Int {
+					get {
+						return a
+					}
+					set {
+						a = newValue
+					}
+				}
+			}
+			""",
+			expandedSource:
+			"""
+			struct Foo {
+				let a: Int
+				var b: Int {
+					get {
+						return a
+					}
+					set {
+						a = newValue
+					}
+				}
+				class Builder {
+				}
+			}
+			""", macros: testMacros)
+	}
+
 	func testInvalidType() {
 		assertMacroExpansion(
 			"""
