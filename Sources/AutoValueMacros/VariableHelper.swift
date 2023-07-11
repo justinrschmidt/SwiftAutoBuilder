@@ -2,6 +2,16 @@ import SwiftSyntax
 import SwiftSyntaxBuilder
 
 struct VariableHelper {
+    struct Property: Equatable {
+        let identifier: String
+        let type: String
+
+        init(_ identifier: String, _ type: String) {
+            self.identifier = identifier
+            self.type = type
+        }
+    }
+
     static func getStoredProperties(from members: MemberDeclListSyntax) -> [Property] {
         let variables: [VariableDeclSyntax] = members.compactMap({ member in
             guard let variable = member.decl.as(VariableDeclSyntax.self) else { return nil }
@@ -57,18 +67,6 @@ struct VariableHelper {
         }
         return types
     }
-
-    struct Property: Equatable {
-        let identifier: String
-        let type: String
-
-        init(_ identifier: String, _ type: String) {
-            self.identifier = identifier
-            self.type = type
-        }
-    }
-
-
 
     static func isStoredProperty(_ variable: VariableDeclSyntax) -> Bool {
         switch variable.bindingKeyword.tokenKind {
