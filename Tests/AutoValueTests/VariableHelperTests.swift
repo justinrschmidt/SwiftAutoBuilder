@@ -36,6 +36,22 @@ final class VariableHelperTests: XCTestCase {
         try assertIsStoredProperty("let (a, b): (Int, Double)")
     }
 
+    func testConstantDeclaration_listMixedTrailingInline_isStoredProperty() throws {
+        try assertIsStoredProperty("let a, b: Int, c: Double")
+    }
+
+    func testConstantDeclaration_initListMixedInlineTrailing_isStoredProperty() throws {
+        try assertIsStoredProperty("let a: Int = 0, b, c: Double")
+    }
+
+    func testConstantDeclaration_listMixedTupleSimple_isStoredProperty() throws {
+        try assertIsStoredProperty("let (a, b): (Int, Double), c: Int")
+    }
+
+    func testConstantDeclaration_nestedTuple_isStoredProperty() throws {
+        try assertIsStoredProperty("let (a, (b, c)): (Int, (Int, Double))")
+    }
+
     // MARK: Stored Property Variable Declarations
 
     func testVariableDeclaration_simple_isStoredProperty() throws {
@@ -72,6 +88,22 @@ final class VariableHelperTests: XCTestCase {
 
     func testVariableDeclaration_willSetAndDidSetAccessorBlocks_isStoredProperty() throws {
         try assertIsStoredProperty("var a: Int { willSet { print(\"willSet\") } didSet { print(\"did set\") } }")
+    }
+
+    func testVariableDeclaration_listMixedTrailingInline_isStoredProperty() throws {
+        try assertIsStoredProperty("var a, b: Int, c: Double")
+    }
+
+    func testVariableDeclaration_initListMixedInlineTrailing_isStoredProperty() throws {
+        try assertIsStoredProperty("var a: Int = 0, b, c: Double")
+    }
+
+    func testVariableDeclaration_listMixedTupleSimple_isStoredProperty() throws {
+        try assertIsStoredProperty("var (a, b): (Int, Double), c: Int")
+    }
+
+    func testVariableDeclaration_nestedTuple_isStoredProperty() throws {
+        try assertIsStoredProperty("var (a, (b, c)): (Int, (Int, Double))")
     }
 
     // MARK: Computed Property Variable Declarations
