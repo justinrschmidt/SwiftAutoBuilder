@@ -6,6 +6,10 @@ struct VariableHelper {
         let identifier: String
         let type: String
 
+        var identifierToken: TokenSyntax {
+            return .identifier(identifier)
+        }
+
         init(_ identifier: String, _ type: String) {
             self.identifier = identifier
             self.type = type

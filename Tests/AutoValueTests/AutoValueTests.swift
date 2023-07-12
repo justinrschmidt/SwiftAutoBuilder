@@ -21,6 +21,8 @@ final class AutoValueTests: XCTestCase {
                 init(with builder: Builder) {
                 }
                 class Builder {
+                    init() {
+                    }
                 }
             }
             """, macros: testMacros)
@@ -43,6 +45,12 @@ final class AutoValueTests: XCTestCase {
                 init(with builder: Builder) {
                 }
                 class Builder {
+                    let a: BuildableProperty<Int>
+                    let b: BuildableProperty<Double>
+                    init() {
+                        a = BuildableProperty(name: "a")
+                        b = BuildableProperty(name: "b")
+                    }
                 }
             }
             """, macros: testMacros)
@@ -79,6 +87,10 @@ final class AutoValueTests: XCTestCase {
                 init(with builder: Builder) {
                 }
                 class Builder {
+                    let a: BuildableProperty<Int>
+                    init() {
+                        a = BuildableProperty(name: "a")
+                    }
                 }
             }
             """, macros: testMacros)
