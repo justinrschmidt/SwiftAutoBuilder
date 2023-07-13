@@ -18,7 +18,7 @@ final class AutoValueTests: XCTestCase {
             expandedSource:
             """
             struct Foo {
-                init(with builder: Builder) {
+                init(with builder: Builder) throws {
                 }
                 class Builder {
                     init() {
@@ -42,7 +42,9 @@ final class AutoValueTests: XCTestCase {
             struct Foo {
                 let a: Int
                 let b: Double
-                init(with builder: Builder) {
+                init(with builder: Builder) throws {
+                    a = try builder.a.build()
+                    b = try builder.b.build()
                 }
                 class Builder {
                     let a: BuildableProperty<Int>
@@ -92,7 +94,8 @@ final class AutoValueTests: XCTestCase {
                         a = newValue
                     }
                 }
-                init(with builder: Builder) {
+                init(with builder: Builder) throws {
+                    a = try builder.a.build()
                 }
                 class Builder {
                     let a: BuildableProperty<Int>

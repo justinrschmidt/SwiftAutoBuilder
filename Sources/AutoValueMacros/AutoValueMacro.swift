@@ -25,14 +25,17 @@ public struct AutoValueMacro: MemberMacro {
                 throw AutoValueError.invalidType
             }
         }
-
+    
     private static func expandStruct(
         _ structDecl: StructDeclSyntax,
         of node: AttributeSyntax,
         in context: some MacroExpansionContext) throws -> [DeclSyntax] {
             let storedProperties = VariableHelper.getStoredProperties(from: structDecl.memberBlock.members)
             return [
-                try InitializerDeclSyntax("init(with builder: Builder)", bodyBuilder: {
+                try InitializerDeclSyntax("init(with builder: Builder) throws", bodyBuilder: {
+                    for property in storedProperties {
+                        createPropertyInitializer(from: property)
+                    }
                 }).cast(DeclSyntax.self),
                 try ClassDeclSyntax("class Builder", membersBuilder: {
                     for property in storedProperties {
@@ -49,6 +52,18 @@ public struct AutoValueMacro: MemberMacro {
                 }).cast(DeclSyntax.self)
             ]
         }
+
+    private static func createPropertyInitializer(from property: VariableHelper.Property) -> SequenceExprSyntax {
+        let builderIdentifier = IdentifierExprSyntax(identifier: TokenSyntax(.identifier("builder"), presence: .present))
+        let propertyMemberExpr = MemberAccessExprSyntax(base: builderIdentifier, name: TokenSyntax(.identifier(property.identifier), presence: .present))
+        let buildMemberExpr = MemberAccessExprSyntax(base: propertyMemberExpr, name: "build")
+        let buildFunctionCall = FunctionCallExprSyntax(calledExpression: buildMemberExpr, leftParen: .leftParenToken(), rightParen: .rightParenToken()) {}
+        return SequenceExprSyntax {
+            IdentifierExprSyntax(identifier: .identifier(property.identifier))
+            AssignmentExprSyntax()
+            TryExprSyntax(expression: buildFunctionCall)
+        }
+    }
 
     private static func createVariableDecl(from property: VariableHelper.Property) -> VariableDeclSyntax {
         let bindingKeyword = TokenSyntax(.keyword(.let), presence: .present)
