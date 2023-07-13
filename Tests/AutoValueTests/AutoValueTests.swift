@@ -51,6 +51,14 @@ final class AutoValueTests: XCTestCase {
                         a = BuildableProperty(name: "a")
                         b = BuildableProperty(name: "b")
                     }
+                    func set(a: Int) -> Builder {
+                        self.a.set(value: a)
+                        return self
+                    }
+                    func set(b: Double) -> Builder {
+                        self.b.set(value: b)
+                        return self
+                    }
                 }
             }
             """, macros: testMacros)
@@ -90,6 +98,10 @@ final class AutoValueTests: XCTestCase {
                     let a: BuildableProperty<Int>
                     init() {
                         a = BuildableProperty(name: "a")
+                    }
+                    func set(a: Int) -> Builder {
+                        self.a.set(value: a)
+                        return self
                     }
                 }
             }

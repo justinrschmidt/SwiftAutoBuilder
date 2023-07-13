@@ -43,6 +43,9 @@ public struct AutoValueMacro: MemberMacro {
                             createBuildablePropertyInitializer(from: property)
                         }
                     })
+                    for property in storedProperties {
+                        try createSetValueFunction(from: property)
+                    }
                 }).cast(DeclSyntax.self)
             ]
         }
@@ -71,6 +74,18 @@ public struct AutoValueMacro: MemberMacro {
                 TupleExprElementSyntax(label: "name", expression: StringLiteralExprSyntax(content: property.identifier))
             }
         })))
+    }
+
+    private static func createSetValueFunction(from property: VariableHelper.Property) throws -> FunctionDeclSyntax {
+        let selfIdentifier = IdentifierExprSyntax(identifier: .keyword(.`self`))
+        let selfExpression = MemberAccessExprSyntax(base: selfIdentifier, name: TokenSyntax(.identifier(property.identifier), presence: .present))
+        let setValueExpression = MemberAccessExprSyntax(base: selfExpression, name: TokenSyntax(.identifier("set"), presence: .present))
+        return try FunctionDeclSyntax("func set(\(raw: property.identifier): \(raw: property.type)) -> Builder") {
+            FunctionCallExprSyntax(calledExpression: setValueExpression, leftParen: .leftParenToken(), rightParen: .rightParenToken()) {
+                TupleExprElementSyntax(label: "value", expression: IdentifierExprSyntax(identifier: .identifier(property.identifier)))
+            }
+            ReturnStmtSyntax(expression: IdentifierExprSyntax(identifier: .keyword(.`self`)))
+        }
     }
 }
 

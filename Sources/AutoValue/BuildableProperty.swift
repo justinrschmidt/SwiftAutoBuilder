@@ -1,9 +1,13 @@
 public class BuildableProperty<T> {
     private let propertyName: String
-    public internal(set) var value: T?
+    private var value: T?
 
     public init(_ value: T? = nil, name: String) {
         propertyName = name
+        self.value = value
+    }
+
+    public func set(value: T) {
         self.value = value
     }
 
