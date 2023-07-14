@@ -16,30 +16,63 @@ struct VariableHelper {
         }
     }
 
-    static func getStoredProperties(from members: MemberDeclListSyntax) -> [Property] {
+    enum VariableError: Error, Equatable {
+        case impliedVariableType(nodes: [Syntax])
+    }
+
+    static func getStoredProperties(from members: MemberDeclListSyntax) throws -> [Property] {
         let variables: [VariableDeclSyntax] = members.compactMap({ member in
             guard let variable = member.decl.as(VariableDeclSyntax.self) else { return nil }
             return isStoredProperty(variable) ? variable : nil
         })
-        return variables.flatMap(getProperties(from:))
+        var properties: [Property] = []
+        var impliedTypeNodes: [Syntax] = []
+        for variable in variables {
+            do {
+                properties += try getProperties(from: variable)
+            } catch VariableError.impliedVariableType(let nodes) {
+                impliedTypeNodes += nodes
+            }
+        }
+        if impliedTypeNodes.isEmpty {
+            return properties
+        } else {
+            throw VariableError.impliedVariableType(nodes: impliedTypeNodes)
+        }
     }
 
-    private static func getProperties(from variable: VariableDeclSyntax) -> [Property] {
-        var type: String = ""
+    private static func getProperties(from variable: VariableDeclSyntax) throws -> [Property] {
+        var type: String?
         var properties: [Property] = []
+        var impliedTypeNodes: [Syntax] = []
         for patternBinding in variable.bindings.reversed() {
             if let identifierPattern = patternBinding.pattern.as(IdentifierPatternSyntax.self) {
+                if patternBinding.initializer != nil {
+                    type = nil
+                }
                 if let simpleType = patternBinding.typeAnnotation?.type.as(SimpleTypeIdentifierSyntax.self)?.name.text {
                     type = simpleType
                 }
-                properties.append(Property(identifierPattern.identifier.text, type))
+                if let type = type {
+                    properties.append(Property(identifierPattern.identifier.text, type))
+                } else {
+                    impliedTypeNodes.append(identifierPattern.cast(Syntax.self))
+                }
             }
-            if let tuplePattern = patternBinding.pattern.as(TuplePatternSyntax.self),
-               let tupleType = patternBinding.typeAnnotation?.type.as(TupleTypeSyntax.self) {
-                properties += getProperties(from: tuplePattern, type: tupleType)
+            if let tuplePattern = patternBinding.pattern.as(TuplePatternSyntax.self) {
+                type = nil
+                if let tupleType = patternBinding.typeAnnotation?.type.as(TupleTypeSyntax.self) {
+                    properties += getProperties(from: tuplePattern, type: tupleType)
+                } else {
+                    impliedTypeNodes.append(tuplePattern.cast(Syntax.self))
+                }
             }
         }
-        return properties.reversed()
+        if impliedTypeNodes.isEmpty {
+            return properties.reversed()
+        } else {
+            throw VariableError.impliedVariableType(nodes: impliedTypeNodes.reversed())
+        }
     }
 
     private static func getProperties(from tuplePattern: TuplePatternSyntax, type: TupleTypeSyntax) -> [Property] {

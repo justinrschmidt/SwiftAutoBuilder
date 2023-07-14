@@ -2,6 +2,7 @@ import SwiftCompilerPlugin
 import SwiftSyntax
 import SwiftSyntaxBuilder
 import SwiftSyntaxMacros
+import SwiftDiagnostics
 
 enum AutoValueError: CustomStringConvertible, Error {
     case invalidType
@@ -11,6 +12,28 @@ enum AutoValueError: CustomStringConvertible, Error {
         case .invalidType:
             return "@AutoValue can only be applied to structs"
         }
+    }
+}
+
+enum AutoValueDiagnostic: String, DiagnosticMessage {
+    case impliedVariableType
+
+    var severity: DiagnosticSeverity {
+        switch self {
+        case .impliedVariableType:
+            return .error
+        }
+    }
+
+    var message: String {
+        switch self {
+        case .impliedVariableType:
+            return "Type annotation missing. AutoBuilder requires all properties to have type annotations."
+        }
+    }
+
+    var diagnosticID: MessageID {
+        MessageID(domain: "AutoValueMacro", id: rawValue)
     }
 }
 
@@ -30,27 +53,35 @@ public struct AutoValueMacro: MemberMacro {
         _ structDecl: StructDeclSyntax,
         of node: AttributeSyntax,
         in context: some MacroExpansionContext) throws -> [DeclSyntax] {
-            let storedProperties = VariableHelper.getStoredProperties(from: structDecl.memberBlock.members)
-            return [
-                try InitializerDeclSyntax("init(with builder: Builder) throws", bodyBuilder: {
-                    for property in storedProperties {
-                        createPropertyInitializer(from: property)
-                    }
-                }).cast(DeclSyntax.self),
-                try ClassDeclSyntax("class Builder", membersBuilder: {
-                    for property in storedProperties {
-                        createVariableDecl(from: property)
-                    }
-                    try InitializerDeclSyntax("init()", bodyBuilder: {
+            do {
+                // TODO: need to skip over stored constants with inline initializers because they are already initialized
+                let storedProperties = try VariableHelper.getStoredProperties(from: structDecl.memberBlock.members)
+                return [
+                    try InitializerDeclSyntax("init(with builder: Builder) throws", bodyBuilder: {
                         for property in storedProperties {
-                            createBuildablePropertyInitializer(from: property)
+                            createPropertyInitializer(from: property)
                         }
-                    })
-                    for property in storedProperties {
-                        try createSetValueFunction(from: property)
-                    }
-                }).cast(DeclSyntax.self)
-            ]
+                    }).cast(DeclSyntax.self),
+                    try ClassDeclSyntax("class Builder", membersBuilder: {
+                        for property in storedProperties {
+                            createVariableDecl(from: property)
+                        }
+                        try InitializerDeclSyntax("init()", bodyBuilder: {
+                            for property in storedProperties {
+                                createBuildablePropertyInitializer(from: property)
+                            }
+                        })
+                        for property in storedProperties {
+                            try createSetValueFunction(from: property)
+                        }
+                    }).cast(DeclSyntax.self)
+                ]
+            } catch VariableHelper.VariableError.impliedVariableType(let nodes) {
+                for node in nodes {
+                    context.diagnose(Diagnostic(node: node, message: AutoValueDiagnostic.impliedVariableType))
+                }
+                return []
+            }
         }
 
     private static func createPropertyInitializer(from property: VariableHelper.Property) -> SequenceExprSyntax {
