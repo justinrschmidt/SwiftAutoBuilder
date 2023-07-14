@@ -1,6 +1,7 @@
 import SwiftSyntax
 
 struct Property: Equatable, CustomStringConvertible {
+    let bindingKeyword: BindingKeyword
     let identifier: String
     let type: String
 
@@ -12,8 +13,19 @@ struct Property: Equatable, CustomStringConvertible {
         return "(\(identifier), \(type))"
     }
 
-    init(_ identifier: String, _ type: String) {
-        self.identifier = identifier
-        self.type = type
+    enum BindingKeyword {
+        case `let`
+        case `var`
+
+        init?(kind: TokenKind) {
+            switch kind {
+            case TokenKind.keyword(.let):
+                self = .let
+            case TokenKind.keyword(.var):
+                self = .var
+            default:
+                return nil
+            }
+        }
     }
 }
