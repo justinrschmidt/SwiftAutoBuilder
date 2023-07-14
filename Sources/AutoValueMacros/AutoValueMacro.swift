@@ -84,7 +84,7 @@ public struct AutoValueMacro: MemberMacro {
             }
         }
 
-    private static func createPropertyInitializer(from property: VariableHelper.Property) -> SequenceExprSyntax {
+    private static func createPropertyInitializer(from property: Property) -> SequenceExprSyntax {
         let builderIdentifier = IdentifierExprSyntax(identifier: TokenSyntax(.identifier("builder"), presence: .present))
         let propertyMemberExpr = MemberAccessExprSyntax(base: builderIdentifier, name: TokenSyntax(.identifier(property.identifier), presence: .present))
         let buildMemberExpr = MemberAccessExprSyntax(base: propertyMemberExpr, name: "build")
@@ -96,7 +96,7 @@ public struct AutoValueMacro: MemberMacro {
         }
     }
 
-    private static func createVariableDecl(from property: VariableHelper.Property) -> VariableDeclSyntax {
+    private static func createVariableDecl(from property: Property) -> VariableDeclSyntax {
         let bindingKeyword = TokenSyntax(.keyword(.let), presence: .present)
         let identifierPattern = IdentifierPatternSyntax(identifier: property.identifierToken)
         let typeAnnotation = TypeAnnotationSyntax(
@@ -111,7 +111,7 @@ public struct AutoValueMacro: MemberMacro {
         }
     }
 
-    private static func createBuildablePropertyInitializer(from property: VariableHelper.Property) -> CodeBlockItemSyntax {
+    private static func createBuildablePropertyInitializer(from property: Property) -> CodeBlockItemSyntax {
         let initExpression = IdentifierExprSyntax(identifier: TokenSyntax(.identifier("BuildableProperty"), presence: .present))
         return CodeBlockItemSyntax(item: CodeBlockItemSyntax.Item(SequenceExprSyntax(elementsBuilder: {
             IdentifierExprSyntax(identifier: property.identifierToken)
@@ -122,7 +122,7 @@ public struct AutoValueMacro: MemberMacro {
         })))
     }
 
-    private static func createSetValueFunction(from property: VariableHelper.Property) throws -> FunctionDeclSyntax {
+    private static func createSetValueFunction(from property: Property) throws -> FunctionDeclSyntax {
         let selfIdentifier = IdentifierExprSyntax(identifier: .keyword(.`self`))
         let selfExpression = MemberAccessExprSyntax(base: selfIdentifier, name: TokenSyntax(.identifier(property.identifier), presence: .present))
         let setValueExpression = MemberAccessExprSyntax(base: selfExpression, name: TokenSyntax(.identifier("set"), presence: .present))

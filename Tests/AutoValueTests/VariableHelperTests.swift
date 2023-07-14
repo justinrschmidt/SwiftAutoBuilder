@@ -8,12 +8,6 @@ enum VariableHelperTestsError: Error {
     case invalidDeclSyntax
 }
 
-extension VariableHelper.Property: CustomStringConvertible {
-    public var description: String {
-        return "(\(identifier), \(type))"
-    }
-}
-
 final class VariableHelperTests: XCTestCase {
 
     // MARK: Get Stored Properties Constant Declarations
@@ -404,7 +398,7 @@ final class VariableHelperTests: XCTestCase {
     ) throws {
         let memberList = try Self.createMemberList(variableSources)
         let actualProperties = try VariableHelper.getStoredProperties(from: memberList)
-        let expectedProperties = properties.map({ VariableHelper.Property($0.0, $0.1) })
+        let expectedProperties = properties.map({ Property($0.0, $0.1) })
         XCTAssertEqual(actualProperties, expectedProperties, file: file, line: line)
     }
 

@@ -2,20 +2,6 @@ import SwiftSyntax
 import SwiftSyntaxBuilder
 
 struct VariableHelper {
-    struct Property: Equatable {
-        let identifier: String
-        let type: String
-
-        var identifierToken: TokenSyntax {
-            return .identifier(identifier)
-        }
-
-        init(_ identifier: String, _ type: String) {
-            self.identifier = identifier
-            self.type = type
-        }
-    }
-
     enum VariableError: Error, Equatable {
         case impliedVariableType(nodes: [Syntax])
     }
