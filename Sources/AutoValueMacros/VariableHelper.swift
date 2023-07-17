@@ -31,28 +31,28 @@ struct VariableHelper {
         guard let bindingKeyword = Property.BindingKeyword(kind: variable.bindingKeyword.tokenKind) else {
             return []
         }
-        var type: String?
+        var typeNode: TypeSyntax?
         var properties: [Property] = []
         var impliedTypeNodes: [Syntax] = []
         for patternBinding in variable.bindings.reversed() {
             if let identifierPattern = patternBinding.pattern.as(IdentifierPatternSyntax.self) {
                 if patternBinding.initializer != nil {
-                    type = nil
+                    typeNode = nil
                 }
-                if let simpleType = patternBinding.typeAnnotation?.type.as(SimpleTypeIdentifierSyntax.self)?.name.text {
-                    type = simpleType
+                if let type = patternBinding.typeAnnotation?.type {
+                    typeNode = type
                 }
-                if let type = type {
+                if let typeNode = typeNode {
                     properties.append(Property(
                         bindingKeyword: bindingKeyword,
                         identifierPattern: identifierPattern,
-                        type: type))
+                        typeNode: typeNode))
                 } else {
                     impliedTypeNodes.append(identifierPattern.cast(Syntax.self))
                 }
             }
             if let tuplePattern = patternBinding.pattern.as(TuplePatternSyntax.self) {
-                type = nil
+                typeNode = nil
                 if let tupleType = patternBinding.typeAnnotation?.type.as(TupleTypeSyntax.self) {
                     properties += getProperties(from: tuplePattern, type: tupleType, bindingKeyword: bindingKeyword)
                 } else {
@@ -70,7 +70,7 @@ struct VariableHelper {
     private static func getProperties(from tuplePattern: TuplePatternSyntax, type: TupleTypeSyntax, bindingKeyword: Property.BindingKeyword) -> [Property] {
         let identifiers = getTupleIdentifiers(from: tuplePattern)
         let types = getTupleTypes(from: type)
-        return zip(identifiers, types).map({ Property(bindingKeyword: bindingKeyword, identifierPattern: $0.0, type: $0.1) }).reversed()
+        return zip(identifiers, types).map({ Property(bindingKeyword: bindingKeyword, identifierPattern: $0.0, typeNode: $0.1) }).reversed()
     }
 
     private static func getTupleIdentifiers(from tuplePattern: TuplePatternSyntax) -> [IdentifierPatternSyntax] {
@@ -85,11 +85,11 @@ struct VariableHelper {
         return identifiers
     }
 
-    private static func getTupleTypes(from tupleType: TupleTypeSyntax) -> [String] {
-        var types: [String] = []
+    private static func getTupleTypes(from tupleType: TupleTypeSyntax) -> [TypeSyntax] {
+        var types: [TypeSyntax] = []
         for element in tupleType.elements {
-            if let type = element.type.as(SimpleTypeIdentifierSyntax.self)?.name.text {
-                types.append(type)
+            if element.type.as(SimpleTypeIdentifierSyntax.self)?.name.text != nil {
+                types.append(element.type)
             } else if let subTupleType = element.type.as(TupleTypeSyntax.self) {
                 types += getTupleTypes(from: subTupleType)
             }

@@ -3,10 +3,14 @@ import SwiftSyntax
 struct Property: Equatable, CustomStringConvertible {
     let bindingKeyword: BindingKeyword
     let identifierPattern: IdentifierPatternSyntax
-    let type: String
+    let typeNode: TypeSyntax
 
     var identifier: String {
         return identifierPattern.identifier.text
+    }
+
+    var type: String {
+        return typeNode.description.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
     var identifierToken: TokenSyntax {
@@ -17,15 +21,10 @@ struct Property: Equatable, CustomStringConvertible {
         return "(\(identifier), \(type))"
     }
 
-    init(bindingKeyword: BindingKeyword, identifier: String, type: String) {
-        let identifierPattern = IdentifierPatternSyntax(identifier: .identifier(identifier))
-        self.init(bindingKeyword: bindingKeyword, identifierPattern: identifierPattern, type: type)
-    }
-
-    init(bindingKeyword: BindingKeyword, identifierPattern: IdentifierPatternSyntax, type: String) {
+    init(bindingKeyword: BindingKeyword, identifierPattern: IdentifierPatternSyntax, typeNode: TypeSyntax) {
         self.bindingKeyword = bindingKeyword
         self.identifierPattern = identifierPattern
-        self.type = type
+        self.typeNode = typeNode
     }
 
     static func ==(lhs: Property, rhs: Property) -> Bool {

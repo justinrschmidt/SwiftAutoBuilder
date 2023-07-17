@@ -445,3 +445,15 @@ final class VariableHelperTests: XCTestCase {
         return variable
     }
 }
+
+extension Property {
+    init(bindingKeyword: BindingKeyword, identifier: String, type: String) {
+        let identifierPattern = IdentifierPatternSyntax(identifier: .identifier(identifier))
+        self.init(bindingKeyword: bindingKeyword, identifierPattern: identifierPattern, typeNode: Self.createTypeNode(from: type))
+    }
+
+    private static func createTypeNode(from type: String) -> TypeSyntax {
+        var parser = Parser(type)
+        return TypeSyntax.parse(from: &parser)
+    }
+}
