@@ -3,14 +3,19 @@ import SwiftSyntax
 struct Property: Equatable, CustomStringConvertible {
     let bindingKeyword: BindingKeyword
     let identifierPattern: IdentifierPatternSyntax
-    let typeNode: TypeSyntax
+    let variableType: VariableType
 
     var identifier: String {
         return identifierPattern.identifier.text
     }
 
     var type: String {
-        return typeNode.description.trimmingCharacters(in: .whitespacesAndNewlines)
+        switch variableType {
+        case .implicit:
+            return ""
+        case .explicit(let typeNode):
+            return typeNode.description.trimmingCharacters(in: .whitespacesAndNewlines)
+        }
     }
 
     var identifierToken: TokenSyntax {
@@ -21,10 +26,10 @@ struct Property: Equatable, CustomStringConvertible {
         return "(\(identifier), \(type))"
     }
 
-    init(bindingKeyword: BindingKeyword, identifierPattern: IdentifierPatternSyntax, typeNode: TypeSyntax) {
+    init(bindingKeyword: BindingKeyword, identifierPattern: IdentifierPatternSyntax, type: VariableType) {
         self.bindingKeyword = bindingKeyword
         self.identifierPattern = identifierPattern
-        self.typeNode = typeNode
+        self.variableType = type
     }
 
     static func ==(lhs: Property, rhs: Property) -> Bool {
@@ -48,5 +53,10 @@ struct Property: Equatable, CustomStringConvertible {
                 return nil
             }
         }
+    }
+
+    enum VariableType {
+        case implicit
+        case explicit(typeNode: TypeSyntax)
     }
 }

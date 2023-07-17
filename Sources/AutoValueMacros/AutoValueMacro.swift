@@ -48,40 +48,36 @@ public struct AutoValueMacro: MemberMacro {
                 throw AutoValueError.invalidType
             }
         }
-    
+
     private static func expandStruct(
         _ structDecl: StructDeclSyntax,
         of node: AttributeSyntax,
         in context: some MacroExpansionContext) throws -> [DeclSyntax] {
-            do {
-                // TODO: need to skip over stored constants with inline initializers because they are already initialized
-                let storedProperties = try VariableHelper.getStoredProperties(from: structDecl.memberBlock.members)
-                return [
-                    try InitializerDeclSyntax("init(with builder: Builder) throws", bodyBuilder: {
+            // TODO: need to emit diagnostic errors when type information is missing
+            // - stored constants with inline initializers can be ignored
+            // - use DiagnosticSpec for tests
+            // TODO: need to skip over stored constants with inline initializers because they are already initialized
+            let storedProperties = VariableHelper.getStoredProperties(from: structDecl.memberBlock.members)
+            return [
+                try InitializerDeclSyntax("init(with builder: Builder) throws", bodyBuilder: {
+                    for property in storedProperties {
+                        createPropertyInitializer(from: property)
+                    }
+                }).cast(DeclSyntax.self),
+                try ClassDeclSyntax("class Builder", membersBuilder: {
+                    for property in storedProperties {
+                        createVariableDecl(from: property)
+                    }
+                    try InitializerDeclSyntax("init()", bodyBuilder: {
                         for property in storedProperties {
-                            createPropertyInitializer(from: property)
+                            createBuildablePropertyInitializer(from: property)
                         }
-                    }).cast(DeclSyntax.self),
-                    try ClassDeclSyntax("class Builder", membersBuilder: {
-                        for property in storedProperties {
-                            createVariableDecl(from: property)
-                        }
-                        try InitializerDeclSyntax("init()", bodyBuilder: {
-                            for property in storedProperties {
-                                createBuildablePropertyInitializer(from: property)
-                            }
-                        })
-                        for property in storedProperties {
-                            try createSetValueFunction(from: property)
-                        }
-                    }).cast(DeclSyntax.self)
-                ]
-            } catch VariableHelper.VariableError.impliedVariableType(let nodes) {
-                for node in nodes {
-                    context.diagnose(Diagnostic(node: node, message: AutoValueDiagnostic.impliedVariableType))
-                }
-                return []
-            }
+                    })
+                    for property in storedProperties {
+                        try createSetValueFunction(from: property)
+                    }
+                }).cast(DeclSyntax.self)
+            ]
         }
 
     private static func createPropertyInitializer(from property: Property) -> SequenceExprSyntax {

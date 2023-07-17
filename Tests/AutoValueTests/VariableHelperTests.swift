@@ -270,47 +270,36 @@ final class VariableHelperTests: XCTestCase {
     // MARK: Get Stored Properties Implied Types
 
     func testVariableDeclaration_impliedSimpleTypeInit_getProperties() throws {
-        let memberList = try Self.createMemberList(["var a = 0"])
-        let variable = memberList.first!.decl.cast(VariableDeclSyntax.self)
-        Self.assertThrowsError(
-            try VariableHelper.getStoredProperties(from: memberList),
-            VariableHelper.VariableError.impliedVariableType(nodes: [variable.bindings.first!.pattern.cast(Syntax.self)]))
+        try assertGetStoredProperties("var a = 0", [
+            (.var, "a", nil)
+        ])
     }
 
     func testVariableDeclaration_impliedEnumTypeInit_getProperties() throws {
-        let memberList = try Self.createMemberList(["var a = (1, 2.0)"])
-        let variable = memberList.first!.decl.cast(VariableDeclSyntax.self)
-        Self.assertThrowsError(
-            try VariableHelper.getStoredProperties(from: memberList),
-            VariableHelper.VariableError.impliedVariableType(nodes: [variable.bindings.first!.pattern.cast(Syntax.self)]))
+        try assertGetStoredProperties("var a = (1, 2.0)", [
+            (.var, "a", nil)
+        ])
     }
 
     func testVariableDeclaration_impliedEnumDeclarationTypeInit_getProperties() throws {
-        let memberList = try Self.createMemberList(["var (a, b) = (1, 2.0)"])
-        let variable = memberList.first!.decl.cast(VariableDeclSyntax.self)
-        Self.assertThrowsError(
-            try VariableHelper.getStoredProperties(from: memberList),
-            VariableHelper.VariableError.impliedVariableType(nodes: [variable.bindings.first!.pattern.cast(Syntax.self)]))
+        try assertGetStoredProperties("var (a, b) = (1, 2.0)", [
+            (.var, "a", nil),
+            (.var, "b", nil)
+        ])
     }
 
     func testVariableDeclaration_impliedTypeList_getProperties() throws {
-        let memberList = try Self.createMemberList(["var a = 0, b = 1.0"])
-        let variable = memberList.first!.decl.cast(VariableDeclSyntax.self)
-        var index = variable.bindings.startIndex
-        let firstNode = variable.bindings[index].pattern.cast(Syntax.self)
-        index = variable.bindings.index(after: index)
-        let secondNode = variable.bindings[index].pattern.cast(Syntax.self)
-        Self.assertThrowsError(
-            try VariableHelper.getStoredProperties(from: memberList),
-            VariableHelper.VariableError.impliedVariableType(nodes: [firstNode, secondNode]))
+        try assertGetStoredProperties("var a = 0, b = 1.0", [
+            (.var, "a", nil),
+            (.var, "b", nil)
+        ])
     }
 
     func testVariableDeclaration_impliedTypeListMixed_getProperties() throws {
-        let memberList = try Self.createMemberList(["var a = 0, b: String"])
-        let variable = memberList.first!.decl.cast(VariableDeclSyntax.self)
-        Self.assertThrowsError(
-            try VariableHelper.getStoredProperties(from: memberList),
-            VariableHelper.VariableError.impliedVariableType(nodes: [variable.bindings.first!.pattern.cast(Syntax.self)]))
+        try assertGetStoredProperties("var a = 0, b: String", [
+            (.var, "a", nil),
+            (.var, "b", "String")
+        ])
     }
 
     // MARK: -
@@ -485,7 +474,7 @@ final class VariableHelperTests: XCTestCase {
 
     private func assertGetStoredProperties(
         _ variableSource: String,
-        _ properties: [(bindingKeyword: Property.BindingKeyword, identifier: String, type: String)],
+        _ properties: [(bindingKeyword: Property.BindingKeyword, identifier: String, type: String?)],
         file: StaticString = #filePath,
         line: UInt = #line
     ) throws {
@@ -494,7 +483,7 @@ final class VariableHelperTests: XCTestCase {
 
     private func assertGetStoredProperties(
         _ variableSources: [String],
-        _ properties: [(bindingKeyword: Property.BindingKeyword, identifier: String, type: String)],
+        _ properties: [(bindingKeyword: Property.BindingKeyword, identifier: String, type: String?)],
         file: StaticString = #filePath,
         line: UInt = #line
     ) throws {
@@ -549,13 +538,20 @@ final class VariableHelperTests: XCTestCase {
 }
 
 extension Property {
-    init(bindingKeyword: BindingKeyword, identifier: String, type: String) {
+    init(bindingKeyword: BindingKeyword, identifier: String, type: String?) {
         let identifierPattern = IdentifierPatternSyntax(identifier: .identifier(identifier))
-        self.init(bindingKeyword: bindingKeyword, identifierPattern: identifierPattern, typeNode: Self.createTypeNode(from: type))
+        self.init(
+            bindingKeyword: bindingKeyword,
+            identifierPattern: identifierPattern,
+            type: Self.createVariableType(from: type))
     }
 
-    private static func createTypeNode(from type: String) -> TypeSyntax {
-        var parser = Parser(type)
-        return TypeSyntax.parse(from: &parser)
+    private static func createVariableType(from type: String?) -> Property.VariableType {
+        if let type = type {
+            var parser = Parser(type)
+            return .explicit(typeNode: TypeSyntax.parse(from: &parser))
+        } else {
+            return .implicit
+        }
     }
 }
