@@ -54,7 +54,7 @@ struct VariableHelper {
             if let tuplePattern = patternBinding.pattern.as(TuplePatternSyntax.self) {
                 typeNode = nil
                 if let tupleType = patternBinding.typeAnnotation?.type.as(TupleTypeSyntax.self) {
-                    properties += getProperties(from: tuplePattern, type: tupleType, bindingKeyword: bindingKeyword)
+                    properties += getProperties(from: tuplePattern, type: tupleType, bindingKeyword: bindingKeyword).reversed()
                 } else {
                     impliedTypeNodes.append(tuplePattern.cast(Syntax.self))
                 }
@@ -68,33 +68,22 @@ struct VariableHelper {
     }
 
     private static func getProperties(from tuplePattern: TuplePatternSyntax, type: TupleTypeSyntax, bindingKeyword: Property.BindingKeyword) -> [Property] {
-        let identifiers = getTupleIdentifiers(from: tuplePattern)
-        let types = getTupleTypes(from: type)
-        return zip(identifiers, types).map({ Property(bindingKeyword: bindingKeyword, identifierPattern: $0.0, typeNode: $0.1) }).reversed()
-    }
-
-    private static func getTupleIdentifiers(from tuplePattern: TuplePatternSyntax) -> [IdentifierPatternSyntax] {
-        var identifiers: [IdentifierPatternSyntax] = []
-        for element in tuplePattern.elements {
-            if let identifierPattern = element.pattern.as(IdentifierPatternSyntax.self) {
-                identifiers.append(identifierPattern)
-            } else if let subTuplePattern = element.pattern.as(TuplePatternSyntax.self) {
-                identifiers += getTupleIdentifiers(from: subTuplePattern)
+        var properties: [Property] = []
+        var patternIterator = tuplePattern.elements.makeIterator()
+        var typeIterator = type.elements.makeIterator()
+        while let patternElement = patternIterator.next(),
+              let typeElement = typeIterator.next() {
+            if let identifierPattern = patternElement.pattern.as(IdentifierPatternSyntax.self) {
+                properties.append(Property(
+                    bindingKeyword: bindingKeyword,
+                    identifierPattern: identifierPattern,
+                    typeNode: typeElement.type.cast(TypeSyntax.self)))
+            } else if let subTuplePattern = patternElement.pattern.as(TuplePatternSyntax.self),
+                      let subTupleType = typeElement.type.as(TupleTypeSyntax.self) {
+                properties += getProperties(from: subTuplePattern, type: subTupleType, bindingKeyword: bindingKeyword)
             }
         }
-        return identifiers
-    }
-
-    private static func getTupleTypes(from tupleType: TupleTypeSyntax) -> [TypeSyntax] {
-        var types: [TypeSyntax] = []
-        for element in tupleType.elements {
-            if element.type.as(SimpleTypeIdentifierSyntax.self)?.name.text != nil {
-                types.append(element.type)
-            } else if let subTupleType = element.type.as(TupleTypeSyntax.self) {
-                types += getTupleTypes(from: subTupleType)
-            }
-        }
-        return types
+        return properties
     }
 
     static func isStoredProperty(_ variable: VariableDeclSyntax) -> Bool {

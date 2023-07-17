@@ -58,6 +58,13 @@ final class VariableHelperTests: XCTestCase {
         ])
     }
 
+    func testConstantDeclaration_tupleWithComplexTypes_getProperties() throws {
+        try assertGetStoredProperties("let (a, b): (Int, (Double, String))", [
+            (.let, "a", "Int"),
+            (.let, "b", "(Double, String)")
+        ])
+    }
+
     func testConstantDeclaration_listMixedTrailingInline_getProperties() throws {
         try assertGetStoredProperties("let a, b: Int, c: Double", [
             (.let, "a", "Int"),
@@ -153,6 +160,13 @@ final class VariableHelperTests: XCTestCase {
     func testVariableDeclaration_tupleType_getProperties() throws {
         try assertGetStoredProperties("var a: (Int, Double)", [
             (.var, "a", "(Int, Double)")
+        ])
+    }
+
+    func testVariableDeclaration_tupleWithComplexTypes_getProperties() throws {
+        try assertGetStoredProperties("var (a, b): (Int, (Double, String))", [
+            (.var, "a", "Int"),
+            (.var, "b", "(Double, String)")
         ])
     }
 
@@ -339,6 +353,10 @@ final class VariableHelperTests: XCTestCase {
         try assertIsStoredProperty("let a: (Int, Double)")
     }
 
+    func testConstantDeclaration_tupleWithComplexTypes_isStoredProperty() throws {
+        try assertIsStoredProperty("let (a, b): (Int, (Double, String))")
+    }
+
     func testConstantDeclaration_listMixedTrailingInline_isStoredProperty() throws {
         try assertIsStoredProperty("let a, b: Int, c: Double")
     }
@@ -403,6 +421,10 @@ final class VariableHelperTests: XCTestCase {
 
     func testVariableDeclaration_tupleType_isStoredProperty() throws {
         try assertIsStoredProperty("var a: (Int, Double)")
+    }
+
+    func testVariableDeclaration_tupleWithComplexTypes_isStoredProperty() throws {
+        try assertIsStoredProperty("var (a, b): (Int, (Double, String))")
     }
 
     func testVariableDeclaration_willSetAccessorBlock_isStoredProperty() throws {
