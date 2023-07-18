@@ -14,104 +14,111 @@ final class VariableHelperTests: XCTestCase {
 
     func testConstantDeclaration_simple_getProperties() throws {
         try assertGetStoredProperties("let a: Int", [
-            (.let, "a", "Int")
+            (.let, "a", "Int", false)
         ])
     }
 
     func testConstantDeclaration_init_getProperties() throws {
         try assertGetStoredProperties("let a: Int = 0", [
-            (.let, "a", "Int")
+            (.let, "a", "Int", true)
         ])
     }
 
     func testConstantDeclaration_listInline_getProperties() throws {
         try assertGetStoredProperties("let a: Int, b: Double", [
-            (.let, "a", "Int"),
-            (.let, "b", "Double")
+            (.let, "a", "Int", false),
+            (.let, "b", "Double", false)
         ])
     }
 
     func testConstantDeclaration_listTrailing_getProperties() throws {
         try assertGetStoredProperties("let a, b: Int", [
-            (.let, "a", "Int"),
-            (.let, "b", "Int")
+            (.let, "a", "Int", false),
+            (.let, "b", "Int", false)
         ])
     }
 
     func testConstantDeclaration_initList_getProperties() throws {
         try assertGetStoredProperties("let a: Int = 1, b: Double = 2", [
-            (.let, "a", "Int"),
-            (.let, "b", "Double")
+            (.let, "a", "Int", true),
+            (.let, "b", "Double", true)
         ])
     }
 
     func testConstantDeclaration_tuple_getProperties() throws {
         try assertGetStoredProperties("let (a, b): (Int, Double)", [
-            (.let, "a", "Int"),
-            (.let, "b", "Double")
+            (.let, "a", "Int", false),
+            (.let, "b", "Double", false)
+        ])
+    }
+
+    func testConstantDeclaration_initTuple_getProperties() throws {
+        try assertGetStoredProperties("let (a, b): (Int, Double) = (1, 2.3)", [
+            (.let, "a", "Int", true),
+            (.let, "b", "Double", true)
         ])
     }
 
     func testConstantDeclaration_tupleType_getProperties() throws {
         try assertGetStoredProperties("let a: (Int, Double)", [
-            (.let, "a", "(Int, Double)")
+            (.let, "a", "(Int, Double)", false)
         ])
     }
 
     func testConstantDeclaration_tupleWithComplexTypes_getProperties() throws {
         try assertGetStoredProperties("let (a, b): (Int, (Double, String))", [
-            (.let, "a", "Int"),
-            (.let, "b", "(Double, String)")
+            (.let, "a", "Int", false),
+            (.let, "b", "(Double, String)", false)
         ])
     }
 
     func testConstantDeclaration_listMixedTrailingInline_getProperties() throws {
         try assertGetStoredProperties("let a, b: Int, c: Double", [
-            (.let, "a", "Int"),
-            (.let, "b", "Int"),
-            (.let, "c", "Double")
+            (.let, "a", "Int", false),
+            (.let, "b", "Int", false),
+            (.let, "c", "Double", false)
         ])
     }
 
     func testConstantDeclaration_initListMixedInlineTrailing_getProperties() throws {
         try assertGetStoredProperties("let a: Int = 0, b, c: Double", [
-            (.let, "a", "Int"),
-            (.let, "b", "Double"),
-            (.let, "c", "Double")
+            (.let, "a", "Int", true),
+            (.let, "b", "Double", false),
+            (.let, "c", "Double", false)
         ])
     }
 
     func testConstantDeclaration_listMixedTupleSimple_getProperties() throws {
         try assertGetStoredProperties("let (a, b): (Int, Double), c: String", [
-            (.let, "a", "Int"),
-            (.let, "b", "Double"),
-            (.let, "c", "String")
+            (.let, "a", "Int", false),
+            (.let, "b", "Double", false),
+            (.let, "c", "String", false)
         ])
     }
 
     func testConstantDeclaration_nestedTuple_getProperties() throws {
         try assertGetStoredProperties("let (a, (b, c)): (Int, (Double, String))", [
-            (.let, "a", "Int"),
-            (.let, "b", "Double"),
-            (.let, "c", "String")
+            (.let, "a", "Int", false),
+            (.let, "b", "Double", false),
+            (.let, "c", "String", false)
         ])
     }
 
     func testConstantDeclaration_arrayType_getProperties() throws {
         try assertGetStoredProperties("let a: [Int]", [
-            (.let, "a", "[Int]")
+            (.let, "a", "[Int]", false)
         ])
     }
 
     func testConstantDeclaration_dictionaryType_getProperties() throws {
         try assertGetStoredProperties("let a: [Int:Double]", [
-            (.let, "a", "[Int:Double]")
+            (.let, "a", "[Int:Double]", false)
         ])
     }
 
     func testConstantDeclaration_genericType_getProperties() throws {
         try assertGetStoredProperties("let a: Set<Int>", [
-            (.let, "a", "Set<Int>")
+            (.let, "a", "Set<Int>", false)
         ])
     }
 
@@ -119,122 +126,129 @@ final class VariableHelperTests: XCTestCase {
 
     func testVariableDeclaration_simple_getProperties() throws {
         try assertGetStoredProperties("var a: Int", [
-            (.var, "a", "Int")
+            (.var, "a", "Int", false)
         ])
     }
 
     func testVariableDeclaration_init_getProperties() throws {
         try assertGetStoredProperties("var a: Int = 0", [
-            (.var, "a", "Int")
+            (.var, "a", "Int", true)
         ])
     }
 
     func testVariableDeclaration_listInline_getProperties() throws {
         try assertGetStoredProperties("var a: Int, b: Double", [
-            (.var, "a", "Int"),
-            (.var, "b", "Double")
+            (.var, "a", "Int", false),
+            (.var, "b", "Double", false)
         ])
     }
 
     func testVariableDeclaration_listTrailing_getProperties() throws {
         try assertGetStoredProperties("var a, b: Int", [
-            (.var, "a", "Int"),
-            (.var, "b", "Int")
+            (.var, "a", "Int", false),
+            (.var, "b", "Int", false)
         ])
     }
 
     func testVariableDeclaration_initList_getProperties() throws {
         try assertGetStoredProperties("var a: Int = 1, b: Double = 2", [
-            (.var, "a", "Int"),
-            (.var, "b", "Double")
+            (.var, "a", "Int", true),
+            (.var, "b", "Double", true)
         ])
     }
 
     func testVariableDeclaration_tuple_getProperties() throws {
         try assertGetStoredProperties("var (a, b): (Int, Double)", [
-            (.var, "a", "Int"),
-            (.var, "b", "Double")
+            (.var, "a", "Int", false),
+            (.var, "b", "Double", false)
+        ])
+    }
+
+    func testVariableDeclaration_initTuple_getProperties() throws {
+        try assertGetStoredProperties("var (a, b): (Int, Double) = (1, 2.3)", [
+            (.var, "a", "Int", true),
+            (.var, "b", "Double", true)
         ])
     }
 
     func testVariableDeclaration_tupleType_getProperties() throws {
         try assertGetStoredProperties("var a: (Int, Double)", [
-            (.var, "a", "(Int, Double)")
+            (.var, "a", "(Int, Double)", false)
         ])
     }
 
     func testVariableDeclaration_tupleWithComplexTypes_getProperties() throws {
         try assertGetStoredProperties("var (a, b): (Int, (Double, String))", [
-            (.var, "a", "Int"),
-            (.var, "b", "(Double, String)")
+            (.var, "a", "Int", false),
+            (.var, "b", "(Double, String)", false)
         ])
     }
 
     func testVariableDeclaration_willSetAccessorBlock_getProperties() throws {
         try assertGetStoredProperties("var a: Int { willSet { print(\"will set\") } }", [
-            (.var, "a", "Int")
+            (.var, "a", "Int", false)
         ])
     }
 
     func testVariableDeclaration_didSetAccessorBlock_getProperties() throws {
         try assertGetStoredProperties("var a: Int { didSet { print(\"did set\") }", [
-            (.var, "a", "Int")
+            (.var, "a", "Int", false)
         ])
     }
 
     func testVariableDeclaration_willSetAndDidSetAccessorBlocks_getProperties() throws {
         try assertGetStoredProperties("var a: Int { willSet { print(\"willSet\") } didSet { print(\"did set\") } }", [
-            (.var, "a", "Int")
+            (.var, "a", "Int", false)
         ])
     }
 
     func testVariableDeclaration_listMixedTrailingInline_getProperties() throws {
         try assertGetStoredProperties("var a, b: Int, c: Double", [
-            (.var, "a", "Int"),
-            (.var, "b", "Int"),
-            (.var, "c", "Double")
+            (.var, "a", "Int", false),
+            (.var, "b", "Int", false),
+            (.var, "c", "Double", false)
         ])
     }
 
     func testVariableDeclaration_initListMixedInlineTrailing_getProperties() throws {
         try assertGetStoredProperties("var a: Int = 0, b, c: Double", [
-            (.var, "a", "Int"),
-            (.var, "b", "Double"),
-            (.var, "c", "Double")
+            (.var, "a", "Int", true),
+            (.var, "b", "Double", false),
+            (.var, "c", "Double", false)
         ])
     }
 
     func testVariableDeclaration_listMixedTupleSimple_getProperties() throws {
         try assertGetStoredProperties("var (a, b): (Int, Double), c: Int", [
-            (.var, "a", "Int"),
-            (.var, "b", "Double"),
-            (.var, "c", "Int")
+            (.var, "a", "Int", false),
+            (.var, "b", "Double", false),
+            (.var, "c", "Int", false)
         ])
     }
 
     func testVariableDeclaration_nestedTuple_getProperties() throws {
         try assertGetStoredProperties("var (a, (b, c)): (Int, (Int, Double))", [
-            (.var, "a", "Int"),
-            (.var, "b", "Int"),
-            (.var, "c", "Double")
+            (.var, "a", "Int", false),
+            (.var, "b", "Int", false),
+            (.var, "c", "Double", false)
         ])
     }
 
     func testVariableDeclaration_arrayType_getProperties() throws {
         try assertGetStoredProperties("var a: [Int]", [
-            (.var, "a", "[Int]")
+            (.var, "a", "[Int]", false)
         ])
     }
 
     func testVariableDeclaration_dictionaryType_getProperties() throws {
         try assertGetStoredProperties("var a: [Int:Double]", [
-            (.var, "a", "[Int:Double]")
+            (.var, "a", "[Int:Double]", false)
         ])
     }
 
     func testVariableDeclaration_genericType_getProperties() throws {
         try assertGetStoredProperties("var a: Set<Int>", [
-            (.var, "a", "Set<Int>")
+            (.var, "a", "Set<Int>", false)
         ])
     }
 
@@ -261,9 +275,9 @@ final class VariableHelperTests: XCTestCase {
             "var c: String { return \"c\" }",
             "var d: Float"
         ], [
-            (.let, "a", "Int"),
-            (.var, "b", "Double"),
-            (.var, "d", "Float")
+            (.let, "a", "Int", false),
+            (.var, "b", "Double", false),
+            (.var, "d", "Float", false)
         ])
     }
 
@@ -271,34 +285,34 @@ final class VariableHelperTests: XCTestCase {
 
     func testVariableDeclaration_impliedSimpleTypeInit_getProperties() throws {
         try assertGetStoredProperties("var a = 0", [
-            (.var, "a", nil)
+            (.var, "a", nil, true)
         ])
     }
 
     func testVariableDeclaration_impliedEnumTypeInit_getProperties() throws {
         try assertGetStoredProperties("var a = (1, 2.0)", [
-            (.var, "a", nil)
+            (.var, "a", nil, true)
         ])
     }
 
     func testVariableDeclaration_impliedEnumDeclarationTypeInit_getProperties() throws {
         try assertGetStoredProperties("var (a, b) = (1, 2.0)", [
-            (.var, "a", nil),
-            (.var, "b", nil)
+            (.var, "a", nil, true),
+            (.var, "b", nil, true)
         ])
     }
 
     func testVariableDeclaration_impliedTypeList_getProperties() throws {
         try assertGetStoredProperties("var a = 0, b = 1.0", [
-            (.var, "a", nil),
-            (.var, "b", nil)
+            (.var, "a", nil, true),
+            (.var, "b", nil, true)
         ])
     }
 
     func testVariableDeclaration_impliedTypeListMixed_getProperties() throws {
         try assertGetStoredProperties("var a = 0, b: String", [
-            (.var, "a", nil),
-            (.var, "b", "String")
+            (.var, "a", nil, true),
+            (.var, "b", "String", false)
         ])
     }
 
@@ -336,6 +350,10 @@ final class VariableHelperTests: XCTestCase {
 
     func testConstantDeclaration_tuple_isStoredProperty() throws {
         try assertIsStoredProperty("let (a, b): (Int, Double)")
+    }
+
+    func testConstantDeclaration_initTuple_isStoredProperty() throws {
+        try assertIsStoredProperty("let (a, b): (Int, Double) = (1, 2.3)")
     }
 
     func testConstantDeclaration_tupleType_isStoredProperty() throws {
@@ -408,6 +426,10 @@ final class VariableHelperTests: XCTestCase {
         try assertIsStoredProperty("var (a, b): (Int, Double)")
     }
 
+    func testVariableDeclaration_initTuple_isStoredProperty() throws {
+        try assertIsStoredProperty("var (a, b): (Int, Double) = (1, 2.3)")
+    }
+
     func testVariableDeclaration_tupleType_isStoredProperty() throws {
         try assertIsStoredProperty("var a: (Int, Double)")
     }
@@ -474,7 +496,7 @@ final class VariableHelperTests: XCTestCase {
 
     private func assertGetStoredProperties(
         _ variableSource: String,
-        _ properties: [(bindingKeyword: Property.BindingKeyword, identifier: String, type: String?)],
+        _ properties: [(bindingKeyword: Property.BindingKeyword, identifier: String, type: String?, isInitialized: Bool)],
         file: StaticString = #filePath,
         line: UInt = #line
     ) throws {
@@ -483,13 +505,13 @@ final class VariableHelperTests: XCTestCase {
 
     private func assertGetStoredProperties(
         _ variableSources: [String],
-        _ properties: [(bindingKeyword: Property.BindingKeyword, identifier: String, type: String?)],
+        _ properties: [(bindingKeyword: Property.BindingKeyword, identifier: String, type: String?, isInitialized: Bool)],
         file: StaticString = #filePath,
         line: UInt = #line
     ) throws {
         let memberList = try Self.createMemberList(variableSources)
-        let actualProperties = try VariableHelper.getStoredProperties(from: memberList)
-        let expectedProperties = properties.map({ Property(bindingKeyword: $0.0, identifier: $0.1, type: $0.2) })
+        let actualProperties = VariableHelper.getStoredProperties(from: memberList)
+        let expectedProperties = properties.map({ Property(bindingKeyword: $0.0, identifier: $0.1, type: $0.2, isInitialized: $0.3) })
         XCTAssertEqual(actualProperties, expectedProperties, file: file, line: line)
     }
 
@@ -538,12 +560,13 @@ final class VariableHelperTests: XCTestCase {
 }
 
 extension Property {
-    init(bindingKeyword: BindingKeyword, identifier: String, type: String?) {
+    init(bindingKeyword: BindingKeyword, identifier: String, type: String?, isInitialized: Bool) {
         let identifierPattern = IdentifierPatternSyntax(identifier: .identifier(identifier))
         self.init(
             bindingKeyword: bindingKeyword,
             identifierPattern: identifierPattern,
-            type: Self.createVariableType(from: type))
+            type: Self.createVariableType(from: type),
+            isInitialized: isInitialized)
     }
 
     private static func createVariableType(from type: String?) -> Property.VariableType {

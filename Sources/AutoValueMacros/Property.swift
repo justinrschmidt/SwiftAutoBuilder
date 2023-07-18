@@ -4,6 +4,7 @@ struct Property: Equatable, CustomStringConvertible {
     let bindingKeyword: BindingKeyword
     let identifierPattern: IdentifierPatternSyntax
     let variableType: VariableType
+    let isInitialized: Bool
 
     var identifier: String {
         return identifierPattern.identifier.text
@@ -19,19 +20,22 @@ struct Property: Equatable, CustomStringConvertible {
     }
 
     var description: String {
-        return "(\(identifier), \(type))"
+        let initialized = isInitialized ? "initialized" : "uninitialized"
+        return "(\(identifier), \(type), \(initialized))"
     }
 
-    init(bindingKeyword: BindingKeyword, identifierPattern: IdentifierPatternSyntax, type: VariableType) {
+    init(bindingKeyword: BindingKeyword, identifierPattern: IdentifierPatternSyntax, type: VariableType, isInitialized: Bool) {
         self.bindingKeyword = bindingKeyword
         self.identifierPattern = identifierPattern
         self.variableType = type
+        self.isInitialized = isInitialized
     }
 
     static func ==(lhs: Property, rhs: Property) -> Bool {
         guard lhs.bindingKeyword == rhs.bindingKeyword else { return false }
         guard lhs.identifier == rhs.identifier else { return false }
         guard lhs.type == rhs.type else { return false }
+        guard lhs.isInitialized == rhs.isInitialized else { return false }
         return true
     }
 
