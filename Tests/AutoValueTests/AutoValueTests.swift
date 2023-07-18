@@ -151,4 +151,25 @@ final class AutoValueTests: XCTestCase {
             ],
             macros: testMacros)
     }
+
+    func testStructWithImplicitlyTypedConstant() {
+        assertMacroExpansion(
+            """
+            @AutoValue
+            struct Foo {
+                let a = 0
+            }
+            """,
+            expandedSource: """
+            struct Foo {
+                let a = 0
+                init(with builder: Builder) throws {
+                }
+                class Builder {
+                    init() {
+                    }
+                }
+            }
+            """, macros: testMacros)
+    }
 }

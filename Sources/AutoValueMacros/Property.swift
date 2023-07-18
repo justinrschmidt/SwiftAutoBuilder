@@ -19,6 +19,10 @@ struct Property: Equatable, CustomStringConvertible {
         }
     }
 
+    var isInitializedConstant: Bool {
+        return bindingKeyword == .let && isInitialized
+    }
+
     var description: String {
         let initialized = isInitialized ? "initialized" : "uninitialized"
         return "(\(identifier), \(type), \(initialized))"

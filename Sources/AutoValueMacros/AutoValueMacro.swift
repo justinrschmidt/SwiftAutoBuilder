@@ -72,27 +72,32 @@ public struct AutoValueMacro: MemberMacro {
                 }
                 return []
             }
-            return [
-                try InitializerDeclSyntax("init(with builder: Builder) throws", bodyBuilder: {
-                    for property in storedProperties {
-                        createPropertyInitializer(from: property)
-                    }
-                }).cast(DeclSyntax.self),
-                try ClassDeclSyntax("class Builder", membersBuilder: {
-                    for property in storedProperties {
-                        createVariableDecl(from: property)
-                    }
-                    try InitializerDeclSyntax("init()", bodyBuilder: {
-                        for property in storedProperties {
-                            createBuildablePropertyInitializer(from: property)
-                        }
-                    })
-                    for property in storedProperties {
-                        try createSetValueFunction(from: property)
-                    }
-                }).cast(DeclSyntax.self)
-            ]
+            let propertiesToBuild = storedProperties.filter({ !$0.isInitializedConstant })
+            return try createDecls(from: propertiesToBuild)
         }
+
+    private static func createDecls(from properties: [Property]) throws -> [DeclSyntax] {
+        return [
+            try InitializerDeclSyntax("init(with builder: Builder) throws", bodyBuilder: {
+                for property in properties {
+                    createPropertyInitializer(from: property)
+                }
+            }).cast(DeclSyntax.self),
+            try ClassDeclSyntax("class Builder", membersBuilder: {
+                for property in properties {
+                    createVariableDecl(from: property)
+                }
+                try InitializerDeclSyntax("init()", bodyBuilder: {
+                    for property in properties {
+                        createBuildablePropertyInitializer(from: property)
+                    }
+                })
+                for property in properties {
+                    try createSetValueFunction(from: property)
+                }
+            }).cast(DeclSyntax.self)
+        ]
+    }
 
     private static func createPropertyInitializer(from property: Property) -> SequenceExprSyntax {
         let builderIdentifier = IdentifierExprSyntax(identifier: TokenSyntax(.identifier("builder"), presence: .present))
