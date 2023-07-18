@@ -18,10 +18,6 @@ struct Property: Equatable, CustomStringConvertible {
         }
     }
 
-    var identifierToken: TokenSyntax {
-        return .identifier(identifier)
-    }
-
     var description: String {
         return "(\(identifier), \(type))"
     }

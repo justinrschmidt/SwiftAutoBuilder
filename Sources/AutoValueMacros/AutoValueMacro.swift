@@ -108,7 +108,7 @@ public struct AutoValueMacro: MemberMacro {
 
     private static func createVariableDecl(from property: Property) -> VariableDeclSyntax {
         let bindingKeyword = TokenSyntax(.keyword(.let), presence: .present)
-        let identifierPattern = IdentifierPatternSyntax(identifier: property.identifierToken)
+        let identifierPattern = IdentifierPatternSyntax(identifier: .identifier(property.identifier))
         let typeAnnotation = TypeAnnotationSyntax(
             type: SimpleTypeIdentifierSyntax(
                 name: TokenSyntax(
@@ -124,7 +124,7 @@ public struct AutoValueMacro: MemberMacro {
     private static func createBuildablePropertyInitializer(from property: Property) -> CodeBlockItemSyntax {
         let initExpression = IdentifierExprSyntax(identifier: TokenSyntax(.identifier("BuildableProperty"), presence: .present))
         return CodeBlockItemSyntax(item: CodeBlockItemSyntax.Item(SequenceExprSyntax(elementsBuilder: {
-            IdentifierExprSyntax(identifier: property.identifierToken)
+            IdentifierExprSyntax(identifier: .identifier(property.identifier))
             AssignmentExprSyntax()
             FunctionCallExprSyntax(calledExpression: initExpression, leftParen: .leftParenToken(), rightParen: .rightParenToken()) {
                 TupleExprElementSyntax(label: "name", expression: StringLiteralExprSyntax(content: property.identifier))
