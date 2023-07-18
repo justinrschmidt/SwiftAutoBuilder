@@ -55,8 +55,26 @@ struct Property: Equatable, CustomStringConvertible {
         }
     }
 
-    enum VariableType {
+    enum VariableType: Equatable {
         case implicit
         case explicit(typeNode: TypeSyntax)
+
+        var isImplicit: Bool {
+            switch self {
+            case .implicit:
+                return true
+            default:
+                return false
+            }
+        }
+
+        var isExplicit: Bool {
+            switch self {
+            case .explicit(_):
+                return true
+            default:
+                return false
+            }
+        }
     }
 }

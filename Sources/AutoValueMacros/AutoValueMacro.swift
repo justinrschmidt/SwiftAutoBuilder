@@ -15,25 +15,30 @@ enum AutoValueError: CustomStringConvertible, Error {
     }
 }
 
-enum AutoValueDiagnostic: String, DiagnosticMessage {
-    case impliedVariableType
+public enum AutoValueDiagnostic: DiagnosticMessage {
+    public static let domain = "AutoValueMacro"
 
-    var severity: DiagnosticSeverity {
+    case impliedVariableType(identifier: String)
+
+    public var severity: DiagnosticSeverity {
         switch self {
-        case .impliedVariableType:
+        case .impliedVariableType(_):
             return .error
         }
     }
 
-    var message: String {
+    public var message: String {
         switch self {
-        case .impliedVariableType:
-            return "Type annotation missing. AutoBuilder requires all properties to have type annotations."
+        case .impliedVariableType(let identifier):
+            return "Type annotation missing for '\(identifier)'. AutoBuilder requires all variable properties to have type annotations."
         }
     }
 
-    var diagnosticID: MessageID {
-        MessageID(domain: "AutoValueMacro", id: rawValue)
+    public var diagnosticID: MessageID {
+        switch self {
+        case .impliedVariableType(_):
+            return MessageID(domain: Self.domain, id: "ImpliedVariableType")
+        }
     }
 }
 
@@ -58,6 +63,15 @@ public struct AutoValueMacro: MemberMacro {
             // - use DiagnosticSpec for tests
             // TODO: need to skip over stored constants with inline initializers because they are already initialized
             let storedProperties = VariableHelper.getStoredProperties(from: structDecl.memberBlock.members)
+            let impliedTypeVariableProperties = storedProperties.filter({ $0.bindingKeyword == .var && $0.variableType.isImplicit })
+            guard impliedTypeVariableProperties.isEmpty else {
+                for property in impliedTypeVariableProperties {
+                    context.diagnose(Diagnostic(
+                        node: property.identifierPattern.cast(Syntax.self),
+                        message: AutoValueDiagnostic.impliedVariableType(identifier: property.identifier)))
+                }
+                return []
+            }
             return [
                 try InitializerDeclSyntax("init(with builder: Builder) throws", bodyBuilder: {
                     for property in storedProperties {

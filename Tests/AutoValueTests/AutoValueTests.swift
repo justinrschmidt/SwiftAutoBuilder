@@ -1,5 +1,6 @@
 import SwiftSyntaxMacros
 import SwiftSyntaxMacrosTestSupport
+import SwiftDiagnostics
 import XCTest
 import AutoValueMacros
 
@@ -125,5 +126,29 @@ final class AutoValueTests: XCTestCase {
             """, diagnostics: [
                 DiagnosticSpec(message: "@AutoValue can only be applied to structs", line: 1, column: 1)
             ], macros: testMacros)
+    }
+
+    func testStructWithImplicitlyTypedVariable() {
+        assertMacroExpansion(
+            """
+            @AutoValue
+            struct Foo {
+                var bar = 0
+            }
+            """,
+            expandedSource: """
+            struct Foo {
+                var bar = 0
+            }
+            """,
+            diagnostics: [
+                DiagnosticSpec(
+                    id: MessageID(domain: AutoValueDiagnostic.domain, id: "ImpliedVariableType"),
+                    message: "Type annotation missing for 'bar'. AutoBuilder requires all variable properties to have type annotations.",
+                    line: 3,
+                    column: 9,
+                    severity: .error)
+            ],
+            macros: testMacros)
     }
 }
