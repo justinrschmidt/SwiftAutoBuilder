@@ -58,10 +58,6 @@ public struct AutoValueMacro: MemberMacro {
         _ structDecl: StructDeclSyntax,
         of node: AttributeSyntax,
         in context: some MacroExpansionContext) throws -> [DeclSyntax] {
-            // TODO: need to emit diagnostic errors when type information is missing
-            // - stored constants with inline initializers can be ignored
-            // - use DiagnosticSpec for tests
-            // TODO: need to skip over stored constants with inline initializers because they are already initialized
             let storedProperties = VariableHelper.getStoredProperties(from: structDecl.memberBlock.members)
             let impliedTypeVariableProperties = storedProperties.filter({ $0.bindingKeyword == .var && $0.variableType.isImplicit })
             guard impliedTypeVariableProperties.isEmpty else {
