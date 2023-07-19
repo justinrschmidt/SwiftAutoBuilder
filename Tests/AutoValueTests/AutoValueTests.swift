@@ -124,7 +124,12 @@ final class AutoValueTests: XCTestCase {
             class Foo {
             }
             """, diagnostics: [
-                DiagnosticSpec(message: "@AutoValue can only be applied to structs", line: 1, column: 1)
+                DiagnosticSpec(
+                    id: MessageID(domain: AutoValueDiagnostic.domain, id: "InvalidTypeForAutoValue"),
+                    message: "@AutoValue can only be applied to structs",
+                    line: 1,
+                    column: 1,
+                    severity: .error)
             ], macros: testMacros)
     }
 

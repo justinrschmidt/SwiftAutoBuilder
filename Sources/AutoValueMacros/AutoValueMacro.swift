@@ -4,25 +4,16 @@ import SwiftSyntaxBuilder
 import SwiftSyntaxMacros
 import SwiftDiagnostics
 
-enum AutoValueError: CustomStringConvertible, Error {
-    case invalidType
-
-    var description: String {
-        switch self {
-        case .invalidType:
-            return "@AutoValue can only be applied to structs"
-        }
-    }
-}
-
 public enum AutoValueDiagnostic: DiagnosticMessage {
     public static let domain = "AutoValueMacro"
 
     case impliedVariableType(identifier: String)
+    case invalidTypeForAutoValue
 
     public var severity: DiagnosticSeverity {
         switch self {
-        case .impliedVariableType(_):
+        case .impliedVariableType(_),
+                .invalidTypeForAutoValue:
             return .error
         }
     }
@@ -31,6 +22,8 @@ public enum AutoValueDiagnostic: DiagnosticMessage {
         switch self {
         case .impliedVariableType(let identifier):
             return "Type annotation missing for '\(identifier)'. AutoBuilder requires all variable properties to have type annotations."
+        case .invalidTypeForAutoValue:
+            return "@AutoValue can only be applied to structs"
         }
     }
 
@@ -38,6 +31,8 @@ public enum AutoValueDiagnostic: DiagnosticMessage {
         switch self {
         case .impliedVariableType(_):
             return MessageID(domain: Self.domain, id: "ImpliedVariableType")
+        case .invalidTypeForAutoValue:
+            return MessageID(domain: Self.domain, id: "InvalidTypeForAutoValue")
         }
     }
 }
@@ -50,7 +45,10 @@ public struct AutoValueMacro: MemberMacro {
             if let structDecl = declaration.as(StructDeclSyntax.self) {
                 return try expandStruct(structDecl, of: node, in: context)
             } else {
-                throw AutoValueError.invalidType
+                context.diagnose(Diagnostic(
+                    node: node.cast(Syntax.self),
+                    message: AutoValueDiagnostic.invalidTypeForAutoValue))
+                return []
             }
         }
 
