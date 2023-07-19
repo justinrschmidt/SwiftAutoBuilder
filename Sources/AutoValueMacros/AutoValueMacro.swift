@@ -37,38 +37,67 @@ public enum AutoValueDiagnostic: DiagnosticMessage {
     }
 }
 
-public struct AutoValueMacro: MemberMacro {
+public struct AutoValueMacro: MemberMacro, ConformanceMacro {
+    private enum DeclAnalysisResponse {
+        case `struct`(structDecl: StructDeclSyntax, propertiesToBuild: [Property])
+        case error(diagnostics: [Diagnostic])
+
+        var isError: Bool {
+            switch self {
+            case .error(_):
+                return true
+            default:
+                return false
+            }
+        }
+    }
+
+    public static func expansion(
+        of node: AttributeSyntax,
+        providingConformancesOf declaration: some DeclGroupSyntax,
+        in context: some MacroExpansionContext) -> [(TypeSyntax, GenericWhereClauseSyntax?)] {
+            if !analyze(declaration: declaration, of: node).isError {
+                return [
+                    (SimpleTypeIdentifierSyntax(name: .identifier("Buildable")).cast(TypeSyntax.self), nil)
+                ]
+            } else {
+                return []
+            }
+    }
+
     public static func expansion(
         of node: AttributeSyntax,
         providingMembersOf declaration: some DeclGroupSyntax,
         in context: some MacroExpansionContext) throws -> [DeclSyntax] {
-            if let structDecl = declaration.as(StructDeclSyntax.self) {
-                return try expandStruct(structDecl, of: node, in: context)
-            } else {
-                context.diagnose(Diagnostic(
-                    node: node.cast(Syntax.self),
-                    message: AutoValueDiagnostic.invalidTypeForAutoValue))
+            switch analyze(declaration: declaration, of: node) {
+            case let .struct(_, propertiesToBuild):
+                return try createDecls(from: propertiesToBuild)
+            case let .error(diagnostics):
+                diagnostics.forEach(context.diagnose(_:))
                 return []
             }
         }
 
-    private static func expandStruct(
-        _ structDecl: StructDeclSyntax,
-        of node: AttributeSyntax,
-        in context: some MacroExpansionContext) throws -> [DeclSyntax] {
-            let storedProperties = VariableHelper.getStoredProperties(from: structDecl.memberBlock.members)
-            let impliedTypeVariableProperties = storedProperties.filter({ $0.bindingKeyword == .var && $0.variableType.isImplicit })
-            guard impliedTypeVariableProperties.isEmpty else {
-                for property in impliedTypeVariableProperties {
-                    context.diagnose(Diagnostic(
-                        node: property.identifierPattern.cast(Syntax.self),
-                        message: AutoValueDiagnostic.impliedVariableType(identifier: property.identifier)))
-                }
-                return []
-            }
-            let propertiesToBuild = storedProperties.filter({ !$0.isInitializedConstant })
-            return try createDecls(from: propertiesToBuild)
+    private static func analyze(declaration: some DeclGroupSyntax, of node: AttributeSyntax) -> DeclAnalysisResponse {
+        guard let structDecl = declaration.as(StructDeclSyntax.self) else {
+            return .error(diagnostics: [
+                Diagnostic(node: node.cast(Syntax.self), message: AutoValueDiagnostic.invalidTypeForAutoValue)
+            ])
         }
+        let storedProperties = VariableHelper.getStoredProperties(from: structDecl.memberBlock.members)
+        let impliedTypeVariableProperties = storedProperties.filter({ $0.bindingKeyword == .var && $0.variableType.isImplicit })
+        let diagnostics = impliedTypeVariableProperties.map({ property in
+            return Diagnostic(
+                node: property.identifierPattern.cast(Syntax.self),
+                message: AutoValueDiagnostic.impliedVariableType(identifier: property.identifier))
+        })
+        if diagnostics.isEmpty {
+            let propertiesToBuild = storedProperties.filter({ !$0.isInitializedConstant })
+            return .struct(structDecl: structDecl, propertiesToBuild: propertiesToBuild)
+        } else {
+            return .error(diagnostics: diagnostics)
+        }
+    }
 
     private static func createDecls(from properties: [Property]) throws -> [DeclSyntax] {
         return [
@@ -77,7 +106,7 @@ public struct AutoValueMacro: MemberMacro {
                     createPropertyInitializer(from: property)
                 }
             }).cast(DeclSyntax.self),
-            try ClassDeclSyntax("class Builder", membersBuilder: {
+            try ClassDeclSyntax("class Builder: BuilderProtocol", membersBuilder: {
                 for property in properties {
                     createVariableDecl(from: property)
                 }

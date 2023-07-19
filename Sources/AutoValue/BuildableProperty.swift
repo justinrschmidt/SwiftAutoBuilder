@@ -1,3 +1,5 @@
+public protocol Buildable {}
+public protocol BuilderProtocol: AnyObject {}
 public class BuildableProperty<T> {
     private let propertyName: String
     private var value: T?

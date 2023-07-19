@@ -21,10 +21,12 @@ final class AutoValueTests: XCTestCase {
             struct Foo {
                 init(with builder: Builder) throws {
                 }
-                class Builder {
+                class Builder: BuilderProtocol {
                     init() {
                     }
                 }
+            }
+            extension Foo: Buildable {
             }
             """, macros: testMacros)
     }
@@ -47,7 +49,7 @@ final class AutoValueTests: XCTestCase {
                     a = try builder.a.build()
                     b = try builder.b.build()
                 }
-                class Builder {
+                class Builder: BuilderProtocol {
                     let a: BuildableProperty<Int>
                     let b: BuildableProperty<Double>
                     init() {
@@ -63,6 +65,8 @@ final class AutoValueTests: XCTestCase {
                         return self
                     }
                 }
+            }
+            extension Foo: Buildable {
             }
             """, macros: testMacros)
     }
@@ -98,7 +102,7 @@ final class AutoValueTests: XCTestCase {
                 init(with builder: Builder) throws {
                     a = try builder.a.build()
                 }
-                class Builder {
+                class Builder: BuilderProtocol {
                     let a: BuildableProperty<Int>
                     init() {
                         a = BuildableProperty(name: "a")
@@ -108,6 +112,8 @@ final class AutoValueTests: XCTestCase {
                         return self
                     }
                 }
+            }
+            extension Foo: Buildable {
             }
             """, macros: testMacros)
     }
@@ -170,10 +176,12 @@ final class AutoValueTests: XCTestCase {
                 let a = 0
                 init(with builder: Builder) throws {
                 }
-                class Builder {
+                class Builder: BuilderProtocol {
                     init() {
                     }
                 }
+            }
+            extension Foo: Buildable {
             }
             """, macros: testMacros)
     }
