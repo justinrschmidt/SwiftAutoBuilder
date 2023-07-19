@@ -24,6 +24,9 @@ final class AutoValueTests: XCTestCase {
                 class Builder: BuilderProtocol {
                     init() {
                     }
+                    func build() throws -> Foo {
+                        return try Foo(with: self)
+                    }
                 }
             }
             extension Foo: Buildable {
@@ -63,6 +66,9 @@ final class AutoValueTests: XCTestCase {
                     func set(b: Double) -> Builder {
                         self.b.set(value: b)
                         return self
+                    }
+                    func build() throws -> Foo {
+                        return try Foo(with: self)
                     }
                 }
             }
@@ -110,6 +116,9 @@ final class AutoValueTests: XCTestCase {
                     func set(a: Int) -> Builder {
                         self.a.set(value: a)
                         return self
+                    }
+                    func build() throws -> Foo {
+                        return try Foo(with: self)
                     }
                 }
             }
@@ -178,6 +187,9 @@ final class AutoValueTests: XCTestCase {
                 }
                 class Builder: BuilderProtocol {
                     init() {
+                    }
+                    func build() throws -> Foo {
+                        return try Foo(with: self)
                     }
                 }
             }

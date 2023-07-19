@@ -70,8 +70,8 @@ public struct AutoValueMacro: MemberMacro, ConformanceMacro {
         providingMembersOf declaration: some DeclGroupSyntax,
         in context: some MacroExpansionContext) throws -> [DeclSyntax] {
             switch analyze(declaration: declaration, of: node) {
-            case let .struct(_, propertiesToBuild):
-                return try createDecls(from: propertiesToBuild)
+            case let .struct(structDecl, propertiesToBuild):
+                return try createDecls(from: propertiesToBuild, containerIdentifier: structDecl.identifier)
             case let .error(diagnostics):
                 diagnostics.forEach(context.diagnose(_:))
                 return []
@@ -99,7 +99,7 @@ public struct AutoValueMacro: MemberMacro, ConformanceMacro {
         }
     }
 
-    private static func createDecls(from properties: [Property]) throws -> [DeclSyntax] {
+    private static func createDecls(from properties: [Property], containerIdentifier: TokenSyntax) throws -> [DeclSyntax] {
         return [
             try InitializerDeclSyntax("init(with builder: Builder) throws", bodyBuilder: {
                 for property in properties {
@@ -118,6 +118,7 @@ public struct AutoValueMacro: MemberMacro, ConformanceMacro {
                 for property in properties {
                     try createSetValueFunction(from: property)
                 }
+                try createBuildFunction(containerIdentifier: containerIdentifier)
             }).cast(DeclSyntax.self)
         ]
     }
@@ -169,6 +170,19 @@ public struct AutoValueMacro: MemberMacro, ConformanceMacro {
                 TupleExprElementSyntax(label: "value", expression: IdentifierExprSyntax(identifier: .identifier(property.identifier)))
             }
             ReturnStmtSyntax(expression: IdentifierExprSyntax(identifier: .keyword(.`self`)))
+        }
+    }
+
+    private static func createBuildFunction(containerIdentifier: TokenSyntax) throws -> FunctionDeclSyntax {
+        return try FunctionDeclSyntax("func build() throws -> \(raw: containerIdentifier.text)") {
+            ReturnStmtSyntax(
+                expression: TryExprSyntax(
+                    expression: FunctionCallExprSyntax(
+                        calledExpression: IdentifierExprSyntax(identifier: .identifier(containerIdentifier.text)),
+                        leftParen: .leftParenToken(),
+                        rightParen: .rightParenToken()) {
+                            TupleExprElementSyntax(label: "with", expression: IdentifierExprSyntax(identifier: .keyword(.self)))
+                        }))
         }
     }
 }
