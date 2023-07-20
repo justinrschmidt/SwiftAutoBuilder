@@ -22,7 +22,7 @@ final class AutoValueTests: XCTestCase {
                 init(with builder: Builder) throws {
                 }
                 class Builder: BuilderProtocol {
-                    init() {
+                    required init() {
                     }
                     func build() throws -> Foo {
                         return try Foo(with: self)
@@ -55,7 +55,7 @@ final class AutoValueTests: XCTestCase {
                 class Builder: BuilderProtocol {
                     let a: BuildableProperty<Int>
                     let b: BuildableProperty<Double>
-                    init() {
+                    required init() {
                         a = BuildableProperty(name: "a")
                         b = BuildableProperty(name: "b")
                     }
@@ -112,7 +112,7 @@ final class AutoValueTests: XCTestCase {
                 }
                 class Builder: BuilderProtocol {
                     let a: BuildableProperty<Int>
-                    init() {
+                    required init() {
                         a = BuildableProperty(name: "a")
                     }
                     @discardableResult
@@ -189,7 +189,7 @@ final class AutoValueTests: XCTestCase {
                 init(with builder: Builder) throws {
                 }
                 class Builder: BuilderProtocol {
-                    init() {
+                    required init() {
                     }
                     func build() throws -> Foo {
                         return try Foo(with: self)

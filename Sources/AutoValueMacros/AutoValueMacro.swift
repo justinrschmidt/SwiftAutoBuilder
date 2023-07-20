@@ -110,7 +110,7 @@ public struct AutoValueMacro: MemberMacro, ConformanceMacro {
                 for property in properties {
                     createVariableDecl(from: property)
                 }
-                try InitializerDeclSyntax("init()", bodyBuilder: {
+                try InitializerDeclSyntax("required init()", bodyBuilder: {
                     for property in properties {
                         createBuildablePropertyInitializer(from: property)
                     }
