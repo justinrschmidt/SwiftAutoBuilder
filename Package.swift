@@ -44,7 +44,7 @@ let package = Package(
 
         // A test target used to develop the macro implementation.
         .testTarget(
-            name: "AutoValueTests",
+            name: "AutoValueMacroTests",
             dependencies: [
                 "AutoValueMacros",
                 .product(name: "SwiftSyntaxMacrosTestSupport", package: "swift-syntax"),
