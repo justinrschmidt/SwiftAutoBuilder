@@ -59,10 +59,12 @@ final class AutoValueTests: XCTestCase {
                         a = BuildableProperty(name: "a")
                         b = BuildableProperty(name: "b")
                     }
+                    @discardableResult
                     func set(a: Int) -> Builder {
                         self.a.set(value: a)
                         return self
                     }
+                    @discardableResult
                     func set(b: Double) -> Builder {
                         self.b.set(value: b)
                         return self
@@ -113,6 +115,7 @@ final class AutoValueTests: XCTestCase {
                     init() {
                         a = BuildableProperty(name: "a")
                     }
+                    @discardableResult
                     func set(a: Int) -> Builder {
                         self.a.set(value: a)
                         return self

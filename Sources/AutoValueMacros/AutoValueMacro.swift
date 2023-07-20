@@ -165,7 +165,7 @@ public struct AutoValueMacro: MemberMacro, ConformanceMacro {
         let selfIdentifier = IdentifierExprSyntax(identifier: .keyword(.`self`))
         let selfExpression = MemberAccessExprSyntax(base: selfIdentifier, name: TokenSyntax(.identifier(property.identifier), presence: .present))
         let setValueExpression = MemberAccessExprSyntax(base: selfExpression, name: TokenSyntax(.identifier("set"), presence: .present))
-        return try FunctionDeclSyntax("func set(\(raw: property.identifier): \(raw: property.type)) -> Builder") {
+        return try FunctionDeclSyntax("@discardableResult\nfunc set(\(raw: property.identifier): \(raw: property.type)) -> Builder") {
             FunctionCallExprSyntax(calledExpression: setValueExpression, leftParen: .leftParenToken(), rightParen: .rightParenToken()) {
                 TupleExprElementSyntax(label: "value", expression: IdentifierExprSyntax(identifier: .identifier(property.identifier)))
             }
