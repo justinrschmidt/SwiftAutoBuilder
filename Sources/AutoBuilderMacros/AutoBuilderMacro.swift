@@ -4,7 +4,7 @@ import SwiftSyntaxBuilder
 import SwiftSyntaxMacros
 import SwiftDiagnostics
 
-public struct AutoValueMacro: MemberMacro, ConformanceMacro {
+public struct AutoBuilderMacro: MemberMacro, ConformanceMacro {
     private enum DeclAnalysisResponse {
         case `struct`(structDecl: StructDeclSyntax, propertiesToBuild: [Property])
         case error(diagnostics: [Diagnostic])
@@ -48,7 +48,7 @@ public struct AutoValueMacro: MemberMacro, ConformanceMacro {
     private static func analyze(declaration: some DeclGroupSyntax, of node: AttributeSyntax) -> DeclAnalysisResponse {
         guard let structDecl = declaration.as(StructDeclSyntax.self) else {
             return .error(diagnostics: [
-                Diagnostic(node: node.cast(Syntax.self), message: AutoValueDiagnostic.invalidTypeForAutoValue)
+                Diagnostic(node: node.cast(Syntax.self), message: AutoBuilderDiagnostic.invalidTypeForAutoBuilder)
             ])
         }
         let storedProperties = VariableHelper.getStoredProperties(from: structDecl.memberBlock.members)
@@ -56,7 +56,7 @@ public struct AutoValueMacro: MemberMacro, ConformanceMacro {
         let diagnostics = impliedTypeVariableProperties.map({ property in
             return Diagnostic(
                 node: property.identifierPattern.cast(Syntax.self),
-                message: AutoValueDiagnostic.impliedVariableType(identifier: property.identifier))
+                message: AutoBuilderDiagnostic.impliedVariableType(identifier: property.identifier))
         })
         if diagnostics.isEmpty {
             let propertiesToBuild = storedProperties.filter({ !$0.isInitializedConstant })
@@ -155,8 +155,8 @@ public struct AutoValueMacro: MemberMacro, ConformanceMacro {
 }
 
 @main
-struct AutoValuePlugin: CompilerPlugin {
+struct AutoBuilderPlugin: CompilerPlugin {
     let providingMacros: [Macro.Type] = [
-        AutoValueMacro.self,
+        AutoBuilderMacro.self,
     ]
 }

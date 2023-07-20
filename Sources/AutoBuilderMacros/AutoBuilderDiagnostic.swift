@@ -1,16 +1,16 @@
 import SwiftSyntax
 import SwiftDiagnostics
 
-public enum AutoValueDiagnostic: DiagnosticMessage {
-    public static let domain = "AutoValueMacro"
+public enum AutoBuilderDiagnostic: DiagnosticMessage {
+    public static let domain = "AutoBuilderMacro"
 
     case impliedVariableType(identifier: String)
-    case invalidTypeForAutoValue
+    case invalidTypeForAutoBuilder
 
     public var severity: DiagnosticSeverity {
         switch self {
         case .impliedVariableType(_),
-                .invalidTypeForAutoValue:
+                .invalidTypeForAutoBuilder:
             return .error
         }
     }
@@ -19,8 +19,8 @@ public enum AutoValueDiagnostic: DiagnosticMessage {
         switch self {
         case .impliedVariableType(let identifier):
             return "Type annotation missing for '\(identifier)'. AutoBuilder requires all variable properties to have type annotations."
-        case .invalidTypeForAutoValue:
-            return "@AutoValue can only be applied to structs"
+        case .invalidTypeForAutoBuilder:
+            return "@AutoBuilder can only be applied to structs"
         }
     }
 
@@ -28,8 +28,8 @@ public enum AutoValueDiagnostic: DiagnosticMessage {
         switch self {
         case .impliedVariableType(_):
             return MessageID(domain: Self.domain, id: "ImpliedVariableType")
-        case .invalidTypeForAutoValue:
-            return MessageID(domain: Self.domain, id: "InvalidTypeForAutoValue")
+        case .invalidTypeForAutoBuilder:
+            return MessageID(domain: Self.domain, id: "InvalidTypeForAutoBuilder")
         }
     }
 }

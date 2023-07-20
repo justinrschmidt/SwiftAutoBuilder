@@ -1,7 +1,7 @@
-import AutoValue
+import AutoBuilder
 import XCTest
 
-final class AutoValueTests: XCTestCase {
+final class AutoBuilderTests: XCTestCase {
     func testBuilder() throws {
         let foo = try Foo.Builder()
             .set(a: 42)
@@ -33,12 +33,12 @@ final class AutoValueTests: XCTestCase {
     }
 }
 
-@AutoValue
+@AutoBuilder
 private struct Foo {
     let a: Int
 }
 
-@AutoValue
+@AutoBuilder
 private struct Bar {
     let foo: Foo
 }

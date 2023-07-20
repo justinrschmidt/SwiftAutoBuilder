@@ -7,17 +7,17 @@ import PackageDescription
 import CompilerPluginSupport
 
 let package = Package(
-    name: "AutoValue",
+    name: "AutoBuilder",
     platforms: [.macOS(.v10_15), .iOS(.v13), .tvOS(.v13), .watchOS(.v6), .macCatalyst(.v13)],
     products: [
         // Products define the executables and libraries a package produces, making them visible to other packages.
         .library(
-            name: "AutoValue",
-            targets: ["AutoValue"]
+            name: "AutoBuilder",
+            targets: ["AutoBuilder"]
         ),
         .executable(
-            name: "AutoValueClient",
-            targets: ["AutoValueClient"]
+            name: "AutoBuilderClient",
+            targets: ["AutoBuilderClient"]
         ),
     ],
     dependencies: [
@@ -29,7 +29,7 @@ let package = Package(
         // Targets can depend on other targets in this package and products from dependencies.
         // Macro implementation that performs the source transformation of a macro.
         .macro(
-            name: "AutoValueMacros",
+            name: "AutoBuilderMacros",
             dependencies: [
                 .product(name: "SwiftSyntaxMacros", package: "swift-syntax"),
                 .product(name: "SwiftCompilerPlugin", package: "swift-syntax")
@@ -37,23 +37,23 @@ let package = Package(
         ),
 
         // Library that exposes a macro as part of its API, which is used in client programs.
-        .target(name: "AutoValue", dependencies: ["AutoValueMacros"]),
+        .target(name: "AutoBuilder", dependencies: ["AutoBuilderMacros"]),
 
         // A client of the library, which is able to use the macro in its own code.
-        .executableTarget(name: "AutoValueClient", dependencies: ["AutoValue"]),
+        .executableTarget(name: "AutoBuilderClient", dependencies: ["AutoBuilder"]),
 
         // A test target used to develop the macro implementation.
         .testTarget(
-            name: "AutoValueMacroTests",
+            name: "AutoBuilderMacroTests",
             dependencies: [
-                "AutoValueMacros",
+                "AutoBuilderMacros",
                 .product(name: "SwiftSyntaxMacrosTestSupport", package: "swift-syntax"),
             ]
         ),
         .testTarget(
-            name: "AutoValueTests",
+            name: "AutoBuilderTests",
             dependencies: [
-                "AutoValue"
+                "AutoBuilder"
             ]
         ),
     ]

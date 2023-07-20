@@ -14,9 +14,9 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "AutoValue"
-               BuildableName = "AutoValue"
-               BlueprintName = "AutoValue"
+               BlueprintIdentifier = "AutoBuilder"
+               BuildableName = "AutoBuilder"
+               BlueprintName = "AutoBuilder"
                ReferencedContainer = "container:">
             </BuildableReference>
          </BuildActionEntry>
@@ -29,7 +29,7 @@
       shouldUseLaunchSchemeArgsEnv = "YES">
       <TestPlans>
          <TestPlanReference
-            reference = "container:.swiftpm/AutoValue.xctestplan"
+            reference = "container:.swiftpm/AutoBuilder.xctestplan"
             default = "YES">
          </TestPlanReference>
       </TestPlans>
@@ -54,9 +54,9 @@
       <MacroExpansion>
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "AutoValue"
-            BuildableName = "AutoValue"
-            BlueprintName = "AutoValue"
+            BlueprintIdentifier = "AutoBuilder"
+            BuildableName = "AutoBuilder"
+            BlueprintName = "AutoBuilder"
             ReferencedContainer = "container:">
          </BuildableReference>
       </MacroExpansion>

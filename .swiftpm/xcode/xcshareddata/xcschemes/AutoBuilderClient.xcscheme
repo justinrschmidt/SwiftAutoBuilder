@@ -14,9 +14,9 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "AutoValueClient"
-               BuildableName = "AutoValueClient"
-               BlueprintName = "AutoValueClient"
+               BlueprintIdentifier = "AutoBuilderClient"
+               BuildableName = "AutoBuilderClient"
+               BlueprintName = "AutoBuilderClient"
                ReferencedContainer = "container:">
             </BuildableReference>
          </BuildActionEntry>
@@ -28,9 +28,23 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "AutoValueTests"
-               BuildableName = "AutoValueTests"
-               BlueprintName = "AutoValueTests"
+               BlueprintIdentifier = "AutoBuilderMacroTests"
+               BuildableName = "AutoBuilderMacroTests"
+               BlueprintName = "AutoBuilderMacroTests"
+               ReferencedContainer = "container:">
+            </BuildableReference>
+         </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "NO"
+            buildForArchiving = "NO"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "AutoBuilderTests"
+               BuildableName = "AutoBuilderTests"
+               BlueprintName = "AutoBuilderTests"
                ReferencedContainer = "container:">
             </BuildableReference>
          </BuildActionEntry>
@@ -47,9 +61,9 @@
             skipped = "NO">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "AutoValueTests"
-               BuildableName = "AutoValueTests"
-               BlueprintName = "AutoValueTests"
+               BlueprintIdentifier = "AutoBuilderMacroTests"
+               BuildableName = "AutoBuilderMacroTests"
+               BlueprintName = "AutoBuilderMacroTests"
                ReferencedContainer = "container:">
             </BuildableReference>
          </TestableReference>
@@ -57,9 +71,9 @@
             skipped = "NO">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "AutoValueMacroTests"
-               BuildableName = "AutoValueMacroTests"
-               BlueprintName = "AutoValueMacroTests"
+               BlueprintIdentifier = "AutoBuilderTests"
+               BuildableName = "AutoBuilderTests"
+               BlueprintName = "AutoBuilderTests"
                ReferencedContainer = "container:">
             </BuildableReference>
          </TestableReference>
@@ -79,9 +93,9 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "AutoValueClient"
-            BuildableName = "AutoValueClient"
-            BlueprintName = "AutoValueClient"
+            BlueprintIdentifier = "AutoBuilderClient"
+            BuildableName = "AutoBuilderClient"
+            BlueprintName = "AutoBuilderClient"
             ReferencedContainer = "container:">
          </BuildableReference>
       </BuildableProductRunnable>
@@ -96,9 +110,9 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "AutoValueClient"
-            BuildableName = "AutoValueClient"
-            BlueprintName = "AutoValueClient"
+            BlueprintIdentifier = "AutoBuilderClient"
+            BuildableName = "AutoBuilderClient"
+            BlueprintName = "AutoBuilderClient"
             ReferencedContainer = "container:">
          </BuildableReference>
       </BuildableProductRunnable>

@@ -3,4 +3,4 @@
 
 @attached(conformance)
 @attached(member, names: named(Builder), named(init(with:)))
-public macro AutoValue() = #externalMacro(module: "AutoValueMacros", type: "AutoValueMacro")
+public macro AutoBuilder() = #externalMacro(module: "AutoBuilderMacros", type: "AutoBuilderMacro")

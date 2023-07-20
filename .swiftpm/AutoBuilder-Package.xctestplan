@@ -1,7 +1,7 @@
 {
   "configurations" : [
     {
-      "id" : "DFC9115B-27A9-40DF-8C16-9204143C8989",
+      "id" : "74BAAFE1-EA00-48EC-8BEE-9B94E1032AF2",
       "name" : "Test Scheme Action",
       "options" : {
 
@@ -12,23 +12,23 @@
     "codeCoverage" : false,
     "targetForVariableExpansion" : {
       "containerPath" : "container:",
-      "identifier" : "AutoValueClient",
-      "name" : "AutoValueClient"
+      "identifier" : "AutoBuilderClient",
+      "name" : "AutoBuilderClient"
     }
   },
   "testTargets" : [
     {
       "target" : {
         "containerPath" : "container:",
-        "identifier" : "AutoValueMacroTests",
-        "name" : "AutoValueMacroTests"
+        "identifier" : "AutoBuilderMacroTests",
+        "name" : "AutoBuilderMacroTests"
       }
     },
     {
       "target" : {
         "containerPath" : "container:",
-        "identifier" : "AutoValueTests",
-        "name" : "AutoValueTests"
+        "identifier" : "AutoBuilderTests",
+        "name" : "AutoBuilderTests"
       }
     }
   ],

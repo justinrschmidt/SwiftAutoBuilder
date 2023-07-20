@@ -2,17 +2,17 @@ import SwiftSyntaxMacros
 import SwiftSyntaxMacrosTestSupport
 import SwiftDiagnostics
 import XCTest
-import AutoValueMacros
+import AutoBuilderMacros
 
 let testMacros: [String: Macro.Type] = [
-    "AutoValue": AutoValueMacro.self,
+    "AutoBuilder": AutoBuilderMacro.self,
 ]
 
-final class AutoValueMacroTests: XCTestCase {
+final class AutoBuilderMacroTests: XCTestCase {
     func testEmptyStruct() {
         assertMacroExpansion(
             """
-            @AutoValue
+            @AutoBuilder
             struct Foo {
             }
             """,
@@ -37,7 +37,7 @@ final class AutoValueMacroTests: XCTestCase {
     func testStructWithStoredProperties() {
         assertMacroExpansion(
             """
-            @AutoValue
+            @AutoBuilder
             struct Foo {
                 let a: Int
                 let b: Double
@@ -82,7 +82,7 @@ final class AutoValueMacroTests: XCTestCase {
     func testStructWithComputedProperties() {
         assertMacroExpansion(
             """
-            @AutoValue
+            @AutoBuilder
             struct Foo {
                 let a: Int
                 var b: Int {
@@ -133,7 +133,7 @@ final class AutoValueMacroTests: XCTestCase {
     func testInvalidType() {
         assertMacroExpansion(
             """
-            @AutoValue
+            @AutoBuilder
             class Foo {
             }
             """,
@@ -143,8 +143,8 @@ final class AutoValueMacroTests: XCTestCase {
             }
             """, diagnostics: [
                 DiagnosticSpec(
-                    id: MessageID(domain: AutoValueDiagnostic.domain, id: "InvalidTypeForAutoValue"),
-                    message: "@AutoValue can only be applied to structs",
+                    id: MessageID(domain: AutoBuilderDiagnostic.domain, id: "InvalidTypeForAutoBuilder"),
+                    message: "@AutoBuilder can only be applied to structs",
                     line: 1,
                     column: 1,
                     severity: .error)
@@ -154,7 +154,7 @@ final class AutoValueMacroTests: XCTestCase {
     func testStructWithImplicitlyTypedVariable() {
         assertMacroExpansion(
             """
-            @AutoValue
+            @AutoBuilder
             struct Foo {
                 var bar = 0
             }
@@ -166,7 +166,7 @@ final class AutoValueMacroTests: XCTestCase {
             """,
             diagnostics: [
                 DiagnosticSpec(
-                    id: MessageID(domain: AutoValueDiagnostic.domain, id: "ImpliedVariableType"),
+                    id: MessageID(domain: AutoBuilderDiagnostic.domain, id: "ImpliedVariableType"),
                     message: "Type annotation missing for 'bar'. AutoBuilder requires all variable properties to have type annotations.",
                     line: 3,
                     column: 9,
@@ -178,7 +178,7 @@ final class AutoValueMacroTests: XCTestCase {
     func testStructWithImplicitlyTypedConstant() {
         assertMacroExpansion(
             """
-            @AutoValue
+            @AutoBuilder
             struct Foo {
                 let a = 0
             }

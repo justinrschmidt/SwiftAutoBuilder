@@ -2,7 +2,7 @@ import SwiftParser
 import SwiftSyntax
 import SwiftSyntaxBuilder
 import XCTest
-@testable import AutoValueMacros
+@testable import AutoBuilderMacros
 
 enum VariableHelperTestsError: Error {
     case invalidDeclSyntax
