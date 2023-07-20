@@ -23,6 +23,13 @@
         "identifier" : "AutoValueMacroTests",
         "name" : "AutoValueMacroTests"
       }
+    },
+    {
+      "target" : {
+        "containerPath" : "container:",
+        "identifier" : "AutoValueTests",
+        "name" : "AutoValueTests"
+      }
     }
   ],
   "version" : 1
