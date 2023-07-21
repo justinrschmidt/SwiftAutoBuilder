@@ -40,6 +40,15 @@ final class AutoBuilderTests: XCTestCase {
         XCTAssertEqual(bar.foo.a, 3)
         XCTAssertEqual(bar.foo.b, 2)
     }
+
+    func testSettingBuilder() throws {
+        let fooBuilder = Foo.Builder()
+            .set(a: 42)
+        let barBuilder = Bar.Builder()
+        barBuilder.foo.builder = fooBuilder
+        let bar = try barBuilder.build()
+        XCTAssertEqual(bar.foo.a, 42)
+    }
 }
 
 @AutoBuilder

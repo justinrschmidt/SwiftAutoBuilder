@@ -43,13 +43,19 @@ public enum BuilderError: Error {
 
 extension BuildableProperty where T: Buildable, T.Builder: BuilderProtocol, T.Builder.Client == T {
     public var builder: T.Builder {
-        if let subBuilder = self.subBuilder as? T.Builder {
-            return subBuilder
-        } else {
-            let subBuilder = value?.toBuilder() ?? T.Builder()
+        get {
+            if let subBuilder = self.subBuilder as? T.Builder {
+                return subBuilder
+            } else {
+                let subBuilder = value?.toBuilder() ?? T.Builder()
+                value = nil
+                self.subBuilder = subBuilder
+                return subBuilder
+            }
+        }
+        set {
             value = nil
-            self.subBuilder = subBuilder
-            return subBuilder
+            subBuilder = newValue
         }
     }
 }
