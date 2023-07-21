@@ -21,6 +21,10 @@ final class AutoBuilderMacroTests: XCTestCase {
             struct Foo {
                 init(with builder: Builder) throws {
                 }
+                func toBuilder() -> Builder {
+                    let builder = Builder()
+                    return builder
+                }
                 class Builder: BuilderProtocol {
                     required init() {
                     }
@@ -51,6 +55,12 @@ final class AutoBuilderMacroTests: XCTestCase {
                 init(with builder: Builder) throws {
                     a = try builder.a.build()
                     b = try builder.b.build()
+                }
+                func toBuilder() -> Builder {
+                    let builder = Builder()
+                    builder.set(a: a)
+                    builder.set(b: b)
+                    return builder
                 }
                 class Builder: BuilderProtocol {
                     let a: BuildableProperty<Int>
@@ -109,6 +119,11 @@ final class AutoBuilderMacroTests: XCTestCase {
                 }
                 init(with builder: Builder) throws {
                     a = try builder.a.build()
+                }
+                func toBuilder() -> Builder {
+                    let builder = Builder()
+                    builder.set(a: a)
+                    return builder
                 }
                 class Builder: BuilderProtocol {
                     let a: BuildableProperty<Int>
@@ -187,6 +202,10 @@ final class AutoBuilderMacroTests: XCTestCase {
             struct Foo {
                 let a = 0
                 init(with builder: Builder) throws {
+                }
+                func toBuilder() -> Builder {
+                    let builder = Builder()
+                    return builder
                 }
                 class Builder: BuilderProtocol {
                     required init() {

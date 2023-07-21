@@ -66,6 +66,8 @@ public struct AutoBuilderMacro: MemberMacro, ConformanceMacro {
         }
     }
 
+    // MARK: - Create Syntax Tokens
+
     private static func createDecls(from properties: [Property], containerIdentifier: TokenSyntax) throws -> [DeclSyntax] {
         return [
             try InitializerDeclSyntax("init(with builder: Builder) throws", bodyBuilder: {
@@ -73,6 +75,7 @@ public struct AutoBuilderMacro: MemberMacro, ConformanceMacro {
                     createPropertyInitializer(from: property)
                 }
             }).cast(DeclSyntax.self),
+            try createToBuilderFunction(from: properties).cast(DeclSyntax.self),
             try ClassDeclSyntax("class Builder: BuilderProtocol", membersBuilder: {
                 for property in properties {
                     createVariableDecl(from: property)
@@ -99,6 +102,34 @@ public struct AutoBuilderMacro: MemberMacro, ConformanceMacro {
             IdentifierExprSyntax(identifier: .identifier(property.identifier))
             AssignmentExprSyntax()
             TryExprSyntax(expression: buildFunctionCall)
+        }
+    }
+
+    private static func createToBuilderFunction(from properties: [Property]) throws -> FunctionDeclSyntax {
+        return try FunctionDeclSyntax("func toBuilder() -> Builder") {
+            VariableDeclSyntax(
+                .let,
+                name: IdentifierPatternSyntax(identifier: .identifier("builder")).cast(PatternSyntax.self),
+                initializer: InitializerClauseSyntax(
+                    value: FunctionCallExprSyntax(
+                        calledExpression: IdentifierExprSyntax(identifier: .identifier("Builder")),
+                        leftParen: .leftParenToken(),
+                        argumentList: TupleExprElementListSyntax([]),
+                        rightParen: .rightParenToken())))
+            for property in properties {
+                FunctionCallExprSyntax(
+                    calledExpression: MemberAccessExprSyntax(
+                        base: IdentifierExprSyntax(identifier: .identifier("builder")),
+                        name: .identifier("set")),
+                    leftParen: .leftParenToken(),
+                    rightParen: .rightParenToken()) {
+                        TupleExprElementSyntax(
+                            label: .identifier(property.identifier),
+                            colon: .colonToken(),
+                            expression: IdentifierExprSyntax(identifier: .identifier(property.identifier)))
+                    }
+            }
+            ReturnStmtSyntax(expression: IdentifierExprSyntax(identifier: .identifier("builder")))
         }
     }
 
