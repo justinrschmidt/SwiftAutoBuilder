@@ -46,8 +46,8 @@ extension BuildableProperty where T: Buildable, T.Builder: BuilderProtocol, T.Bu
         if let subBuilder = self.subBuilder as? T.Builder {
             return subBuilder
         } else {
+            let subBuilder = value?.toBuilder() ?? T.Builder()
             value = nil
-            let subBuilder = T.Builder()
             self.subBuilder = subBuilder
             return subBuilder
         }
