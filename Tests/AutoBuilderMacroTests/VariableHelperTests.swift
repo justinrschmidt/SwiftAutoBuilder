@@ -285,33 +285,33 @@ final class VariableHelperTests: XCTestCase {
 
     func testVariableDeclaration_impliedSimpleTypeInit_getProperties() throws {
         try assertGetStoredProperties("var a = 0", [
-            (.var, "a", nil, .initialized)
+            (.var, "a", .implicit, .initialized)
         ])
     }
 
     func testVariableDeclaration_impliedEnumTypeInit_getProperties() throws {
         try assertGetStoredProperties("var a = (1, 2.0)", [
-            (.var, "a", nil, .initialized)
+            (.var, "a", .implicit, .initialized)
         ])
     }
 
     func testVariableDeclaration_impliedEnumDeclarationTypeInit_getProperties() throws {
         try assertGetStoredProperties("var (a, b) = (1, 2.0)", [
-            (.var, "a", nil, .initialized),
-            (.var, "b", nil, .initialized)
+            (.var, "a", .implicit, .initialized),
+            (.var, "b", .implicit, .initialized)
         ])
     }
 
     func testVariableDeclaration_impliedTypeList_getProperties() throws {
         try assertGetStoredProperties("var a = 0, b = 1.0", [
-            (.var, "a", nil, .initialized),
-            (.var, "b", nil, .initialized)
+            (.var, "a", .implicit, .initialized),
+            (.var, "b", .implicit, .initialized)
         ])
     }
 
     func testVariableDeclaration_impliedTypeListMixed_getProperties() throws {
         try assertGetStoredProperties("var a = 0, b: String", [
-            (.var, "a", nil, .initialized),
+            (.var, "a", .implicit, .initialized),
             (.var, "b", "String", .uninitialized)
         ])
     }
@@ -510,7 +510,7 @@ final class VariableHelperTests: XCTestCase {
 
     private func assertGetStoredProperties(
         _ variableSource: String,
-        _ properties: [(bindingKeyword: Property.BindingKeyword, identifier: String, type: String?, initialized: InitializedStatus)],
+        _ properties: [(bindingKeyword: Property.BindingKeyword, identifier: IdentifierPatternSyntax, type: Property.VariableType, initialized: InitializedStatus)],
         file: StaticString = #filePath,
         line: UInt = #line
     ) throws {
@@ -519,13 +519,13 @@ final class VariableHelperTests: XCTestCase {
 
     private func assertGetStoredProperties(
         _ variableSources: [String],
-        _ properties: [(bindingKeyword: Property.BindingKeyword, identifier: String, type: String?, initialized: InitializedStatus)],
+        _ properties: [(bindingKeyword: Property.BindingKeyword, identifier: IdentifierPatternSyntax, type: Property.VariableType, initialized: InitializedStatus)],
         file: StaticString = #filePath,
         line: UInt = #line
     ) throws {
         let memberList = try Self.createMemberList(variableSources)
         let actualProperties = VariableHelper.getStoredProperties(from: memberList)
-        let expectedProperties = properties.map({ Property(bindingKeyword: $0.0, identifier: $0.1, type: $0.2, isInitialized: $0.3.isInitialized) })
+        let expectedProperties = properties.map({ Property(bindingKeyword: $0.0, identifierPattern: $0.1, type: $0.2, isInitialized: $0.3.isInitialized) })
         XCTAssertEqual(actualProperties, expectedProperties, file: file, line: line)
     }
 
@@ -573,22 +573,15 @@ final class VariableHelperTests: XCTestCase {
     }
 }
 
-extension Property {
-    init(bindingKeyword: BindingKeyword, identifier: String, type: String?, isInitialized: Bool) {
-        let identifierPattern = IdentifierPatternSyntax(identifier: .identifier(identifier))
-        self.init(
-            bindingKeyword: bindingKeyword,
-            identifierPattern: identifierPattern,
-            type: Self.createVariableType(from: type),
-            isInitialized: isInitialized)
+extension IdentifierPatternSyntax: ExpressibleByStringLiteral {
+    public init(stringLiteral value: String) {
+        self.init(identifier: .identifier(value))
     }
+}
 
-    private static func createVariableType(from type: String?) -> Property.VariableType {
-        if let type = type {
-            var parser = Parser(type)
-            return .explicit(typeNode: TypeSyntax.parse(from: &parser))
-        } else {
-            return .implicit
-        }
+extension Property.VariableType: ExpressibleByStringLiteral {
+    public init(stringLiteral value: String) {
+        var parser = Parser(value)
+        self = .explicit(typeNode: TypeSyntax.parse(from: &parser))
     }
 }
