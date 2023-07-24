@@ -14,7 +14,15 @@ struct Property: Equatable, CustomStringConvertible {
         switch variableType {
         case .implicit:
             return ""
-        case .explicit(let typeNode):
+        case let .array(elementType):
+            return "[\(elementType.description.trimmingCharacters(in: .whitespacesAndNewlines))]"
+        case let .dictionary(keyType, valueType):
+            let keyString = keyType.description.trimmingCharacters(in: .whitespacesAndNewlines)
+            let valueString = valueType.description.trimmingCharacters(in: .whitespacesAndNewlines)
+            return "[\(keyString):\(valueString)]"
+        case let .set(elementType):
+            return "Set<\(elementType.description.trimmingCharacters(in: .whitespacesAndNewlines))>"
+        case let .explicit(typeNode):
             return typeNode.description.trimmingCharacters(in: .whitespacesAndNewlines)
         }
     }
@@ -38,7 +46,7 @@ struct Property: Equatable, CustomStringConvertible {
     static func ==(lhs: Property, rhs: Property) -> Bool {
         guard lhs.bindingKeyword == rhs.bindingKeyword else { return false }
         guard lhs.identifier == rhs.identifier else { return false }
-        guard lhs.type == rhs.type else { return false }
+        guard lhs.variableType == rhs.variableType else { return false }
         guard lhs.isInitialized == rhs.isInitialized else { return false }
         return true
     }
@@ -61,6 +69,9 @@ struct Property: Equatable, CustomStringConvertible {
 
     enum VariableType: Equatable {
         case implicit
+        case array(elementType: TypeSyntax)
+        case dictionary(keyType: TypeSyntax, valueType: TypeSyntax)
+        case set(elementType: TypeSyntax)
         case explicit(typeNode: TypeSyntax)
 
         var isImplicit: Bool {
@@ -73,12 +84,30 @@ struct Property: Equatable, CustomStringConvertible {
         }
 
         var isExplicit: Bool {
-            switch self {
-            case .explicit(_):
+            return !isImplicit
+        }
+
+        static func ==(lhs: VariableType, rhs: VariableType) -> Bool {
+            switch (lhs, rhs) {
+            case (.implicit, .implicit):
                 return true
+            case let (.array(lhsType), .array(rhsType)):
+                return typesAreEqual(lhsType, rhsType)
+            case let (.dictionary(lhsKey, lhsValue), .dictionary(rhsKey, rhsValue)):
+                return typesAreEqual(lhsKey, rhsKey) && typesAreEqual(lhsValue, rhsValue)
+            case let (.set(lhsType), .set(rhsType)):
+                return typesAreEqual(lhsType, rhsType)
+            case let (.explicit(lhsType), .explicit(rhsType)):
+                return typesAreEqual(lhsType, rhsType)
             default:
                 return false
             }
+        }
+
+        private static func typesAreEqual(_ lhs: TypeSyntax, _ rhs: TypeSyntax) -> Bool {
+            let lhsText = lhs.description.trimmingCharacters(in: .whitespacesAndNewlines)
+            let rhsText = rhs.description.trimmingCharacters(in: .whitespacesAndNewlines)
+            return lhsText == rhsText
         }
     }
 }
