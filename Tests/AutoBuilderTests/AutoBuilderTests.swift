@@ -49,6 +49,15 @@ final class AutoBuilderTests: XCTestCase {
         let bar = try barBuilder.build()
         XCTAssertEqual(bar.foo.a, 42)
     }
+
+    func testPropertyWrapper() throws {
+        let foo = try FooWithPropertyWrapper.Builder()
+            .set(a: 42)
+            .set(b: 1)
+            .build()
+        XCTAssertEqual(foo.a, 12)
+        XCTAssertEqual(foo.b, 1)
+    }
 }
 
 @AutoBuilder
@@ -70,4 +79,19 @@ private struct Foo2 {
 @AutoBuilder
 private struct Bar2 {
     let foo: Foo2
+}
+
+@propertyWrapper
+private struct TwelveOrLess {
+    private var number = 0
+    var wrappedValue: Int {
+        get { return number }
+        set { number = min(newValue, 12) }
+    }
+}
+
+@AutoBuilder
+private struct FooWithPropertyWrapper {
+    @TwelveOrLess var a: Int
+    @TwelveOrLess var b: Int
 }
