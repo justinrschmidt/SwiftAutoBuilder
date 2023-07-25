@@ -86,7 +86,18 @@ public struct AutoBuilderMacro: MemberMacro, ConformanceMacro {
                     }
                 })
                 for property in properties {
-                    try createSetValueFunction(from: property)
+                    switch property.variableType {
+                    case let .array(elementType):
+                        try createSetValueFunction(from: property)
+                        try createAppendElementFunction(from: property, elementType: elementType)
+                        try createAppendCollectionFunction(from: property, elementType: elementType)
+                        try createRemoveAllFunction(from: property)
+                    case .dictionary(_, _),
+                            .set(_),
+                            .implicit,
+                            .explicit(_):
+                        try createSetValueFunction(from: property)
+                    }
                 }
                 try createBuildFunction(containerIdentifier: containerIdentifier)
             }).cast(DeclSyntax.self)
@@ -101,7 +112,11 @@ public struct AutoBuilderMacro: MemberMacro, ConformanceMacro {
         return SequenceExprSyntax {
             IdentifierExprSyntax(identifier: .identifier(property.identifier))
             AssignmentExprSyntax()
-            TryExprSyntax(expression: buildFunctionCall)
+            if property.variableType.isCollection {
+                buildFunctionCall
+            } else {
+                TryExprSyntax(expression: buildFunctionCall)
+            }
         }
     }
 
@@ -136,11 +151,16 @@ public struct AutoBuilderMacro: MemberMacro, ConformanceMacro {
     private static func createVariableDecl(from property: Property) -> VariableDeclSyntax {
         let bindingKeyword = TokenSyntax(.keyword(.let), presence: .present)
         let identifierPattern = IdentifierPatternSyntax(identifier: .identifier(property.identifier))
+        let typeIdentifier = switch property.variableType {
+        case .implicit: ""
+        case let .array(elementType): "BuildableArrayProperty<\(elementType.description.trimmingCharacters(in: .whitespacesAndNewlines))>"
+        case .dictionary(_, _): ""
+        case .set(_): ""
+        case let .explicit(typeNode): "BuildableProperty<\(typeNode.description.trimmingCharacters(in: .whitespacesAndNewlines))>"
+        }
         let typeAnnotation = TypeAnnotationSyntax(
             type: SimpleTypeIdentifierSyntax(
-                name: TokenSyntax(
-                    .identifier("BuildableProperty<\(property.type)>"),
-                    presence: .present)))
+                name: TokenSyntax(.identifier(typeIdentifier), presence: .present)))
         return VariableDeclSyntax(bindingKeyword: bindingKeyword) {
             PatternBindingListSyntax {
                 PatternBindingSyntax(pattern: identifierPattern, typeAnnotation: typeAnnotation)
@@ -149,12 +169,21 @@ public struct AutoBuilderMacro: MemberMacro, ConformanceMacro {
     }
 
     private static func createBuildablePropertyInitializer(from property: Property) -> CodeBlockItemSyntax {
-        let initExpression = IdentifierExprSyntax(identifier: TokenSyntax(.identifier("BuildableProperty"), presence: .present))
+        let typeIdentifier = switch property.variableType {
+        case .implicit: ""
+        case .array(_): "BuildableArrayProperty"
+        case .dictionary(_, _): ""
+        case .set(_): ""
+        case .explicit(_): "BuildableProperty"
+        }
+        let initExpression = IdentifierExprSyntax(identifier: TokenSyntax(.identifier(typeIdentifier), presence: .present))
         return CodeBlockItemSyntax(item: CodeBlockItemSyntax.Item(SequenceExprSyntax(elementsBuilder: {
             IdentifierExprSyntax(identifier: .identifier(property.identifier))
             AssignmentExprSyntax()
             FunctionCallExprSyntax(calledExpression: initExpression, leftParen: .leftParenToken(), rightParen: .rightParenToken()) {
-                TupleExprElementSyntax(label: "name", expression: StringLiteralExprSyntax(content: property.identifier))
+                if !property.variableType.isCollection {
+                    TupleExprElementSyntax(label: "name", expression: StringLiteralExprSyntax(content: property.identifier))
+                }
             }
         })))
     }
@@ -167,6 +196,44 @@ public struct AutoBuilderMacro: MemberMacro, ConformanceMacro {
             FunctionCallExprSyntax(calledExpression: setValueExpression, leftParen: .leftParenToken(), rightParen: .rightParenToken()) {
                 TupleExprElementSyntax(label: "value", expression: IdentifierExprSyntax(identifier: .identifier(property.identifier)))
             }
+            ReturnStmtSyntax(expression: IdentifierExprSyntax(identifier: .keyword(.`self`)))
+        }
+    }
+
+    private static func createAppendElementFunction(from property: Property, elementType: TypeSyntax) throws -> FunctionDeclSyntax {
+        let elementTypeString = elementType.description.trimmingCharacters(in: .whitespacesAndNewlines)
+        let selfIdentifier = IdentifierExprSyntax(identifier: .keyword(.`self`))
+        let selfExpression = MemberAccessExprSyntax(base: selfIdentifier, name: TokenSyntax(.identifier(property.identifier), presence: .present))
+        let appendElementExpression = MemberAccessExprSyntax(base: selfExpression, name: TokenSyntax(.identifier("append"), presence: .present))
+        return try FunctionDeclSyntax("@discardableResult\nfunc appendTo(\(raw: property.identifier) element: \(raw: elementTypeString)) -> Builder") {
+            FunctionCallExprSyntax(calledExpression: appendElementExpression, leftParen: .leftParenToken(), rightParen: .rightParenToken()) {
+                TupleExprElementSyntax(label: "element", expression: IdentifierExprSyntax(identifier: .identifier("element")))
+            }
+            ReturnStmtSyntax(expression: IdentifierExprSyntax(identifier: .keyword(.`self`)))
+        }
+    }
+
+    private static func createAppendCollectionFunction(from property: Property, elementType: TypeSyntax) throws -> FunctionDeclSyntax {
+        let elementTypeString = elementType.description.trimmingCharacters(in: .whitespacesAndNewlines)
+        let selfIdentifier = IdentifierExprSyntax(identifier: .keyword(.`self`))
+        let selfExpression = MemberAccessExprSyntax(base: selfIdentifier, name: TokenSyntax(.identifier(property.identifier), presence: .present))
+        let appendCollectionExpression = MemberAccessExprSyntax(base: selfExpression, name: TokenSyntax(.identifier("append"), presence: .present))
+        return try FunctionDeclSyntax("@discardableResult\nfunc appendTo<C>(\(raw: property.identifier) collection: C) -> Builder where C: Collection, C.Element == \(raw: elementTypeString)") {
+            FunctionCallExprSyntax(calledExpression: appendCollectionExpression, leftParen: .leftParenToken(), rightParen: .rightParenToken()) {
+                TupleExprElementSyntax(label: "contentsOf", expression: IdentifierExprSyntax(identifier: .identifier("collection")))
+            }
+            ReturnStmtSyntax(expression: IdentifierExprSyntax(identifier: .keyword(.`self`)))
+        }
+    }
+
+    private static func createRemoveAllFunction(from property: Property) throws -> FunctionDeclSyntax {
+        let identifier = property.identifier
+        let capitalizedIdentifier = identifier.first!.uppercased() + identifier[identifier.index(after: identifier.startIndex)...]
+        let appendElementExpression = MemberAccessExprSyntax(
+            base: IdentifierExprSyntax(identifier: .identifier(property.identifier)),
+            name: TokenSyntax(.identifier("removeAll"), presence: .present))
+        return try FunctionDeclSyntax("@discardableResult\nfunc removeAllFrom\(raw: capitalizedIdentifier)() -> Builder") {
+            FunctionCallExprSyntax(calledExpression: appendElementExpression, leftParen: .leftParenToken(), rightParen: .rightParenToken()) {}
             ReturnStmtSyntax(expression: IdentifierExprSyntax(identifier: .keyword(.`self`)))
         }
     }

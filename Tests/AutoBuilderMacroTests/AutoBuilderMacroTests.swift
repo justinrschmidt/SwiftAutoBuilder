@@ -219,4 +219,58 @@ final class AutoBuilderMacroTests: XCTestCase {
             }
             """, macros: testMacros)
     }
+
+    func testStructWithArrayProperty() {
+        assertMacroExpansion(
+            """
+            @AutoBuilder
+            struct Foo {
+                var a: [Int]
+            }
+            """,
+            expandedSource: """
+            struct Foo {
+                var a: [Int]
+                init(with builder: Builder) throws {
+                    a = builder.a.build()
+                }
+                func toBuilder() -> Builder {
+                    let builder = Builder()
+                    builder.set(a: a)
+                    return builder
+                }
+                class Builder: BuilderProtocol {
+                    let a: BuildableArrayProperty<Int>
+                    required init() {
+                        a = BuildableArrayProperty()
+                    }
+                    @discardableResult
+                    func set(a: [Int]) -> Builder {
+                        self.a.set(value: a)
+                        return self
+                    }
+                    @discardableResult
+                    func appendTo(a element: Int) -> Builder {
+                        self.a.append(element: element)
+                        return self
+                    }
+                    @discardableResult
+                    func appendTo<C>(a collection: C) -> Builder where C: Collection, C.Element == Int {
+                        self.a.append(contentsOf: collection)
+                        return self
+                    }
+                    @discardableResult
+                    func removeAllFromA() -> Builder {
+                        a.removeAll()
+                        return self
+                    }
+                    func build() throws -> Foo {
+                        return try Foo(with: self)
+                    }
+                }
+            }
+            extension Foo: Buildable {
+            }
+            """, macros: testMacros)
+    }
 }

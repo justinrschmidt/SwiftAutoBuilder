@@ -93,6 +93,15 @@ struct Property: Equatable, CustomStringConvertible {
             return !isImplicit
         }
 
+        var isCollection: Bool {
+            switch self {
+            case .array(_), .dictionary(_, _), .set(_):
+                return true
+            default:
+                return false
+            }
+        }
+
         static func ==(lhs: VariableType, rhs: VariableType) -> Bool {
             switch (lhs, rhs) {
             case (.implicit, .implicit):
