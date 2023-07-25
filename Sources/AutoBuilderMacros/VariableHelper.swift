@@ -24,19 +24,11 @@ struct VariableHelper {
                 if let type = patternBinding.typeAnnotation?.type {
                     typeNode = type
                 }
-                if let typeNode = typeNode {
-                    properties.append(Property(
-                        bindingKeyword: bindingKeyword,
-                        identifierPattern: identifierPattern,
-                        type: .explicit(typeNode: typeNode),
-                        isInitialized: patternBinding.initializer != nil))
-                } else {
-                    properties.append(Property(
-                        bindingKeyword: bindingKeyword,
-                        identifierPattern: identifierPattern,
-                        type: .implicit,
-                        isInitialized: patternBinding.initializer != nil))
-                }
+                properties.append(Property(
+                    bindingKeyword: bindingKeyword,
+                    identifierPattern: identifierPattern,
+                    type: getVariableType(from: typeNode),
+                    isInitialized: patternBinding.initializer != nil))
             }
             if let tuplePattern = patternBinding.pattern.as(TuplePatternSyntax.self) {
                 typeNode = nil
@@ -71,7 +63,7 @@ struct VariableHelper {
                 properties.append(Property(
                     bindingKeyword: bindingKeyword,
                     identifierPattern: identifierPattern,
-                    type: .explicit(typeNode: typeElement.type.cast(TypeSyntax.self)),
+                    type: getVariableType(from: typeElement.type),
                     isInitialized: isInitialized))
             } else if let subTuplePattern = patternElement.pattern.as(TuplePatternSyntax.self),
                       let subTupleType = typeElement.type.as(TupleTypeSyntax.self) {
@@ -91,6 +83,34 @@ struct VariableHelper {
             }
         }
         return identifiers
+    }
+
+    private static func getVariableType(from typeSyntax: TypeSyntax?) -> Property.VariableType {
+        guard let typeSyntax = typeSyntax else {
+            return .implicit
+        }
+        if let arraySyntax = typeSyntax.as(ArrayTypeSyntax.self) {
+            return .array(elementType: arraySyntax.elementType)
+        } else if let dictionarySyntax = typeSyntax.as(DictionaryTypeSyntax.self) {
+            return .dictionary(keyType: dictionarySyntax.keyType, valueType: dictionarySyntax.valueType)
+        } else if let simpleTypeSyntax = typeSyntax.as(SimpleTypeIdentifierSyntax.self),
+                  let genericClause = simpleTypeSyntax.genericArgumentClause {
+            switch simpleTypeSyntax.name.text {
+            case "Array":
+                return .array(elementType: genericClause.arguments.first!.argumentType)
+            case "Dictionary":
+                var arguments = genericClause.arguments.makeIterator()
+                let keyType = arguments.next()!.argumentType
+                let valueType = arguments.next()!.argumentType
+                return .dictionary(keyType: keyType, valueType: valueType)
+            case "Set":
+                return .set(elementType: genericClause.arguments.first!.argumentType)
+            default:
+                return .explicit(typeNode: typeSyntax)
+            }
+        } else {
+            return .explicit(typeNode: typeSyntax)
+        }
     }
 
     static func isStoredProperty(_ variable: VariableDeclSyntax) -> Bool {

@@ -104,21 +104,39 @@ final class VariableHelperTests: XCTestCase {
         ])
     }
 
-    func testConstantDeclaration_arrayType_getProperties() throws {
-        try assertGetStoredProperties("let a: [Int]", [
-            (.let, "a", .explicit(typeNode: "[Int]"), .uninitialized)
-        ])
-    }
-
-    func testConstantDeclaration_dictionaryType_getProperties() throws {
-        try assertGetStoredProperties("let a: [Int:Double]", [
-            (.let, "a", .explicit(typeNode: "[Int:Double]"), .uninitialized)
-        ])
-    }
-
     func testConstantDeclaration_genericType_getProperties() throws {
+        try assertGetStoredProperties("let a: Foo<Int>", [
+            (.let, "a", .explicit(typeNode: "Foo<Int>"), .uninitialized)
+        ])
+    }
+
+    func testConstantDeclaration_arrayLiteralType_getProperties() throws {
+        try assertGetStoredProperties("let a: [Int]", [
+            (.let, "a", .array(elementType: "Int"), .uninitialized)
+        ])
+    }
+
+    func testConstantDeclaration_arrayGenericType_getProperties() throws {
+        try assertGetStoredProperties("let a: Array<Int>", [
+            (.let, "a", .array(elementType: "Int"), .uninitialized)
+        ])
+    }
+
+    func testConstantDeclaration_dictionaryLiteralType_getProperties() throws {
+        try assertGetStoredProperties("let a: [Int:Double]", [
+            (.let, "a", .dictionary(keyType: "Int", valueType: "Double"), .uninitialized)
+        ])
+    }
+
+    func testConstantDeclaration_dictionaryGenericType_getProperties() throws {
+        try assertGetStoredProperties("let a: Dictionary<Int, Double>", [
+            (.let, "a", .dictionary(keyType: "Int", valueType: "Double"), .uninitialized)
+        ])
+    }
+
+    func testConstantDeclaration_setGenericType_getProperties() throws {
         try assertGetStoredProperties("let a: Set<Int>", [
-            (.let, "a", .explicit(typeNode: "Set<Int>"), .uninitialized)
+            (.let, "a", .set(elementType: "Int"), .uninitialized)
         ])
     }
 
@@ -234,21 +252,39 @@ final class VariableHelperTests: XCTestCase {
         ])
     }
 
-    func testVariableDeclaration_arrayType_getProperties() throws {
-        try assertGetStoredProperties("var a: [Int]", [
-            (.var, "a", .explicit(typeNode: "[Int]"), .uninitialized)
-        ])
-    }
-
-    func testVariableDeclaration_dictionaryType_getProperties() throws {
-        try assertGetStoredProperties("var a: [Int:Double]", [
-            (.var, "a", .explicit(typeNode: "[Int:Double]"), .uninitialized)
-        ])
-    }
-
     func testVariableDeclaration_genericType_getProperties() throws {
+        try assertGetStoredProperties("var a: Foo<Int>", [
+            (.var, "a", .explicit(typeNode: "Foo<Int>"), .uninitialized)
+        ])
+    }
+
+    func testVariableDeclaration_arrayLiteralType_getProperties() throws {
+        try assertGetStoredProperties("var a: [Int]", [
+            (.var, "a", .array(elementType: "Int"), .uninitialized)
+        ])
+    }
+
+    func testVariableDeclaration_arrayGenericType_getProperties() throws {
+        try assertGetStoredProperties("var a: Array<Int>", [
+            (.var, "a", .array(elementType: "Int"), .uninitialized)
+        ])
+    }
+
+    func testVariableDeclaration_dictionaryLiteralType_getProperties() throws {
+        try assertGetStoredProperties("var a: [Int:Double]", [
+            (.var, "a", .dictionary(keyType: "Int", valueType: "Double"), .uninitialized)
+        ])
+    }
+
+    func testVariableDeclaration_dictionaryGenericType_getProperties() throws {
+        try assertGetStoredProperties("var a: Dictionary<Int, Double>", [
+            (.var, "a", .dictionary(keyType: "Int", valueType: "Double"), .uninitialized)
+        ])
+    }
+
+    func testVariableDeclaration_setGenericType_getProperties() throws {
         try assertGetStoredProperties("var a: Set<Int>", [
-            (.var, "a", .explicit(typeNode: "Set<Int>"), .uninitialized)
+            (.var, "a", .set(elementType: "Int"), .uninitialized)
         ])
     }
 
@@ -380,15 +416,27 @@ final class VariableHelperTests: XCTestCase {
         try assertIsStoredProperty("let (a, (b, c)): (Int, (Int, Double))")
     }
 
-    func testConstantDeclaration_arrayType_isStoredProperty() throws {
+    func testConstantDeclaration_genericType_isStoredProperty() throws {
+        try assertIsStoredProperty("let a: Foo<Int>")
+    }
+
+    func testConstantDeclaration_arrayLiteralType_isStoredProperty() throws {
         try assertIsStoredProperty("let a: [Int]")
     }
 
-    func testConstantDeclaration_dictionaryType_isStoredProperty() throws {
+    func testConstantDeclaration_arrayGenericType_isStoredProperty() throws {
+        try assertIsStoredProperty("let a: Array<Int>")
+    }
+
+    func testConstantDeclaration_dictionaryLiteralType_isStoredProperty() throws {
         try assertIsStoredProperty("let a: [Int:Double]")
     }
 
-    func testConstantDeclaration_genericType_isStoredProperty() throws {
+    func testConstantDeclaration_dictionaryGenericType_isStoredProperty() throws {
+        try assertIsStoredProperty("let a: Dictionary<Int, Double>")
+    }
+
+    func testConstantDeclaration_setGenericType_isStoredProperty() throws {
         try assertIsStoredProperty("let a: Set<Int>")
     }
 
@@ -466,15 +514,27 @@ final class VariableHelperTests: XCTestCase {
         try assertIsStoredProperty("var (a, (b, c)): (Int, (Int, Double))")
     }
 
-    func testVariableDeclaration_arrayType_isStoredProperty() throws {
+    func testVariableDeclaration_genericType_isStoredProperty() throws {
+        try assertIsStoredProperty("var a: Foo<Int>")
+    }
+
+    func testVariableDeclaration_arrayLiteralType_isStoredProperty() throws {
         try assertIsStoredProperty("var a: [Int]")
     }
 
-    func testVariableDeclaration_dictionaryType_isStoredProperty() throws {
+    func testVariableDeclaration_arrayGenericType_isStoredProperty() throws {
+        try assertIsStoredProperty("var a: Array<Int>")
+    }
+
+    func testVariableDeclaration_dictionaryLiteralType_isStoredProperty() throws {
         try assertIsStoredProperty("var a: [Int:Double]")
     }
 
-    func testVariableDeclaration_genericType_isStoredProperty() throws {
+    func testVariableDeclaration_dictionaryGenericType_isStoredProperty() throws {
+        try assertIsStoredProperty("var a: Dictionary<Int, Double>")
+    }
+
+    func testVariableDeclaration_setGenericType_isStoredProperty() throws {
         try assertIsStoredProperty("var a: Set<Int>")
     }
 

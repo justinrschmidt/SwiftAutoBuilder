@@ -33,7 +33,13 @@ struct Property: Equatable, CustomStringConvertible {
 
     var description: String {
         let initialized = isInitialized ? "initialized" : "uninitialized"
-        return "(\(identifier), \(type), \(initialized))"
+        let typePrefix = switch variableType {
+        case .implicit, .explicit(_): ""
+        case .array(_): "A:"
+        case .dictionary(_, _): "D:"
+        case .set(_): "S:"
+        }
+        return "(\(identifier), \(typePrefix)\(type), \(initialized))"
     }
 
     init(bindingKeyword: BindingKeyword, identifierPattern: IdentifierPatternSyntax, type: VariableType, isInitialized: Bool) {
