@@ -327,4 +327,58 @@ final class AutoBuilderMacroTests: XCTestCase {
             }
             """, macros: testMacros)
     }
+
+    func testStructWithSetProperty() {
+        assertMacroExpansion(
+            """
+            @AutoBuilder
+            struct Foo {
+                var a: Set<Int>
+            }
+            """,
+            expandedSource: """
+            struct Foo {
+                var a: Set<Int>
+                init(with builder: Builder) throws {
+                    a = builder.a.build()
+                }
+                func toBuilder() -> Builder {
+                    let builder = Builder()
+                    builder.set(a: a)
+                    return builder
+                }
+                class Builder: BuilderProtocol {
+                    let a: BuildableSetProperty<Int>
+                    required init() {
+                        a = BuildableSetProperty()
+                    }
+                    @discardableResult
+                    func set(a: Set<Int>) -> Builder {
+                        self.a.set(value: a)
+                        return self
+                    }
+                    @discardableResult
+                    func insertInto(a element: Int) -> Builder {
+                        a.insert(element: element)
+                        return self
+                    }
+                    @discardableResult
+                    func formUnionWithA(other: Set<Int>) -> Builder {
+                        a.formUnion(other: other)
+                        return self
+                    }
+                    @discardableResult
+                    func removeAllFromA() -> Builder {
+                        a.removeAll()
+                        return self
+                    }
+                    func build() throws -> Foo {
+                        return try Foo(with: self)
+                    }
+                }
+            }
+            extension Foo: Buildable {
+            }
+            """, macros: testMacros)
+    }
 }

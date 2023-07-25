@@ -97,9 +97,12 @@ public struct AutoBuilderMacro: MemberMacro, ConformanceMacro {
                         try createInsertDictionaryFunction(from: property, keyType: keyType, valueType: valueType)
                         try createMergeDictionaryFunction(from: property, keyType: keyType, valueType: valueType)
                         try createRemoveAllFunction(from: property)
-                    case .set(_),
-                            .implicit,
-                            .explicit(_):
+                    case let .set(elementType):
+                        try createSetValueFunction(from: property)
+                        try createInsertSetFunction(from: property, elementType: elementType)
+                        try createFormUnionSetFunction(from: property, elementType: elementType)
+                        try createRemoveAllFunction(from: property)
+                    case .implicit, .explicit(_):
                         try createSetValueFunction(from: property)
                     }
                 }
@@ -159,7 +162,7 @@ public struct AutoBuilderMacro: MemberMacro, ConformanceMacro {
         case .implicit: ""
         case let .array(elementType): "BuildableArrayProperty<\(elementType.trimmed.description)>"
         case let .dictionary(keyType, valueType): "BuildableDictionaryProperty<\(keyType.trimmed.description), \(valueType.trimmed.description)>"
-        case .set(_): ""
+        case let .set(elementType): "BuildableSetProperty<\(elementType.trimmed.description)>"
         case let .explicit(typeNode): "BuildableProperty<\(typeNode.trimmed.description)>"
         }
         let typeAnnotation = TypeAnnotationSyntax(
@@ -177,7 +180,7 @@ public struct AutoBuilderMacro: MemberMacro, ConformanceMacro {
         case .implicit: ""
         case .array(_): "BuildableArrayProperty"
         case .dictionary(_, _): "BuildableDictionaryProperty"
-        case .set(_): ""
+        case .set(_): "BuildableSetProperty"
         case .explicit(_): "BuildableProperty"
         }
         let initExpression = IdentifierExprSyntax(identifier: TokenSyntax(.identifier(typeIdentifier), presence: .present))
@@ -255,6 +258,30 @@ public struct AutoBuilderMacro: MemberMacro, ConformanceMacro {
                     TupleExprElementSyntax(label: "other", expression: IdentifierExprSyntax(identifier: .identifier("other")))
                     TupleExprElementSyntax(label: "uniquingKeysWith", expression: IdentifierExprSyntax(identifier: .identifier("combine")))
                 })
+            ReturnStmtSyntax(expression: IdentifierExprSyntax(identifier: .keyword(.`self`)))
+        }
+    }
+
+    private static func createInsertSetFunction(from property: Property, elementType: TypeSyntax) throws -> FunctionDeclSyntax {
+        let insertExpression = MemberAccessExprSyntax(
+            base: IdentifierExprSyntax(identifier: .identifier(property.identifier)),
+            name: TokenSyntax(.identifier("insert"), presence: .present))
+        return try FunctionDeclSyntax("@discardableResult\nfunc insertInto(\(raw: property.identifier) element: \(elementType.trimmed)) -> Builder") {
+            FunctionCallExprSyntax(calledExpression: insertExpression, leftParen: .leftParenToken(), rightParen: .rightParenToken()) {
+                TupleExprElementSyntax(label: "element", expression: IdentifierExprSyntax(identifier: .identifier("element")))
+            }
+            ReturnStmtSyntax(expression: IdentifierExprSyntax(identifier: .keyword(.`self`)))
+        }
+    }
+
+    private static func createFormUnionSetFunction(from property: Property, elementType: TypeSyntax) throws -> FunctionDeclSyntax {
+        let formUnionExpression = MemberAccessExprSyntax(
+            base: IdentifierExprSyntax(identifier: .identifier(property.identifier)),
+            name: TokenSyntax(.identifier("formUnion"), presence: .present))
+        return try FunctionDeclSyntax("@discardableResult\nfunc formUnionWith\(raw: property.capitalizedIdentifier)(other: Set<\(elementType.trimmed)>) -> Builder") {
+            FunctionCallExprSyntax(calledExpression: formUnionExpression, leftParen: .leftParenToken(), rightParen: .rightParenToken()) {
+                TupleExprElementSyntax(label: "other", expression: IdentifierExprSyntax(identifier: .identifier("other")))
+            }
             ReturnStmtSyntax(expression: IdentifierExprSyntax(identifier: .keyword(.`self`)))
         }
     }
