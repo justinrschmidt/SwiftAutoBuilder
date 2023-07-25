@@ -92,8 +92,12 @@ public struct AutoBuilderMacro: MemberMacro, ConformanceMacro {
                         try createAppendElementFunction(from: property, elementType: elementType)
                         try createAppendCollectionFunction(from: property, elementType: elementType)
                         try createRemoveAllFunction(from: property)
-                    case .dictionary(_, _),
-                            .set(_),
+                    case let .dictionary(keyType, valueType):
+                        try createSetValueFunction(from: property)
+                        try createInsertDictionaryFunction(from: property, keyType: keyType, valueType: valueType)
+                        try createMergeDictionaryFunction(from: property, keyType: keyType, valueType: valueType)
+                        try createRemoveAllFunction(from: property)
+                    case .set(_),
                             .implicit,
                             .explicit(_):
                         try createSetValueFunction(from: property)
@@ -153,10 +157,10 @@ public struct AutoBuilderMacro: MemberMacro, ConformanceMacro {
         let identifierPattern = IdentifierPatternSyntax(identifier: .identifier(property.identifier))
         let typeIdentifier = switch property.variableType {
         case .implicit: ""
-        case let .array(elementType): "BuildableArrayProperty<\(elementType.description.trimmingCharacters(in: .whitespacesAndNewlines))>"
-        case .dictionary(_, _): ""
+        case let .array(elementType): "BuildableArrayProperty<\(elementType.trimmed.description)>"
+        case let .dictionary(keyType, valueType): "BuildableDictionaryProperty<\(keyType.trimmed.description), \(valueType.trimmed.description)>"
         case .set(_): ""
-        case let .explicit(typeNode): "BuildableProperty<\(typeNode.description.trimmingCharacters(in: .whitespacesAndNewlines))>"
+        case let .explicit(typeNode): "BuildableProperty<\(typeNode.trimmed.description)>"
         }
         let typeAnnotation = TypeAnnotationSyntax(
             type: SimpleTypeIdentifierSyntax(
@@ -172,7 +176,7 @@ public struct AutoBuilderMacro: MemberMacro, ConformanceMacro {
         let typeIdentifier = switch property.variableType {
         case .implicit: ""
         case .array(_): "BuildableArrayProperty"
-        case .dictionary(_, _): ""
+        case .dictionary(_, _): "BuildableDictionaryProperty"
         case .set(_): ""
         case .explicit(_): "BuildableProperty"
         }
@@ -226,13 +230,40 @@ public struct AutoBuilderMacro: MemberMacro, ConformanceMacro {
         }
     }
 
+    private static func createInsertDictionaryFunction(from property: Property, keyType: TypeSyntax, valueType: TypeSyntax) throws -> FunctionDeclSyntax {
+        let insertExpression = MemberAccessExprSyntax(
+            base: IdentifierExprSyntax(identifier: .identifier(property.identifier)),
+            name: TokenSyntax(.identifier("insert"), presence: .present))
+        return try FunctionDeclSyntax("@discardableResult\nfunc insertInto\(raw: property.capitalizedIdentifier)(key: \(raw: keyType.trimmed.description), value: \(raw: valueType.trimmed.description)) -> Builder") {
+            FunctionCallExprSyntax(calledExpression: insertExpression, leftParen: .leftParenToken(), rightParen: .rightParenToken()) {
+                TupleExprElementSyntax(label: "key", expression: IdentifierExprSyntax(identifier: .identifier("key")))
+                TupleExprElementSyntax(label: "value", expression: IdentifierExprSyntax(identifier: .identifier("value")))
+            }
+            ReturnStmtSyntax(expression: IdentifierExprSyntax(identifier: .keyword(.`self`)))
+        }
+    }
+
+    private static func createMergeDictionaryFunction(from property: Property, keyType: TypeSyntax, valueType: TypeSyntax) throws -> FunctionDeclSyntax {
+        let keyText = keyType.trimmed.description
+        let valueText = valueType.trimmed.description
+        let mergeExpression = MemberAccessExprSyntax(
+            base: IdentifierExprSyntax(identifier: .identifier(property.identifier)),
+            name: TokenSyntax(.identifier("merge"), presence: .present))
+        return try FunctionDeclSyntax("@discardableResult\nfunc mergeInto\(raw: property.capitalizedIdentifier)(other: [\(raw: keyText): \(raw: valueText)], uniquingKeysWith combine: (\(raw: valueText), \(raw: valueText)) throws -> \(raw: valueText)) rethrows -> Builder") {
+            TryExprSyntax(
+                expression: FunctionCallExprSyntax(calledExpression: mergeExpression, leftParen: .leftParenToken(), rightParen: .rightParenToken()) {
+                    TupleExprElementSyntax(label: "other", expression: IdentifierExprSyntax(identifier: .identifier("other")))
+                    TupleExprElementSyntax(label: "uniquingKeysWith", expression: IdentifierExprSyntax(identifier: .identifier("combine")))
+                })
+            ReturnStmtSyntax(expression: IdentifierExprSyntax(identifier: .keyword(.`self`)))
+        }
+    }
+
     private static func createRemoveAllFunction(from property: Property) throws -> FunctionDeclSyntax {
-        let identifier = property.identifier
-        let capitalizedIdentifier = identifier.first!.uppercased() + identifier[identifier.index(after: identifier.startIndex)...]
         let appendElementExpression = MemberAccessExprSyntax(
             base: IdentifierExprSyntax(identifier: .identifier(property.identifier)),
             name: TokenSyntax(.identifier("removeAll"), presence: .present))
-        return try FunctionDeclSyntax("@discardableResult\nfunc removeAllFrom\(raw: capitalizedIdentifier)() -> Builder") {
+        return try FunctionDeclSyntax("@discardableResult\nfunc removeAllFrom\(raw: property.capitalizedIdentifier)() -> Builder") {
             FunctionCallExprSyntax(calledExpression: appendElementExpression, leftParen: .leftParenToken(), rightParen: .rightParenToken()) {}
             ReturnStmtSyntax(expression: IdentifierExprSyntax(identifier: .keyword(.`self`)))
         }

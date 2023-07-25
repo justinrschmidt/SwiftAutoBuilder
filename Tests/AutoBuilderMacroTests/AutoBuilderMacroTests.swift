@@ -273,4 +273,58 @@ final class AutoBuilderMacroTests: XCTestCase {
             }
             """, macros: testMacros)
     }
+
+    func testStructWithDictionaryProperty() {
+        assertMacroExpansion(
+            """
+            @AutoBuilder
+            struct Foo {
+                var a: [String:Double]
+            }
+            """,
+            expandedSource: """
+            struct Foo {
+                var a: [String: Double]
+                init(with builder: Builder) throws {
+                    a = builder.a.build()
+                }
+                func toBuilder() -> Builder {
+                    let builder = Builder()
+                    builder.set(a: a)
+                    return builder
+                }
+                class Builder: BuilderProtocol {
+                    let a: BuildableDictionaryProperty<String, Double>
+                    required init() {
+                        a = BuildableDictionaryProperty()
+                    }
+                    @discardableResult
+                    func set(a: [String: Double]) -> Builder {
+                        self.a.set(value: a)
+                        return self
+                    }
+                    @discardableResult
+                    func insertIntoA(key: String, value: Double) -> Builder {
+                        a.insert(key: key, value: value)
+                        return self
+                    }
+                    @discardableResult
+                    func mergeIntoA(other: [String: Double], uniquingKeysWith combine: (Double, Double) throws -> Double) rethrows -> Builder {
+                        try a.merge(other: other, uniquingKeysWith: combine)
+                        return self
+                    }
+                    @discardableResult
+                    func removeAllFromA() -> Builder {
+                        a.removeAll()
+                        return self
+                    }
+                    func build() throws -> Foo {
+                        return try Foo(with: self)
+                    }
+                }
+            }
+            extension Foo: Buildable {
+            }
+            """, macros: testMacros)
+    }
 }
