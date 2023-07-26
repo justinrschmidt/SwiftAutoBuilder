@@ -14,6 +14,7 @@ struct VariableHelper {
         guard let bindingKeyword = Property.BindingKeyword(kind: variable.bindingKeyword.tokenKind) else {
             return []
         }
+        let isIVar = !isStatic(variable)
         var typeNode: TypeSyntax?
         var properties: [Property] = []
         for patternBinding in variable.bindings.reversed() {
@@ -25,6 +26,7 @@ struct VariableHelper {
                     typeNode = type
                 }
                 properties.append(Property(
+                    isIVar: isIVar,
                     bindingKeyword: bindingKeyword,
                     identifierPattern: identifierPattern,
                     type: getVariableType(from: typeNode),
@@ -36,12 +38,14 @@ struct VariableHelper {
                     properties += getProperties(
                         from: tuplePattern,
                         type: typeAnnotation.type.cast(TupleTypeSyntax.self),
+                        isIVar: isIVar,
                         bindingKeyword: bindingKeyword,
                         isInitialized: patternBinding.initializer != nil
                     ).reversed()
                 } else {
                     for identifierPattern in getTupleIdentifiers(from: tuplePattern).reversed() {
                         properties.append(Property(
+                            isIVar: isIVar,
                             bindingKeyword: bindingKeyword,
                             identifierPattern: identifierPattern,
                             type: .implicit,
@@ -53,7 +57,13 @@ struct VariableHelper {
         return properties.reversed()
     }
 
-    private static func getProperties(from tuplePattern: TuplePatternSyntax, type: TupleTypeSyntax, bindingKeyword: Property.BindingKeyword, isInitialized: Bool) -> [Property] {
+    private static func isStatic(_ variable: VariableDeclSyntax) -> Bool {
+        variable.modifiers?.contains(where: { modifier in
+            modifier.name.tokenKind == .keyword(.static) || modifier.name.tokenKind == .keyword(.class)
+        }) ?? false
+    }
+
+    private static func getProperties(from tuplePattern: TuplePatternSyntax, type: TupleTypeSyntax, isIVar: Bool, bindingKeyword: Property.BindingKeyword, isInitialized: Bool) -> [Property] {
         var properties: [Property] = []
         var patternIterator = tuplePattern.elements.makeIterator()
         var typeIterator = type.elements.makeIterator()
@@ -61,13 +71,14 @@ struct VariableHelper {
               let typeElement = typeIterator.next() {
             if let identifierPattern = patternElement.pattern.as(IdentifierPatternSyntax.self) {
                 properties.append(Property(
+                    isIVar: isIVar,
                     bindingKeyword: bindingKeyword,
                     identifierPattern: identifierPattern,
                     type: getVariableType(from: typeElement.type),
                     isInitialized: isInitialized))
             } else if let subTuplePattern = patternElement.pattern.as(TuplePatternSyntax.self),
                       let subTupleType = typeElement.type.as(TupleTypeSyntax.self) {
-                properties += getProperties(from: subTuplePattern, type: subTupleType, bindingKeyword: bindingKeyword, isInitialized: isInitialized)
+                properties += getProperties(from: subTuplePattern, type: subTupleType, isIVar: isIVar, bindingKeyword: bindingKeyword, isInitialized: isInitialized)
             }
         }
         return properties

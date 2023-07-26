@@ -14,129 +14,155 @@ final class VariableHelperTests: XCTestCase {
 
     func testConstantDeclaration_simple_getProperties() throws {
         try assertGetStoredProperties("let a: Int", [
-            (.let, "a", .explicit(typeNode: "Int"), .uninitialized)
+            (.iVar, .let, "a", .explicit(typeNode: "Int"), .uninitialized)
+        ])
+    }
+
+    func testConstantDeclaration_simpleStatic_getProperties() throws {
+        try assertGetStoredProperties("static let a: Int", [
+            (.static, .let, "a", .explicit(typeNode: "Int"), .uninitialized)
+        ])
+    }
+
+    func testConstantDeclaration_simpleClass_getProperties() throws {
+        try assertGetStoredProperties("class let a: Int", [
+            (.static, .let, "a", .explicit(typeNode: "Int"), .uninitialized)
         ])
     }
 
     func testConstantDeclaration_init_getProperties() throws {
         try assertGetStoredProperties("let a: Int = 0", [
-            (.let, "a", .explicit(typeNode: "Int"), .initialized)
+            (.iVar, .let, "a", .explicit(typeNode: "Int"), .initialized)
         ])
     }
 
     func testConstantDeclaration_listInline_getProperties() throws {
         try assertGetStoredProperties("let a: Int, b: Double", [
-            (.let, "a", .explicit(typeNode: "Int"), .uninitialized),
-            (.let, "b", .explicit(typeNode: "Double"), .uninitialized)
+            (.iVar, .let, "a", .explicit(typeNode: "Int"), .uninitialized),
+            (.iVar, .let, "b", .explicit(typeNode: "Double"), .uninitialized)
         ])
     }
 
     func testConstantDeclaration_listTrailing_getProperties() throws {
         try assertGetStoredProperties("let a, b: Int", [
-            (.let, "a", .explicit(typeNode: "Int"), .uninitialized),
-            (.let, "b", .explicit(typeNode: "Int"), .uninitialized)
+            (.iVar, .let, "a", .explicit(typeNode: "Int"), .uninitialized),
+            (.iVar, .let, "b", .explicit(typeNode: "Int"), .uninitialized)
         ])
     }
 
     func testConstantDeclaration_initList_getProperties() throws {
         try assertGetStoredProperties("let a: Int = 1, b: Double = 2", [
-            (.let, "a", .explicit(typeNode: "Int"), .initialized),
-            (.let, "b", .explicit(typeNode: "Double"), .initialized)
+            (.iVar, .let, "a", .explicit(typeNode: "Int"), .initialized),
+            (.iVar, .let, "b", .explicit(typeNode: "Double"), .initialized)
         ])
     }
 
     func testConstantDeclaration_tuple_getProperties() throws {
         try assertGetStoredProperties("let (a, b): (Int, Double)", [
-            (.let, "a", .explicit(typeNode: "Int"), .uninitialized),
-            (.let, "b", .explicit(typeNode: "Double"), .uninitialized)
+            (.iVar, .let, "a", .explicit(typeNode: "Int"), .uninitialized),
+            (.iVar, .let, "b", .explicit(typeNode: "Double"), .uninitialized)
+        ])
+    }
+
+    func testConstantDeclaration_tupleStatic_getProperties() throws {
+        try assertGetStoredProperties("static let (a, b): (Int, Double)", [
+            (.static, .let, "a", .explicit(typeNode: "Int"), .uninitialized),
+            (.static, .let, "b", .explicit(typeNode: "Double"), .uninitialized)
+        ])
+    }
+
+    func testConstantDeclaration_tupleClass_getProperties() throws {
+        try assertGetStoredProperties("class let (a, b): (Int, Double)", [
+            (.static, .let, "a", .explicit(typeNode: "Int"), .uninitialized),
+            (.static, .let, "b", .explicit(typeNode: "Double"), .uninitialized)
         ])
     }
 
     func testConstantDeclaration_initTuple_getProperties() throws {
         try assertGetStoredProperties("let (a, b): (Int, Double) = (1, 2.3)", [
-            (.let, "a", .explicit(typeNode: "Int"), .initialized),
-            (.let, "b", .explicit(typeNode: "Double"), .initialized)
+            (.iVar, .let, "a", .explicit(typeNode: "Int"), .initialized),
+            (.iVar, .let, "b", .explicit(typeNode: "Double"), .initialized)
         ])
     }
 
     func testConstantDeclaration_tupleType_getProperties() throws {
         try assertGetStoredProperties("let a: (Int, Double)", [
-            (.let, "a", .explicit(typeNode: "(Int, Double)"), .uninitialized)
+            (.iVar, .let, "a", .explicit(typeNode: "(Int, Double)"), .uninitialized)
         ])
     }
 
     func testConstantDeclaration_tupleWithComplexTypes_getProperties() throws {
         try assertGetStoredProperties("let (a, b): (Int, (Double, String))", [
-            (.let, "a", .explicit(typeNode: "Int"), .uninitialized),
-            (.let, "b", .explicit(typeNode: "(Double, String)"), .uninitialized)
+            (.iVar, .let, "a", .explicit(typeNode: "Int"), .uninitialized),
+            (.iVar, .let, "b", .explicit(typeNode: "(Double, String)"), .uninitialized)
         ])
     }
 
     func testConstantDeclaration_listMixedTrailingInline_getProperties() throws {
         try assertGetStoredProperties("let a, b: Int, c: Double", [
-            (.let, "a", .explicit(typeNode: "Int"), .uninitialized),
-            (.let, "b", .explicit(typeNode: "Int"), .uninitialized),
-            (.let, "c", .explicit(typeNode: "Double"), .uninitialized)
+            (.iVar, .let, "a", .explicit(typeNode: "Int"), .uninitialized),
+            (.iVar, .let, "b", .explicit(typeNode: "Int"), .uninitialized),
+            (.iVar, .let, "c", .explicit(typeNode: "Double"), .uninitialized)
         ])
     }
 
     func testConstantDeclaration_initListMixedInlineTrailing_getProperties() throws {
         try assertGetStoredProperties("let a: Int = 0, b, c: Double", [
-            (.let, "a", .explicit(typeNode: "Int"), .initialized),
-            (.let, "b", .explicit(typeNode: "Double"), .uninitialized),
-            (.let, "c", .explicit(typeNode: "Double"), .uninitialized)
+            (.iVar, .let, "a", .explicit(typeNode: "Int"), .initialized),
+            (.iVar, .let, "b", .explicit(typeNode: "Double"), .uninitialized),
+            (.iVar, .let, "c", .explicit(typeNode: "Double"), .uninitialized)
         ])
     }
 
     func testConstantDeclaration_listMixedTupleSimple_getProperties() throws {
         try assertGetStoredProperties("let (a, b): (Int, Double), c: String", [
-            (.let, "a", .explicit(typeNode: "Int"), .uninitialized),
-            (.let, "b", .explicit(typeNode: "Double"), .uninitialized),
-            (.let, "c", .explicit(typeNode: "String"), .uninitialized)
+            (.iVar, .let, "a", .explicit(typeNode: "Int"), .uninitialized),
+            (.iVar, .let, "b", .explicit(typeNode: "Double"), .uninitialized),
+            (.iVar, .let, "c", .explicit(typeNode: "String"), .uninitialized)
         ])
     }
 
     func testConstantDeclaration_nestedTuple_getProperties() throws {
         try assertGetStoredProperties("let (a, (b, c)): (Int, (Double, String))", [
-            (.let, "a", .explicit(typeNode: "Int"), .uninitialized),
-            (.let, "b", .explicit(typeNode: "Double"), .uninitialized),
-            (.let, "c", .explicit(typeNode: "String"), .uninitialized)
+            (.iVar, .let, "a", .explicit(typeNode: "Int"), .uninitialized),
+            (.iVar, .let, "b", .explicit(typeNode: "Double"), .uninitialized),
+            (.iVar, .let, "c", .explicit(typeNode: "String"), .uninitialized)
         ])
     }
 
     func testConstantDeclaration_genericType_getProperties() throws {
         try assertGetStoredProperties("let a: Foo<Int>", [
-            (.let, "a", .explicit(typeNode: "Foo<Int>"), .uninitialized)
+            (.iVar, .let, "a", .explicit(typeNode: "Foo<Int>"), .uninitialized)
         ])
     }
 
     func testConstantDeclaration_arrayLiteralType_getProperties() throws {
         try assertGetStoredProperties("let a: [Int]", [
-            (.let, "a", .array(elementType: "Int"), .uninitialized)
+            (.iVar, .let, "a", .array(elementType: "Int"), .uninitialized)
         ])
     }
 
     func testConstantDeclaration_arrayGenericType_getProperties() throws {
         try assertGetStoredProperties("let a: Array<Int>", [
-            (.let, "a", .array(elementType: "Int"), .uninitialized)
+            (.iVar, .let, "a", .array(elementType: "Int"), .uninitialized)
         ])
     }
 
     func testConstantDeclaration_dictionaryLiteralType_getProperties() throws {
         try assertGetStoredProperties("let a: [Int:Double]", [
-            (.let, "a", .dictionary(keyType: "Int", valueType: "Double"), .uninitialized)
+            (.iVar, .let, "a", .dictionary(keyType: "Int", valueType: "Double"), .uninitialized)
         ])
     }
 
     func testConstantDeclaration_dictionaryGenericType_getProperties() throws {
         try assertGetStoredProperties("let a: Dictionary<Int, Double>", [
-            (.let, "a", .dictionary(keyType: "Int", valueType: "Double"), .uninitialized)
+            (.iVar, .let, "a", .dictionary(keyType: "Int", valueType: "Double"), .uninitialized)
         ])
     }
 
     func testConstantDeclaration_setGenericType_getProperties() throws {
         try assertGetStoredProperties("let a: Set<Int>", [
-            (.let, "a", .set(elementType: "Int"), .uninitialized)
+            (.iVar, .let, "a", .set(elementType: "Int"), .uninitialized)
         ])
     }
 
@@ -144,147 +170,173 @@ final class VariableHelperTests: XCTestCase {
 
     func testVariableDeclaration_simple_getProperties() throws {
         try assertGetStoredProperties("var a: Int", [
-            (.var, "a", .explicit(typeNode: "Int"), .uninitialized)
+            (.iVar, .var, "a", .explicit(typeNode: "Int"), .uninitialized)
+        ])
+    }
+
+    func testVariableDeclaration_simpleStatic_getProperties() throws {
+        try assertGetStoredProperties("static var a: Int", [
+            (.static, .var, "a", .explicit(typeNode: "Int"), .uninitialized)
+        ])
+    }
+
+    func testVariableDeclaration_simpleClass_getProperties() throws {
+        try assertGetStoredProperties("class var a: Int", [
+            (.static, .var, "a", .explicit(typeNode: "Int"), .uninitialized)
         ])
     }
 
     func testVariableDeclaration_init_getProperties() throws {
         try assertGetStoredProperties("var a: Int = 0", [
-            (.var, "a", .explicit(typeNode: "Int"), .initialized)
+            (.iVar, .var, "a", .explicit(typeNode: "Int"), .initialized)
         ])
     }
 
     func testVariableDeclaration_listInline_getProperties() throws {
         try assertGetStoredProperties("var a: Int, b: Double", [
-            (.var, "a", .explicit(typeNode: "Int"), .uninitialized),
-            (.var, "b", .explicit(typeNode: "Double"), .uninitialized)
+            (.iVar, .var, "a", .explicit(typeNode: "Int"), .uninitialized),
+            (.iVar, .var, "b", .explicit(typeNode: "Double"), .uninitialized)
         ])
     }
 
     func testVariableDeclaration_listTrailing_getProperties() throws {
         try assertGetStoredProperties("var a, b: Int", [
-            (.var, "a", .explicit(typeNode: "Int"), .uninitialized),
-            (.var, "b", .explicit(typeNode: "Int"), .uninitialized)
+            (.iVar, .var, "a", .explicit(typeNode: "Int"), .uninitialized),
+            (.iVar, .var, "b", .explicit(typeNode: "Int"), .uninitialized)
         ])
     }
 
     func testVariableDeclaration_initList_getProperties() throws {
         try assertGetStoredProperties("var a: Int = 1, b: Double = 2", [
-            (.var, "a", .explicit(typeNode: "Int"), .initialized),
-            (.var, "b", .explicit(typeNode: "Double"), .initialized)
+            (.iVar, .var, "a", .explicit(typeNode: "Int"), .initialized),
+            (.iVar, .var, "b", .explicit(typeNode: "Double"), .initialized)
         ])
     }
 
     func testVariableDeclaration_tuple_getProperties() throws {
         try assertGetStoredProperties("var (a, b): (Int, Double)", [
-            (.var, "a", .explicit(typeNode: "Int"), .uninitialized),
-            (.var, "b", .explicit(typeNode: "Double"), .uninitialized)
+            (.iVar, .var, "a", .explicit(typeNode: "Int"), .uninitialized),
+            (.iVar, .var, "b", .explicit(typeNode: "Double"), .uninitialized)
+        ])
+    }
+
+    func testVariableDeclaration_tupleStatic_getProperties() throws {
+        try assertGetStoredProperties("static var (a, b): (Int, Double)", [
+            (.static, .var, "a", .explicit(typeNode: "Int"), .uninitialized),
+            (.static, .var, "b", .explicit(typeNode: "Double"), .uninitialized)
+        ])
+    }
+
+    func testVariableDeclaration_tupleClass_getProperties() throws {
+        try assertGetStoredProperties("class var (a, b): (Int, Double)", [
+            (.static, .var, "a", .explicit(typeNode: "Int"), .uninitialized),
+            (.static, .var, "b", .explicit(typeNode: "Double"), .uninitialized)
         ])
     }
 
     func testVariableDeclaration_initTuple_getProperties() throws {
         try assertGetStoredProperties("var (a, b): (Int, Double) = (1, 2.3)", [
-            (.var, "a", .explicit(typeNode: "Int"), .initialized),
-            (.var, "b", .explicit(typeNode: "Double"), .initialized)
+            (.iVar, .var, "a", .explicit(typeNode: "Int"), .initialized),
+            (.iVar, .var, "b", .explicit(typeNode: "Double"), .initialized)
         ])
     }
 
     func testVariableDeclaration_tupleType_getProperties() throws {
         try assertGetStoredProperties("var a: (Int, Double)", [
-            (.var, "a", .explicit(typeNode: "(Int, Double)"), .uninitialized)
+            (.iVar, .var, "a", .explicit(typeNode: "(Int, Double)"), .uninitialized)
         ])
     }
 
     func testVariableDeclaration_tupleWithComplexTypes_getProperties() throws {
         try assertGetStoredProperties("var (a, b): (Int, (Double, String))", [
-            (.var, "a", .explicit(typeNode: "Int"), .uninitialized),
-            (.var, "b", .explicit(typeNode: "(Double, String)"), .uninitialized)
+            (.iVar, .var, "a", .explicit(typeNode: "Int"), .uninitialized),
+            (.iVar, .var, "b", .explicit(typeNode: "(Double, String)"), .uninitialized)
         ])
     }
 
     func testVariableDeclaration_willSetAccessorBlock_getProperties() throws {
         try assertGetStoredProperties("var a: Int { willSet { print(\"will set\") } }", [
-            (.var, "a", .explicit(typeNode: "Int"), .uninitialized)
+            (.iVar, .var, "a", .explicit(typeNode: "Int"), .uninitialized)
         ])
     }
 
     func testVariableDeclaration_didSetAccessorBlock_getProperties() throws {
         try assertGetStoredProperties("var a: Int { didSet { print(\"did set\") }", [
-            (.var, "a", .explicit(typeNode: "Int"), .uninitialized)
+            (.iVar, .var, "a", .explicit(typeNode: "Int"), .uninitialized)
         ])
     }
 
     func testVariableDeclaration_willSetAndDidSetAccessorBlocks_getProperties() throws {
         try assertGetStoredProperties("var a: Int { willSet { print(\"willSet\") } didSet { print(\"did set\") } }", [
-            (.var, "a", .explicit(typeNode: "Int"), .uninitialized)
+            (.iVar, .var, "a", .explicit(typeNode: "Int"), .uninitialized)
         ])
     }
 
     func testVariableDeclaration_listMixedTrailingInline_getProperties() throws {
         try assertGetStoredProperties("var a, b: Int, c: Double", [
-            (.var, "a", .explicit(typeNode: "Int"), .uninitialized),
-            (.var, "b", .explicit(typeNode: "Int"), .uninitialized),
-            (.var, "c", .explicit(typeNode: "Double"), .uninitialized)
+            (.iVar, .var, "a", .explicit(typeNode: "Int"), .uninitialized),
+            (.iVar, .var, "b", .explicit(typeNode: "Int"), .uninitialized),
+            (.iVar, .var, "c", .explicit(typeNode: "Double"), .uninitialized)
         ])
     }
 
     func testVariableDeclaration_initListMixedInlineTrailing_getProperties() throws {
         try assertGetStoredProperties("var a: Int = 0, b, c: Double", [
-            (.var, "a", .explicit(typeNode: "Int"), .initialized),
-            (.var, "b", .explicit(typeNode: "Double"), .uninitialized),
-            (.var, "c", .explicit(typeNode: "Double"), .uninitialized)
+            (.iVar, .var, "a", .explicit(typeNode: "Int"), .initialized),
+            (.iVar, .var, "b", .explicit(typeNode: "Double"), .uninitialized),
+            (.iVar, .var, "c", .explicit(typeNode: "Double"), .uninitialized)
         ])
     }
 
     func testVariableDeclaration_listMixedTupleSimple_getProperties() throws {
         try assertGetStoredProperties("var (a, b): (Int, Double), c: Int", [
-            (.var, "a", .explicit(typeNode: "Int"), .uninitialized),
-            (.var, "b", .explicit(typeNode: "Double"), .uninitialized),
-            (.var, "c", .explicit(typeNode: "Int"), .uninitialized)
+            (.iVar, .var, "a", .explicit(typeNode: "Int"), .uninitialized),
+            (.iVar, .var, "b", .explicit(typeNode: "Double"), .uninitialized),
+            (.iVar, .var, "c", .explicit(typeNode: "Int"), .uninitialized)
         ])
     }
 
     func testVariableDeclaration_nestedTuple_getProperties() throws {
         try assertGetStoredProperties("var (a, (b, c)): (Int, (Int, Double))", [
-            (.var, "a", .explicit(typeNode: "Int"), .uninitialized),
-            (.var, "b", .explicit(typeNode: "Int"), .uninitialized),
-            (.var, "c", .explicit(typeNode: "Double"), .uninitialized)
+            (.iVar, .var, "a", .explicit(typeNode: "Int"), .uninitialized),
+            (.iVar, .var, "b", .explicit(typeNode: "Int"), .uninitialized),
+            (.iVar, .var, "c", .explicit(typeNode: "Double"), .uninitialized)
         ])
     }
 
     func testVariableDeclaration_genericType_getProperties() throws {
         try assertGetStoredProperties("var a: Foo<Int>", [
-            (.var, "a", .explicit(typeNode: "Foo<Int>"), .uninitialized)
+            (.iVar, .var, "a", .explicit(typeNode: "Foo<Int>"), .uninitialized)
         ])
     }
 
     func testVariableDeclaration_arrayLiteralType_getProperties() throws {
         try assertGetStoredProperties("var a: [Int]", [
-            (.var, "a", .array(elementType: "Int"), .uninitialized)
+            (.iVar, .var, "a", .array(elementType: "Int"), .uninitialized)
         ])
     }
 
     func testVariableDeclaration_arrayGenericType_getProperties() throws {
         try assertGetStoredProperties("var a: Array<Int>", [
-            (.var, "a", .array(elementType: "Int"), .uninitialized)
+            (.iVar, .var, "a", .array(elementType: "Int"), .uninitialized)
         ])
     }
 
     func testVariableDeclaration_dictionaryLiteralType_getProperties() throws {
         try assertGetStoredProperties("var a: [Int:Double]", [
-            (.var, "a", .dictionary(keyType: "Int", valueType: "Double"), .uninitialized)
+            (.iVar, .var, "a", .dictionary(keyType: "Int", valueType: "Double"), .uninitialized)
         ])
     }
 
     func testVariableDeclaration_dictionaryGenericType_getProperties() throws {
         try assertGetStoredProperties("var a: Dictionary<Int, Double>", [
-            (.var, "a", .dictionary(keyType: "Int", valueType: "Double"), .uninitialized)
+            (.iVar, .var, "a", .dictionary(keyType: "Int", valueType: "Double"), .uninitialized)
         ])
     }
 
     func testVariableDeclaration_setGenericType_getProperties() throws {
         try assertGetStoredProperties("var a: Set<Int>", [
-            (.var, "a", .set(elementType: "Int"), .uninitialized)
+            (.iVar, .var, "a", .set(elementType: "Int"), .uninitialized)
         ])
     }
 
@@ -311,9 +363,9 @@ final class VariableHelperTests: XCTestCase {
             "var c: String { return \"c\" }",
             "var d: Float"
         ], [
-            (.let, "a", .explicit(typeNode: "Int"), .uninitialized),
-            (.var, "b", .explicit(typeNode: "Double"), .uninitialized),
-            (.var, "d", .explicit(typeNode: "Float"), .uninitialized)
+            (.iVar, .let, "a", .explicit(typeNode: "Int"), .uninitialized),
+            (.iVar, .var, "b", .explicit(typeNode: "Double"), .uninitialized),
+            (.iVar, .var, "d", .explicit(typeNode: "Float"), .uninitialized)
         ])
     }
 
@@ -321,34 +373,34 @@ final class VariableHelperTests: XCTestCase {
 
     func testVariableDeclaration_impliedSimpleTypeInit_getProperties() throws {
         try assertGetStoredProperties("var a = 0", [
-            (.var, "a", .implicit, .initialized)
+            (.iVar, .var, "a", .implicit, .initialized)
         ])
     }
 
     func testVariableDeclaration_impliedEnumTypeInit_getProperties() throws {
         try assertGetStoredProperties("var a = (1, 2.0)", [
-            (.var, "a", .implicit, .initialized)
+            (.iVar, .var, "a", .implicit, .initialized)
         ])
     }
 
     func testVariableDeclaration_impliedEnumDeclarationTypeInit_getProperties() throws {
         try assertGetStoredProperties("var (a, b) = (1, 2.0)", [
-            (.var, "a", .implicit, .initialized),
-            (.var, "b", .implicit, .initialized)
+            (.iVar, .var, "a", .implicit, .initialized),
+            (.iVar, .var, "b", .implicit, .initialized)
         ])
     }
 
     func testVariableDeclaration_impliedTypeList_getProperties() throws {
         try assertGetStoredProperties("var a = 0, b = 1.0", [
-            (.var, "a", .implicit, .initialized),
-            (.var, "b", .implicit, .initialized)
+            (.iVar, .var, "a", .implicit, .initialized),
+            (.iVar, .var, "b", .implicit, .initialized)
         ])
     }
 
     func testVariableDeclaration_impliedTypeListMixed_getProperties() throws {
         try assertGetStoredProperties("var a = 0, b: String", [
-            (.var, "a", .implicit, .initialized),
-            (.var, "b", .explicit(typeNode: "String"), .uninitialized)
+            (.iVar, .var, "a", .implicit, .initialized),
+            (.iVar, .var, "b", .explicit(typeNode: "String"), .uninitialized)
         ])
     }
 
@@ -358,6 +410,14 @@ final class VariableHelperTests: XCTestCase {
 
     func testConstantDeclaration_simple_isStoredProperty() throws {
         try assertIsStoredProperty("let a: Int")
+    }
+
+    func testConstantDeclaration_simpleStatic_isStoredProperty() throws {
+        try assertIsStoredProperty("static let a: Int")
+    }
+
+    func testConstantDeclaration_simpleClass_isStoredProperty() throws {
+        try assertIsStoredProperty("class let a: Int")
     }
 
     func testConstantDeclaration_init_isStoredProperty() throws {
@@ -386,6 +446,14 @@ final class VariableHelperTests: XCTestCase {
 
     func testConstantDeclaration_tuple_isStoredProperty() throws {
         try assertIsStoredProperty("let (a, b): (Int, Double)")
+    }
+
+    func testConstantDeclaration_tupleStatic_isStoredProperty() throws {
+        try assertIsStoredProperty("static let (a, b): (Int, Double)")
+    }
+
+    func testConstantDeclaration_tupleClass_isStoredProperty() throws {
+        try assertIsStoredProperty("class let (a, b): (Int, Double)")
     }
 
     func testConstantDeclaration_initTuple_isStoredProperty() throws {
@@ -446,6 +514,14 @@ final class VariableHelperTests: XCTestCase {
         try assertIsStoredProperty("var a: Int")
     }
 
+    func testVariableDeclaration_simpleStatic_isStoredProperty() throws {
+        try assertIsStoredProperty("static var a: Int")
+    }
+
+    func testVariableDeclaration_simpleClass_isStoredProperty() throws {
+        try assertIsStoredProperty("class var a: Int")
+    }
+
     func testVariableDeclaration_init_isStoredProperty() throws {
         try assertIsStoredProperty("var a: Int = 0")
     }
@@ -472,6 +548,14 @@ final class VariableHelperTests: XCTestCase {
 
     func testVariableDeclaration_tuple_isStoredProperty() throws {
         try assertIsStoredProperty("var (a, b): (Int, Double)")
+    }
+
+    func testVariableDeclaration_tupleStatic_isStoredProperty() throws {
+        try assertIsStoredProperty("static var (a, b): (Int, Double)")
+    }
+
+    func testVariableDeclaration_tupleClass_isStoredProperty() throws {
+        try assertIsStoredProperty("class var (a, b): (Int, Double)")
     }
 
     func testVariableDeclaration_initTuple_isStoredProperty() throws {
@@ -554,6 +638,20 @@ final class VariableHelperTests: XCTestCase {
 
     // MARK: - Util
 
+    private enum IVarStatus {
+        case iVar
+        case `static`
+
+        var isIVar: Bool {
+            switch self {
+            case .iVar:
+                return true
+            case .static:
+                return false
+            }
+        }
+    }
+
     private enum InitializedStatus {
         case initialized
         case uninitialized
@@ -570,7 +668,7 @@ final class VariableHelperTests: XCTestCase {
 
     private func assertGetStoredProperties(
         _ variableSource: String,
-        _ properties: [(bindingKeyword: Property.BindingKeyword, identifier: IdentifierPatternSyntax, type: VariableTypeDescriptor, initialized: InitializedStatus)],
+        _ properties: [(iVarStatus: IVarStatus, bindingKeyword: Property.BindingKeyword, identifier: IdentifierPatternSyntax, type: VariableTypeDescriptor, initialized: InitializedStatus)],
         file: StaticString = #filePath,
         line: UInt = #line
     ) throws {
@@ -579,13 +677,19 @@ final class VariableHelperTests: XCTestCase {
 
     private func assertGetStoredProperties(
         _ variableSources: [String],
-        _ properties: [(bindingKeyword: Property.BindingKeyword, identifier: IdentifierPatternSyntax, type: VariableTypeDescriptor, initialized: InitializedStatus)],
+        _ properties: [(iVarStatus: IVarStatus, bindingKeyword: Property.BindingKeyword, identifier: IdentifierPatternSyntax, type: VariableTypeDescriptor, initialized: InitializedStatus)],
         file: StaticString = #filePath,
         line: UInt = #line
     ) throws {
         let memberList = try Self.createMemberList(variableSources)
         let actualProperties = VariableHelper.getStoredProperties(from: memberList)
-        let expectedProperties = properties.map({ Property(bindingKeyword: $0.0, identifierPattern: $0.1, type: $0.2.variableType, isInitialized: $0.3.isInitialized) })
+        let expectedProperties = properties.map({ Property(
+            isIVar: $0.0.isIVar,
+            bindingKeyword: $0.1,
+            identifierPattern: $0.2,
+            type: $0.3.variableType,
+            isInitialized: $0.4.isInitialized)
+        })
         XCTAssertEqual(actualProperties, expectedProperties, file: file, line: line)
     }
 

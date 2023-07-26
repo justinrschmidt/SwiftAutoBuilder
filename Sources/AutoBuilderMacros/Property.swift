@@ -1,6 +1,7 @@
 import SwiftSyntax
 
 struct Property: Equatable, CustomStringConvertible {
+    let isIVar: Bool
     let bindingKeyword: BindingKeyword
     let identifierPattern: IdentifierPatternSyntax
     let variableType: VariableType
@@ -40,6 +41,7 @@ struct Property: Equatable, CustomStringConvertible {
     }
 
     var description: String {
+        let iVar = isIVar ? "iVar" : "static"
         let initialized = isInitialized ? "initialized" : "uninitialized"
         let typePrefix = switch variableType {
         case .implicit, .explicit(_): ""
@@ -47,10 +49,15 @@ struct Property: Equatable, CustomStringConvertible {
         case .dictionary(_, _): "D:"
         case .set(_): "S:"
         }
-        return "(\(identifier), \(typePrefix)\(type), \(initialized))"
+        return "(\(iVar), \(identifier), \(typePrefix)\(type), \(initialized))"
     }
 
-    init(bindingKeyword: BindingKeyword, identifierPattern: IdentifierPatternSyntax, type: VariableType, isInitialized: Bool) {
+    init(isIVar: Bool,
+         bindingKeyword: BindingKeyword,
+         identifierPattern: IdentifierPatternSyntax,
+         type: VariableType,
+         isInitialized: Bool) {
+        self.isIVar = isIVar
         self.bindingKeyword = bindingKeyword
         self.identifierPattern = identifierPattern
         self.variableType = type
@@ -58,6 +65,7 @@ struct Property: Equatable, CustomStringConvertible {
     }
 
     static func ==(lhs: Property, rhs: Property) -> Bool {
+        guard lhs.isIVar == rhs.isIVar else { return false }
         guard lhs.bindingKeyword == rhs.bindingKeyword else { return false }
         guard lhs.identifier == rhs.identifier else { return false }
         guard lhs.variableType == rhs.variableType else { return false }
