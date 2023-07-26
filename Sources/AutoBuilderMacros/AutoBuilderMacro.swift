@@ -115,7 +115,7 @@ public struct AutoBuilderMacro: MemberMacro, ConformanceMacro {
         let builderIdentifier = IdentifierExprSyntax(identifier: TokenSyntax(.identifier("builder"), presence: .present))
         let propertyMemberExpr = MemberAccessExprSyntax(base: builderIdentifier, name: TokenSyntax(.identifier(property.identifier), presence: .present))
         let buildMemberExpr = MemberAccessExprSyntax(base: propertyMemberExpr, name: "build")
-        let buildFunctionCall = FunctionCallExprSyntax(calledExpression: buildMemberExpr, leftParen: .leftParenToken(), rightParen: .rightParenToken()) {}
+        let buildFunctionCall = functionCallExpr(buildMemberExpr)
         return SequenceExprSyntax {
             IdentifierExprSyntax(identifier: .identifier(property.identifier))
             AssignmentExprSyntax()
