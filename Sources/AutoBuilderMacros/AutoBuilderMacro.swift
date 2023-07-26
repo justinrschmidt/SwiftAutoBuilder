@@ -271,7 +271,7 @@ public struct AutoBuilderMacro: MemberMacro, ConformanceMacro {
             name: TokenSyntax(.identifier("removeAll"), presence: .present))
         return try FunctionDeclSyntax("@discardableResult\nfunc removeAllFrom\(raw: property.capitalizedIdentifier)() -> Builder") {
             functionCallExpr(appendElementExpression)
-            ReturnStmtSyntax(expression: IdentifierExprSyntax(identifier: .keyword(.`self`)))
+            returnSelfStmt()
         }
     }
 
