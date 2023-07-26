@@ -38,7 +38,10 @@ public struct AutoBuilderMacro: MemberMacro, ConformanceMacro {
         in context: some MacroExpansionContext) throws -> [DeclSyntax] {
             switch analyze(declaration: declaration, of: node) {
             case let .struct(structDecl, propertiesToBuild):
-                return try createDecls(from: propertiesToBuild, containerIdentifier: structDecl.identifier)
+                let isPublic = structDecl.modifiers?.contains(where: { modifier in
+                    modifier.name.tokenKind == .keyword(.public) || modifier.name.tokenKind == .keyword(.open)
+                }) ?? false
+                return try createDecls(from: propertiesToBuild, containerIdentifier: structDecl.identifier, isPublic: isPublic)
             case let .error(diagnostics):
                 diagnostics.forEach(context.diagnose(_:))
                 return []
@@ -68,14 +71,15 @@ public struct AutoBuilderMacro: MemberMacro, ConformanceMacro {
 
     // MARK: - Create Syntax Tokens
 
-    private static func createDecls(from properties: [Property], containerIdentifier: TokenSyntax) throws -> [DeclSyntax] {
+    private static func createDecls(from properties: [Property], containerIdentifier: TokenSyntax, isPublic: Bool) throws -> [DeclSyntax] {
+        let accessModifier = isPublic ? "public " : ""
         return [
-            try InitializerDeclSyntax("init(with builder: Builder) throws", bodyBuilder: {
+            try InitializerDeclSyntax("\(raw: accessModifier)init(with builder: Builder) throws", bodyBuilder: {
                 for property in properties {
                     createPropertyInitializer(from: property)
                 }
             }).cast(DeclSyntax.self),
-            try createToBuilderFunction(from: properties).cast(DeclSyntax.self),
+            try createToBuilderFunction(from: properties, isPublic: isPublic).cast(DeclSyntax.self),
             try ClassDeclSyntax("public class Builder: BuilderProtocol", membersBuilder: {
                 for property in properties {
                     createVariableDecl(from: property)
@@ -127,8 +131,9 @@ public struct AutoBuilderMacro: MemberMacro, ConformanceMacro {
         }
     }
 
-    private static func createToBuilderFunction(from properties: [Property]) throws -> FunctionDeclSyntax {
-        return try FunctionDeclSyntax("func toBuilder() -> Builder") {
+    private static func createToBuilderFunction(from properties: [Property], isPublic: Bool) throws -> FunctionDeclSyntax {
+        let accessModifier = isPublic ? "public " : ""
+        return try FunctionDeclSyntax("\(raw: accessModifier)func toBuilder() -> Builder") {
             VariableDeclSyntax(
                 .let,
                 name: IdentifierPatternSyntax(identifier: .identifier("builder")).cast(PatternSyntax.self),

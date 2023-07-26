@@ -463,4 +463,44 @@ final class AutoBuilderMacroTests: XCTestCase {
             }
             """, macros: testMacros)
     }
+
+    func testPublicStructWithStoredProperty() {
+        assertMacroExpansion(
+            """
+            @AutoBuilder
+            public struct Foo {
+                let a: Int
+            }
+            """,
+            expandedSource:
+            """
+            public struct Foo {
+                let a: Int
+                public init(with builder: Builder) throws {
+                    a = try builder.a.build()
+                }
+                public func toBuilder() -> Builder {
+                    let builder = Builder()
+                    builder.set(a: a)
+                    return builder
+                }
+                public class Builder: BuilderProtocol {
+                    public let a: BuildableProperty<Int>
+                    public required init() {
+                        a = BuildableProperty(name: "a")
+                    }
+                    @discardableResult
+                    public func set(a: Int) -> Builder {
+                        self.a.set(value: a)
+                        return self
+                    }
+                    public func build() throws -> Foo {
+                        return try Foo(with: self)
+                    }
+                }
+            }
+            extension Foo: Buildable {
+            }
+            """, macros: testMacros)
+    }
 }
