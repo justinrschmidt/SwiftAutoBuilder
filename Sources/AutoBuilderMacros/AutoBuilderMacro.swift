@@ -200,36 +200,28 @@ public struct AutoBuilderMacro: MemberMacro, ConformanceMacro {
         let selfExpression = MemberAccessExprSyntax(base: selfIdentifier, name: TokenSyntax(.identifier(property.identifier), presence: .present))
         let setValueExpression = MemberAccessExprSyntax(base: selfExpression, name: TokenSyntax(.identifier("set"), presence: .present))
         return try FunctionDeclSyntax("@discardableResult\nfunc set(\(raw: property.identifier): \(raw: property.type)) -> Builder") {
-            FunctionCallExprSyntax(calledExpression: setValueExpression, leftParen: .leftParenToken(), rightParen: .rightParenToken()) {
-                TupleExprElementSyntax(label: "value", expression: IdentifierExprSyntax(identifier: .identifier(property.identifier)))
-            }
-            ReturnStmtSyntax(expression: IdentifierExprSyntax(identifier: .keyword(.`self`)))
+            functionCallExpr(setValueExpression, [("value", property.identifier)])
+            returnSelfStmt()
         }
     }
 
     private static func createAppendElementFunction(from property: Property, elementType: TypeSyntax) throws -> FunctionDeclSyntax {
-        let elementTypeString = elementType.description.trimmingCharacters(in: .whitespacesAndNewlines)
         let selfIdentifier = IdentifierExprSyntax(identifier: .keyword(.`self`))
         let selfExpression = MemberAccessExprSyntax(base: selfIdentifier, name: TokenSyntax(.identifier(property.identifier), presence: .present))
         let appendElementExpression = MemberAccessExprSyntax(base: selfExpression, name: TokenSyntax(.identifier("append"), presence: .present))
-        return try FunctionDeclSyntax("@discardableResult\nfunc appendTo(\(raw: property.identifier) element: \(raw: elementTypeString)) -> Builder") {
-            FunctionCallExprSyntax(calledExpression: appendElementExpression, leftParen: .leftParenToken(), rightParen: .rightParenToken()) {
-                TupleExprElementSyntax(label: "element", expression: IdentifierExprSyntax(identifier: .identifier("element")))
-            }
-            ReturnStmtSyntax(expression: IdentifierExprSyntax(identifier: .keyword(.`self`)))
+        return try FunctionDeclSyntax("@discardableResult\nfunc appendTo(\(raw: property.identifier) element: \(elementType.trimmed)) -> Builder") {
+            functionCallExpr(appendElementExpression, [("element", "element")])
+            returnSelfStmt()
         }
     }
 
     private static func createAppendCollectionFunction(from property: Property, elementType: TypeSyntax) throws -> FunctionDeclSyntax {
-        let elementTypeString = elementType.description.trimmingCharacters(in: .whitespacesAndNewlines)
         let selfIdentifier = IdentifierExprSyntax(identifier: .keyword(.`self`))
         let selfExpression = MemberAccessExprSyntax(base: selfIdentifier, name: TokenSyntax(.identifier(property.identifier), presence: .present))
         let appendCollectionExpression = MemberAccessExprSyntax(base: selfExpression, name: TokenSyntax(.identifier("append"), presence: .present))
-        return try FunctionDeclSyntax("@discardableResult\nfunc appendTo<C>(\(raw: property.identifier) collection: C) -> Builder where C: Collection, C.Element == \(raw: elementTypeString)") {
-            FunctionCallExprSyntax(calledExpression: appendCollectionExpression, leftParen: .leftParenToken(), rightParen: .rightParenToken()) {
-                TupleExprElementSyntax(label: "contentsOf", expression: IdentifierExprSyntax(identifier: .identifier("collection")))
-            }
-            ReturnStmtSyntax(expression: IdentifierExprSyntax(identifier: .keyword(.`self`)))
+        return try FunctionDeclSyntax("@discardableResult\nfunc appendTo<C>(\(raw: property.identifier) collection: C) -> Builder where C: Collection, C.Element == \(elementType.trimmed)") {
+            functionCallExpr(appendCollectionExpression, [("contentsOf", "collection")])
+            returnSelfStmt()
         }
     }
 
@@ -237,28 +229,19 @@ public struct AutoBuilderMacro: MemberMacro, ConformanceMacro {
         let insertExpression = MemberAccessExprSyntax(
             base: IdentifierExprSyntax(identifier: .identifier(property.identifier)),
             name: TokenSyntax(.identifier("insert"), presence: .present))
-        return try FunctionDeclSyntax("@discardableResult\nfunc insertInto\(raw: property.capitalizedIdentifier)(key: \(raw: keyType.trimmed.description), value: \(raw: valueType.trimmed.description)) -> Builder") {
-            FunctionCallExprSyntax(calledExpression: insertExpression, leftParen: .leftParenToken(), rightParen: .rightParenToken()) {
-                TupleExprElementSyntax(label: "key", expression: IdentifierExprSyntax(identifier: .identifier("key")))
-                TupleExprElementSyntax(label: "value", expression: IdentifierExprSyntax(identifier: .identifier("value")))
-            }
-            ReturnStmtSyntax(expression: IdentifierExprSyntax(identifier: .keyword(.`self`)))
+        return try FunctionDeclSyntax("@discardableResult\nfunc insertInto\(raw: property.capitalizedIdentifier)(key: \(keyType.trimmed), value: \(valueType.trimmed)) -> Builder") {
+            functionCallExpr(insertExpression, [("key", "key"), ("value", "value")])
+            returnSelfStmt()
         }
     }
 
     private static func createMergeDictionaryFunction(from property: Property, keyType: TypeSyntax, valueType: TypeSyntax) throws -> FunctionDeclSyntax {
-        let keyText = keyType.trimmed.description
-        let valueText = valueType.trimmed.description
         let mergeExpression = MemberAccessExprSyntax(
             base: IdentifierExprSyntax(identifier: .identifier(property.identifier)),
             name: TokenSyntax(.identifier("merge"), presence: .present))
-        return try FunctionDeclSyntax("@discardableResult\nfunc mergeInto\(raw: property.capitalizedIdentifier)(other: [\(raw: keyText): \(raw: valueText)], uniquingKeysWith combine: (\(raw: valueText), \(raw: valueText)) throws -> \(raw: valueText)) rethrows -> Builder") {
-            TryExprSyntax(
-                expression: FunctionCallExprSyntax(calledExpression: mergeExpression, leftParen: .leftParenToken(), rightParen: .rightParenToken()) {
-                    TupleExprElementSyntax(label: "other", expression: IdentifierExprSyntax(identifier: .identifier("other")))
-                    TupleExprElementSyntax(label: "uniquingKeysWith", expression: IdentifierExprSyntax(identifier: .identifier("combine")))
-                })
-            ReturnStmtSyntax(expression: IdentifierExprSyntax(identifier: .keyword(.`self`)))
+        return try FunctionDeclSyntax("@discardableResult\nfunc mergeInto\(raw: property.capitalizedIdentifier)(other: [\(keyType.trimmed): \(valueType.trimmed)], uniquingKeysWith combine: (\(valueType.trimmed), \(valueType.trimmed)) throws -> \(valueType.trimmed)) rethrows -> Builder") {
+            TryExprSyntax(expression: functionCallExpr(mergeExpression, [("other", "other"), ("uniquingKeysWith", "combine")]))
+            returnSelfStmt()
         }
     }
 
@@ -267,10 +250,8 @@ public struct AutoBuilderMacro: MemberMacro, ConformanceMacro {
             base: IdentifierExprSyntax(identifier: .identifier(property.identifier)),
             name: TokenSyntax(.identifier("insert"), presence: .present))
         return try FunctionDeclSyntax("@discardableResult\nfunc insertInto(\(raw: property.identifier) element: \(elementType.trimmed)) -> Builder") {
-            FunctionCallExprSyntax(calledExpression: insertExpression, leftParen: .leftParenToken(), rightParen: .rightParenToken()) {
-                TupleExprElementSyntax(label: "element", expression: IdentifierExprSyntax(identifier: .identifier("element")))
-            }
-            ReturnStmtSyntax(expression: IdentifierExprSyntax(identifier: .keyword(.`self`)))
+            functionCallExpr(insertExpression, [("element", "element")])
+            returnSelfStmt()
         }
     }
 
@@ -279,10 +260,8 @@ public struct AutoBuilderMacro: MemberMacro, ConformanceMacro {
             base: IdentifierExprSyntax(identifier: .identifier(property.identifier)),
             name: TokenSyntax(.identifier("formUnion"), presence: .present))
         return try FunctionDeclSyntax("@discardableResult\nfunc formUnionWith\(raw: property.capitalizedIdentifier)(other: Set<\(elementType.trimmed)>) -> Builder") {
-            FunctionCallExprSyntax(calledExpression: formUnionExpression, leftParen: .leftParenToken(), rightParen: .rightParenToken()) {
-                TupleExprElementSyntax(label: "other", expression: IdentifierExprSyntax(identifier: .identifier("other")))
-            }
-            ReturnStmtSyntax(expression: IdentifierExprSyntax(identifier: .keyword(.`self`)))
+            functionCallExpr(formUnionExpression, [("other", "other")])
+            returnSelfStmt()
         }
     }
 
@@ -291,7 +270,7 @@ public struct AutoBuilderMacro: MemberMacro, ConformanceMacro {
             base: IdentifierExprSyntax(identifier: .identifier(property.identifier)),
             name: TokenSyntax(.identifier("removeAll"), presence: .present))
         return try FunctionDeclSyntax("@discardableResult\nfunc removeAllFrom\(raw: property.capitalizedIdentifier)() -> Builder") {
-            FunctionCallExprSyntax(calledExpression: appendElementExpression, leftParen: .leftParenToken(), rightParen: .rightParenToken()) {}
+            functionCallExpr(appendElementExpression)
             ReturnStmtSyntax(expression: IdentifierExprSyntax(identifier: .keyword(.`self`)))
         }
     }
@@ -307,6 +286,18 @@ public struct AutoBuilderMacro: MemberMacro, ConformanceMacro {
                             TupleExprElementSyntax(label: "with", expression: IdentifierExprSyntax(identifier: .keyword(.self)))
                         }))
         }
+    }
+
+    private static func functionCallExpr(_ calledExpression: ExprSyntaxProtocol, _ arguments: [(label: String?, identifier: String)] = []) -> FunctionCallExprSyntax {
+        FunctionCallExprSyntax(calledExpression: calledExpression, leftParen: .leftParenToken(), rightParen: .rightParenToken()) {
+            for arg in arguments {
+                TupleExprElementSyntax(label: arg.label, expression: IdentifierExprSyntax(identifier: .identifier(arg.identifier)))
+            }
+        }
+    }
+
+    private static func returnSelfStmt() -> ReturnStmtSyntax {
+        return ReturnStmtSyntax(expression: IdentifierExprSyntax(identifier: .keyword(.`self`)))
     }
 }
 
