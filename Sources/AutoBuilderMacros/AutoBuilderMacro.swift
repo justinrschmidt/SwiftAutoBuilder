@@ -59,7 +59,7 @@ public struct AutoBuilderMacro: MemberMacro, ConformanceMacro {
                 message: AutoBuilderDiagnostic.impliedVariableType(identifier: property.identifier))
         })
         if diagnostics.isEmpty {
-            let propertiesToBuild = storedProperties.filter({ !$0.isInitializedConstant })
+            let propertiesToBuild = storedProperties.filter({ $0.isIVar && !$0.isInitializedConstant })
             return .struct(structDecl: structDecl, propertiesToBuild: propertiesToBuild)
         } else {
             return .error(diagnostics: diagnostics)
