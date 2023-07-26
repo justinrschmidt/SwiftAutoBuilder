@@ -76,11 +76,11 @@ public struct AutoBuilderMacro: MemberMacro, ConformanceMacro {
                 }
             }).cast(DeclSyntax.self),
             try createToBuilderFunction(from: properties).cast(DeclSyntax.self),
-            try ClassDeclSyntax("class Builder: BuilderProtocol", membersBuilder: {
+            try ClassDeclSyntax("public class Builder: BuilderProtocol", membersBuilder: {
                 for property in properties {
                     createVariableDecl(from: property)
                 }
-                try InitializerDeclSyntax("required init()", bodyBuilder: {
+                try InitializerDeclSyntax("public required init()", bodyBuilder: {
                     for property in properties {
                         createBuildablePropertyInitializer(from: property)
                     }
@@ -156,6 +156,9 @@ public struct AutoBuilderMacro: MemberMacro, ConformanceMacro {
     }
 
     private static func createVariableDecl(from property: Property) -> VariableDeclSyntax {
+        let modifiers = ModifierListSyntax {
+            DeclModifierSyntax(name: .keyword(.public))
+        }
         let bindingKeyword = TokenSyntax(.keyword(.let), presence: .present)
         let identifierPattern = IdentifierPatternSyntax(identifier: .identifier(property.identifier))
         let typeIdentifier = switch property.variableType {
@@ -168,7 +171,7 @@ public struct AutoBuilderMacro: MemberMacro, ConformanceMacro {
         let typeAnnotation = TypeAnnotationSyntax(
             type: SimpleTypeIdentifierSyntax(
                 name: TokenSyntax(.identifier(typeIdentifier), presence: .present)))
-        return VariableDeclSyntax(bindingKeyword: bindingKeyword) {
+        return VariableDeclSyntax(modifiers: modifiers, bindingKeyword: bindingKeyword) {
             PatternBindingListSyntax {
                 PatternBindingSyntax(pattern: identifierPattern, typeAnnotation: typeAnnotation)
             }
@@ -199,7 +202,7 @@ public struct AutoBuilderMacro: MemberMacro, ConformanceMacro {
         let selfIdentifier = IdentifierExprSyntax(identifier: .keyword(.`self`))
         let selfExpression = MemberAccessExprSyntax(base: selfIdentifier, name: TokenSyntax(.identifier(property.identifier), presence: .present))
         let setValueExpression = MemberAccessExprSyntax(base: selfExpression, name: TokenSyntax(.identifier("set"), presence: .present))
-        return try FunctionDeclSyntax("@discardableResult\nfunc set(\(raw: property.identifier): \(raw: property.type)) -> Builder") {
+        return try FunctionDeclSyntax("@discardableResult\npublic func set(\(raw: property.identifier): \(raw: property.type)) -> Builder") {
             functionCallExpr(setValueExpression, [("value", property.identifier)])
             returnSelfStmt()
         }
@@ -209,7 +212,7 @@ public struct AutoBuilderMacro: MemberMacro, ConformanceMacro {
         let selfIdentifier = IdentifierExprSyntax(identifier: .keyword(.`self`))
         let selfExpression = MemberAccessExprSyntax(base: selfIdentifier, name: TokenSyntax(.identifier(property.identifier), presence: .present))
         let appendElementExpression = MemberAccessExprSyntax(base: selfExpression, name: TokenSyntax(.identifier("append"), presence: .present))
-        return try FunctionDeclSyntax("@discardableResult\nfunc appendTo(\(raw: property.identifier) element: \(elementType.trimmed)) -> Builder") {
+        return try FunctionDeclSyntax("@discardableResult\npublic func appendTo(\(raw: property.identifier) element: \(elementType.trimmed)) -> Builder") {
             functionCallExpr(appendElementExpression, [("element", "element")])
             returnSelfStmt()
         }
@@ -219,7 +222,7 @@ public struct AutoBuilderMacro: MemberMacro, ConformanceMacro {
         let selfIdentifier = IdentifierExprSyntax(identifier: .keyword(.`self`))
         let selfExpression = MemberAccessExprSyntax(base: selfIdentifier, name: TokenSyntax(.identifier(property.identifier), presence: .present))
         let appendCollectionExpression = MemberAccessExprSyntax(base: selfExpression, name: TokenSyntax(.identifier("append"), presence: .present))
-        return try FunctionDeclSyntax("@discardableResult\nfunc appendTo<C>(\(raw: property.identifier) collection: C) -> Builder where C: Collection, C.Element == \(elementType.trimmed)") {
+        return try FunctionDeclSyntax("@discardableResult\npublic func appendTo<C>(\(raw: property.identifier) collection: C) -> Builder where C: Collection, C.Element == \(elementType.trimmed)") {
             functionCallExpr(appendCollectionExpression, [("contentsOf", "collection")])
             returnSelfStmt()
         }
@@ -229,7 +232,7 @@ public struct AutoBuilderMacro: MemberMacro, ConformanceMacro {
         let insertExpression = MemberAccessExprSyntax(
             base: IdentifierExprSyntax(identifier: .identifier(property.identifier)),
             name: TokenSyntax(.identifier("insert"), presence: .present))
-        return try FunctionDeclSyntax("@discardableResult\nfunc insertInto\(raw: property.capitalizedIdentifier)(key: \(keyType.trimmed), value: \(valueType.trimmed)) -> Builder") {
+        return try FunctionDeclSyntax("@discardableResult\npublic func insertInto\(raw: property.capitalizedIdentifier)(key: \(keyType.trimmed), value: \(valueType.trimmed)) -> Builder") {
             functionCallExpr(insertExpression, [("key", "key"), ("value", "value")])
             returnSelfStmt()
         }
@@ -239,7 +242,7 @@ public struct AutoBuilderMacro: MemberMacro, ConformanceMacro {
         let mergeExpression = MemberAccessExprSyntax(
             base: IdentifierExprSyntax(identifier: .identifier(property.identifier)),
             name: TokenSyntax(.identifier("merge"), presence: .present))
-        return try FunctionDeclSyntax("@discardableResult\nfunc mergeInto\(raw: property.capitalizedIdentifier)(other: [\(keyType.trimmed): \(valueType.trimmed)], uniquingKeysWith combine: (\(valueType.trimmed), \(valueType.trimmed)) throws -> \(valueType.trimmed)) rethrows -> Builder") {
+        return try FunctionDeclSyntax("@discardableResult\npublic func mergeInto\(raw: property.capitalizedIdentifier)(other: [\(keyType.trimmed): \(valueType.trimmed)], uniquingKeysWith combine: (\(valueType.trimmed), \(valueType.trimmed)) throws -> \(valueType.trimmed)) rethrows -> Builder") {
             TryExprSyntax(expression: functionCallExpr(mergeExpression, [("other", "other"), ("uniquingKeysWith", "combine")]))
             returnSelfStmt()
         }
@@ -249,7 +252,7 @@ public struct AutoBuilderMacro: MemberMacro, ConformanceMacro {
         let insertExpression = MemberAccessExprSyntax(
             base: IdentifierExprSyntax(identifier: .identifier(property.identifier)),
             name: TokenSyntax(.identifier("insert"), presence: .present))
-        return try FunctionDeclSyntax("@discardableResult\nfunc insertInto(\(raw: property.identifier) element: \(elementType.trimmed)) -> Builder") {
+        return try FunctionDeclSyntax("@discardableResult\npublic func insertInto(\(raw: property.identifier) element: \(elementType.trimmed)) -> Builder") {
             functionCallExpr(insertExpression, [("element", "element")])
             returnSelfStmt()
         }
@@ -259,7 +262,7 @@ public struct AutoBuilderMacro: MemberMacro, ConformanceMacro {
         let formUnionExpression = MemberAccessExprSyntax(
             base: IdentifierExprSyntax(identifier: .identifier(property.identifier)),
             name: TokenSyntax(.identifier("formUnion"), presence: .present))
-        return try FunctionDeclSyntax("@discardableResult\nfunc formUnionWith\(raw: property.capitalizedIdentifier)(other: Set<\(elementType.trimmed)>) -> Builder") {
+        return try FunctionDeclSyntax("@discardableResult\npublic func formUnionWith\(raw: property.capitalizedIdentifier)(other: Set<\(elementType.trimmed)>) -> Builder") {
             functionCallExpr(formUnionExpression, [("other", "other")])
             returnSelfStmt()
         }
@@ -269,14 +272,14 @@ public struct AutoBuilderMacro: MemberMacro, ConformanceMacro {
         let appendElementExpression = MemberAccessExprSyntax(
             base: IdentifierExprSyntax(identifier: .identifier(property.identifier)),
             name: TokenSyntax(.identifier("removeAll"), presence: .present))
-        return try FunctionDeclSyntax("@discardableResult\nfunc removeAllFrom\(raw: property.capitalizedIdentifier)() -> Builder") {
+        return try FunctionDeclSyntax("@discardableResult\npublic func removeAllFrom\(raw: property.capitalizedIdentifier)() -> Builder") {
             functionCallExpr(appendElementExpression)
             returnSelfStmt()
         }
     }
 
     private static func createBuildFunction(containerIdentifier: TokenSyntax) throws -> FunctionDeclSyntax {
-        return try FunctionDeclSyntax("func build() throws -> \(raw: containerIdentifier.text)") {
+        return try FunctionDeclSyntax("public func build() throws -> \(raw: containerIdentifier.text)") {
             ReturnStmtSyntax(
                 expression: TryExprSyntax(
                     expression: FunctionCallExprSyntax(

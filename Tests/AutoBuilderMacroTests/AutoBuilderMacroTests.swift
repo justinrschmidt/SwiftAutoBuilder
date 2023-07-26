@@ -25,10 +25,10 @@ final class AutoBuilderMacroTests: XCTestCase {
                     let builder = Builder()
                     return builder
                 }
-                class Builder: BuilderProtocol {
-                    required init() {
+                public class Builder: BuilderProtocol {
+                    public required init() {
                     }
-                    func build() throws -> Foo {
+                    public func build() throws -> Foo {
                         return try Foo(with: self)
                     }
                 }
@@ -62,24 +62,24 @@ final class AutoBuilderMacroTests: XCTestCase {
                     builder.set(b: b)
                     return builder
                 }
-                class Builder: BuilderProtocol {
-                    let a: BuildableProperty<Int>
-                    let b: BuildableProperty<Double>
-                    required init() {
+                public class Builder: BuilderProtocol {
+                    public let a: BuildableProperty<Int>
+                    public let b: BuildableProperty<Double>
+                    public required init() {
                         a = BuildableProperty(name: "a")
                         b = BuildableProperty(name: "b")
                     }
                     @discardableResult
-                    func set(a: Int) -> Builder {
+                    public func set(a: Int) -> Builder {
                         self.a.set(value: a)
                         return self
                     }
                     @discardableResult
-                    func set(b: Double) -> Builder {
+                    public func set(b: Double) -> Builder {
                         self.b.set(value: b)
                         return self
                     }
-                    func build() throws -> Foo {
+                    public func build() throws -> Foo {
                         return try Foo(with: self)
                     }
                 }
@@ -125,17 +125,17 @@ final class AutoBuilderMacroTests: XCTestCase {
                     builder.set(a: a)
                     return builder
                 }
-                class Builder: BuilderProtocol {
-                    let a: BuildableProperty<Int>
-                    required init() {
+                public class Builder: BuilderProtocol {
+                    public let a: BuildableProperty<Int>
+                    public required init() {
                         a = BuildableProperty(name: "a")
                     }
                     @discardableResult
-                    func set(a: Int) -> Builder {
+                    public func set(a: Int) -> Builder {
                         self.a.set(value: a)
                         return self
                     }
-                    func build() throws -> Foo {
+                    public func build() throws -> Foo {
                         return try Foo(with: self)
                     }
                 }
@@ -167,17 +167,17 @@ final class AutoBuilderMacroTests: XCTestCase {
                     builder.set(b: b)
                     return builder
                 }
-                class Builder: BuilderProtocol {
-                    let b: BuildableProperty<Int>
-                    required init() {
+                public class Builder: BuilderProtocol {
+                    public let b: BuildableProperty<Int>
+                    public required init() {
                         b = BuildableProperty(name: "b")
                     }
                     @discardableResult
-                    func set(b: Int) -> Builder {
+                    public func set(b: Int) -> Builder {
                         self.b.set(value: b)
                         return self
                     }
-                    func build() throws -> Foo {
+                    public func build() throws -> Foo {
                         return try Foo(with: self)
                     }
                 }
@@ -207,17 +207,17 @@ final class AutoBuilderMacroTests: XCTestCase {
                     builder.set(a: a)
                     return builder
                 }
-                class Builder: BuilderProtocol {
-                    let a: BuildableProperty<T>
-                    required init() {
+                public class Builder: BuilderProtocol {
+                    public let a: BuildableProperty<T>
+                    public required init() {
                         a = BuildableProperty(name: "a")
                     }
                     @discardableResult
-                    func set(a: T) -> Builder {
+                    public func set(a: T) -> Builder {
                         self.a.set(value: a)
                         return self
                     }
-                    func build() throws -> Foo {
+                    public func build() throws -> Foo {
                         return try Foo(with: self)
                     }
                 }
@@ -289,10 +289,10 @@ final class AutoBuilderMacroTests: XCTestCase {
                     let builder = Builder()
                     return builder
                 }
-                class Builder: BuilderProtocol {
-                    required init() {
+                public class Builder: BuilderProtocol {
+                    public required init() {
                     }
-                    func build() throws -> Foo {
+                    public func build() throws -> Foo {
                         return try Foo(with: self)
                     }
                 }
@@ -321,32 +321,32 @@ final class AutoBuilderMacroTests: XCTestCase {
                     builder.set(a: a)
                     return builder
                 }
-                class Builder: BuilderProtocol {
-                    let a: BuildableArrayProperty<Int>
-                    required init() {
+                public class Builder: BuilderProtocol {
+                    public let a: BuildableArrayProperty<Int>
+                    public required init() {
                         a = BuildableArrayProperty()
                     }
                     @discardableResult
-                    func set(a: [Int]) -> Builder {
+                    public func set(a: [Int]) -> Builder {
                         self.a.set(value: a)
                         return self
                     }
                     @discardableResult
-                    func appendTo(a element: Int) -> Builder {
+                    public func appendTo(a element: Int) -> Builder {
                         self.a.append(element: element)
                         return self
                     }
                     @discardableResult
-                    func appendTo<C>(a collection: C) -> Builder where C: Collection, C.Element == Int {
+                    public func appendTo<C>(a collection: C) -> Builder where C: Collection, C.Element == Int {
                         self.a.append(contentsOf: collection)
                         return self
                     }
                     @discardableResult
-                    func removeAllFromA() -> Builder {
+                    public func removeAllFromA() -> Builder {
                         a.removeAll()
                         return self
                     }
-                    func build() throws -> Foo {
+                    public func build() throws -> Foo {
                         return try Foo(with: self)
                     }
                 }
@@ -375,32 +375,32 @@ final class AutoBuilderMacroTests: XCTestCase {
                     builder.set(a: a)
                     return builder
                 }
-                class Builder: BuilderProtocol {
-                    let a: BuildableDictionaryProperty<String, Double>
-                    required init() {
+                public class Builder: BuilderProtocol {
+                    public let a: BuildableDictionaryProperty<String, Double>
+                    public required init() {
                         a = BuildableDictionaryProperty()
                     }
                     @discardableResult
-                    func set(a: [String: Double]) -> Builder {
+                    public func set(a: [String: Double]) -> Builder {
                         self.a.set(value: a)
                         return self
                     }
                     @discardableResult
-                    func insertIntoA(key: String, value: Double) -> Builder {
+                    public func insertIntoA(key: String, value: Double) -> Builder {
                         a.insert(key: key, value: value)
                         return self
                     }
                     @discardableResult
-                    func mergeIntoA(other: [String: Double], uniquingKeysWith combine: (Double, Double) throws -> Double) rethrows -> Builder {
+                    public func mergeIntoA(other: [String: Double], uniquingKeysWith combine: (Double, Double) throws -> Double) rethrows -> Builder {
                         try a.merge(other: other, uniquingKeysWith: combine)
                         return self
                     }
                     @discardableResult
-                    func removeAllFromA() -> Builder {
+                    public func removeAllFromA() -> Builder {
                         a.removeAll()
                         return self
                     }
-                    func build() throws -> Foo {
+                    public func build() throws -> Foo {
                         return try Foo(with: self)
                     }
                 }
@@ -429,32 +429,32 @@ final class AutoBuilderMacroTests: XCTestCase {
                     builder.set(a: a)
                     return builder
                 }
-                class Builder: BuilderProtocol {
-                    let a: BuildableSetProperty<Int>
-                    required init() {
+                public class Builder: BuilderProtocol {
+                    public let a: BuildableSetProperty<Int>
+                    public required init() {
                         a = BuildableSetProperty()
                     }
                     @discardableResult
-                    func set(a: Set<Int>) -> Builder {
+                    public func set(a: Set<Int>) -> Builder {
                         self.a.set(value: a)
                         return self
                     }
                     @discardableResult
-                    func insertInto(a element: Int) -> Builder {
+                    public func insertInto(a element: Int) -> Builder {
                         a.insert(element: element)
                         return self
                     }
                     @discardableResult
-                    func formUnionWithA(other: Set<Int>) -> Builder {
+                    public func formUnionWithA(other: Set<Int>) -> Builder {
                         a.formUnion(other: other)
                         return self
                     }
                     @discardableResult
-                    func removeAllFromA() -> Builder {
+                    public func removeAllFromA() -> Builder {
                         a.removeAll()
                         return self
                     }
-                    func build() throws -> Foo {
+                    public func build() throws -> Foo {
                         return try Foo(with: self)
                     }
                 }
