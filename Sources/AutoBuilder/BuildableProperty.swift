@@ -1,15 +1,3 @@
-public protocol Buildable {
-    associatedtype Builder
-    init(with builder: Builder) throws
-    func toBuilder() -> Builder
-}
-
-public protocol BuilderProtocol: AnyObject {
-    associatedtype Client
-    init()
-    func build() throws -> Client
-}
-
 public class BuildableProperty<T> {
     private let propertyName: String
     private var value: T?
@@ -35,10 +23,6 @@ public class BuildableProperty<T> {
             throw BuilderError.missingValue(propertyName: propertyName)
         }
     }
-}
-
-public enum BuilderError: Error {
-    case missingValue(propertyName: String)
 }
 
 extension BuildableProperty where T: Buildable, T.Builder: BuilderProtocol, T.Builder.Client == T {
