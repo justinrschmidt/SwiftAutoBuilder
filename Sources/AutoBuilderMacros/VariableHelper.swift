@@ -2,11 +2,8 @@ import SwiftSyntax
 import SwiftSyntaxBuilder
 
 struct VariableHelper {
-    static func getStoredProperties(from members: MemberDeclListSyntax) -> [Property] {
-        let variables: [VariableDeclSyntax] = members.compactMap({ member in
-            guard let variable = member.decl.as(VariableDeclSyntax.self) else { return nil }
-            return isStoredProperty(variable) ? variable : nil
-        })
+    static func getProperties(from members: MemberDeclListSyntax) -> [Property] {
+        let variables: [VariableDeclSyntax] = members.compactMap({ $0.decl.as(VariableDeclSyntax.self) })
         return variables.flatMap(getProperties(from:))
     }
 
@@ -14,6 +11,7 @@ struct VariableHelper {
         guard let bindingKeyword = Property.BindingKeyword(kind: variable.bindingKeyword.tokenKind) else {
             return []
         }
+        let isStored = isStoredProperty(variable)
         let isIVar = !isStatic(variable)
         var typeNode: TypeSyntax?
         var properties: [Property] = []
@@ -26,6 +24,7 @@ struct VariableHelper {
                     typeNode = type
                 }
                 properties.append(Property(
+                    isStoredProperty: isStored,
                     isIVar: isIVar,
                     bindingKeyword: bindingKeyword,
                     identifierPattern: identifierPattern,
@@ -38,6 +37,7 @@ struct VariableHelper {
                     properties += getProperties(
                         from: tuplePattern,
                         type: typeAnnotation.type.cast(TupleTypeSyntax.self),
+                        isStored: isStored,
                         isIVar: isIVar,
                         bindingKeyword: bindingKeyword,
                         isInitialized: patternBinding.initializer != nil
@@ -45,6 +45,7 @@ struct VariableHelper {
                 } else {
                     for identifierPattern in getTupleIdentifiers(from: tuplePattern).reversed() {
                         properties.append(Property(
+                            isStoredProperty: isStored,
                             isIVar: isIVar,
                             bindingKeyword: bindingKeyword,
                             identifierPattern: identifierPattern,
@@ -63,7 +64,7 @@ struct VariableHelper {
         }) ?? false
     }
 
-    private static func getProperties(from tuplePattern: TuplePatternSyntax, type: TupleTypeSyntax, isIVar: Bool, bindingKeyword: Property.BindingKeyword, isInitialized: Bool) -> [Property] {
+    private static func getProperties(from tuplePattern: TuplePatternSyntax, type: TupleTypeSyntax, isStored: Bool, isIVar: Bool, bindingKeyword: Property.BindingKeyword, isInitialized: Bool) -> [Property] {
         var properties: [Property] = []
         var patternIterator = tuplePattern.elements.makeIterator()
         var typeIterator = type.elements.makeIterator()
@@ -71,6 +72,7 @@ struct VariableHelper {
               let typeElement = typeIterator.next() {
             if let identifierPattern = patternElement.pattern.as(IdentifierPatternSyntax.self) {
                 properties.append(Property(
+                    isStoredProperty: isStored,
                     isIVar: isIVar,
                     bindingKeyword: bindingKeyword,
                     identifierPattern: identifierPattern,
@@ -78,7 +80,7 @@ struct VariableHelper {
                     isInitialized: isInitialized))
             } else if let subTuplePattern = patternElement.pattern.as(TuplePatternSyntax.self),
                       let subTupleType = typeElement.type.as(TupleTypeSyntax.self) {
-                properties += getProperties(from: subTuplePattern, type: subTupleType, isIVar: isIVar, bindingKeyword: bindingKeyword, isInitialized: isInitialized)
+                properties += getProperties(from: subTuplePattern, type: subTupleType, isStored: isStored, isIVar: isIVar, bindingKeyword: bindingKeyword, isInitialized: isInitialized)
             }
         }
         return properties

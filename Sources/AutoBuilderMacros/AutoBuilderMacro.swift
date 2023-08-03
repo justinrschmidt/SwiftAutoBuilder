@@ -54,7 +54,7 @@ public struct AutoBuilderMacro: MemberMacro, ConformanceMacro {
                 Diagnostic(node: node.cast(Syntax.self), message: AutoBuilderDiagnostic.invalidTypeForAutoBuilder)
             ])
         }
-        let storedProperties = VariableHelper.getStoredProperties(from: structDecl.memberBlock.members)
+        let storedProperties = VariableHelper.getProperties(from: structDecl.memberBlock.members)
         let impliedTypeVariableProperties = storedProperties.filter({ $0.bindingKeyword == .var && $0.variableType.isImplicit })
         let diagnostics = impliedTypeVariableProperties.map({ property in
             return Diagnostic(
@@ -62,7 +62,7 @@ public struct AutoBuilderMacro: MemberMacro, ConformanceMacro {
                 message: AutoBuilderDiagnostic.impliedVariableType(identifier: property.identifier))
         })
         if diagnostics.isEmpty {
-            let propertiesToBuild = storedProperties.filter({ $0.isIVar && !$0.isInitializedConstant })
+            let propertiesToBuild = storedProperties.filter({ $0.isStoredProperty && $0.isIVar && !$0.isInitializedConstant })
             return .struct(structDecl: structDecl, propertiesToBuild: propertiesToBuild)
         } else {
             return .error(diagnostics: diagnostics)

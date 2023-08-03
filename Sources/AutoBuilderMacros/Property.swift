@@ -1,6 +1,7 @@
 import SwiftSyntax
 
 struct Property: Equatable, CustomStringConvertible {
+    let isStoredProperty: Bool
     let isIVar: Bool
     let bindingKeyword: BindingKeyword
     let identifierPattern: IdentifierPatternSyntax
@@ -41,6 +42,7 @@ struct Property: Equatable, CustomStringConvertible {
     }
 
     var description: String {
+        let stored = isStoredProperty ? "stored" : "computed"
         let iVar = isIVar ? "iVar" : "static"
         let initialized = isInitialized ? "initialized" : "uninitialized"
         let typePrefix = switch variableType {
@@ -49,14 +51,16 @@ struct Property: Equatable, CustomStringConvertible {
         case .dictionary(_, _): "D:"
         case .set(_): "S:"
         }
-        return "(\(iVar), \(identifier), \(typePrefix)\(type), \(initialized))"
+        return "(\(stored), \(iVar), \(identifier), \(typePrefix)\(type), \(initialized))"
     }
 
-    init(isIVar: Bool,
+    init(isStoredProperty: Bool,
+         isIVar: Bool,
          bindingKeyword: BindingKeyword,
          identifierPattern: IdentifierPatternSyntax,
          type: VariableType,
          isInitialized: Bool) {
+        self.isStoredProperty = isStoredProperty
         self.isIVar = isIVar
         self.bindingKeyword = bindingKeyword
         self.identifierPattern = identifierPattern
@@ -65,6 +69,7 @@ struct Property: Equatable, CustomStringConvertible {
     }
 
     static func ==(lhs: Property, rhs: Property) -> Bool {
+        guard lhs.isStoredProperty == rhs.isStoredProperty else { return false }
         guard lhs.isIVar == rhs.isIVar else { return false }
         guard lhs.bindingKeyword == rhs.bindingKeyword else { return false }
         guard lhs.identifier == rhs.identifier else { return false }
