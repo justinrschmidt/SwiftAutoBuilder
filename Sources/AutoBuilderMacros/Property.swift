@@ -25,15 +25,13 @@ struct Property: Equatable, CustomStringConvertible {
         case .implicit:
             return ""
         case let .array(elementType):
-            return "[\(elementType.description.trimmingCharacters(in: .whitespacesAndNewlines))]"
+            return "[\(elementType.trimmedDescription)]"
         case let .dictionary(keyType, valueType):
-            let keyString = keyType.description.trimmingCharacters(in: .whitespacesAndNewlines)
-            let valueString = valueType.description.trimmingCharacters(in: .whitespacesAndNewlines)
-            return "[\(keyString):\(valueString)]"
+            return "[\(keyType.trimmedDescription):\(valueType.trimmedDescription)]"
         case let .set(elementType):
-            return "Set<\(elementType.description.trimmingCharacters(in: .whitespacesAndNewlines))>"
+            return "Set<\(elementType.trimmedDescription)>"
         case let .explicit(typeNode):
-            return typeNode.description.trimmingCharacters(in: .whitespacesAndNewlines)
+            return typeNode.trimmedDescription
         }
     }
 
@@ -141,9 +139,7 @@ struct Property: Equatable, CustomStringConvertible {
         }
 
         private static func typesAreEqual(_ lhs: TypeSyntax, _ rhs: TypeSyntax) -> Bool {
-            let lhsText = lhs.description.trimmingCharacters(in: .whitespacesAndNewlines)
-            let rhsText = rhs.description.trimmingCharacters(in: .whitespacesAndNewlines)
-            return lhsText == rhsText
+            return lhs.trimmedDescription == rhs.trimmedDescription
         }
     }
 }

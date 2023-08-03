@@ -168,10 +168,10 @@ public struct AutoBuilderMacro: MemberMacro, ConformanceMacro {
         let identifierPattern = IdentifierPatternSyntax(identifier: .identifier(property.identifier))
         let typeIdentifier = switch property.variableType {
         case .implicit: ""
-        case let .array(elementType): "BuildableArrayProperty<\(elementType.trimmed.description)>"
-        case let .dictionary(keyType, valueType): "BuildableDictionaryProperty<\(keyType.trimmed.description), \(valueType.trimmed.description)>"
-        case let .set(elementType): "BuildableSetProperty<\(elementType.trimmed.description)>"
-        case let .explicit(typeNode): "BuildableProperty<\(typeNode.trimmed.description)>"
+        case let .array(elementType): "BuildableArrayProperty<\(elementType.trimmedDescription)>"
+        case let .dictionary(keyType, valueType): "BuildableDictionaryProperty<\(keyType.trimmedDescription), \(valueType.trimmedDescription)>"
+        case let .set(elementType): "BuildableSetProperty<\(elementType.trimmedDescription)>"
+        case let .explicit(typeNode): "BuildableProperty<\(typeNode.trimmedDescription)>"
         }
         let typeAnnotation = TypeAnnotationSyntax(
             type: SimpleTypeIdentifierSyntax(
