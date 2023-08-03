@@ -23,17 +23,17 @@ let foo = try Foo.Builder()
 print("\(foo.a), \(foo.b)")
 ```
 
-If a type's properties have `@AutoBuilder` attached to them as well, then you can chain those "nested" builders together:
+If your type's properties are also using `@AutoBuilder`, then you can chain those "nested" builders together:
 
 ```swift
 @AutoBuilder
-  struct Foo {
+struct Foo {
   var a: Int
   var b: Int
 }
 
 @AutoBuilder
-  struct Bar {
+struct Bar {
   var foo: Foo
 }
 
