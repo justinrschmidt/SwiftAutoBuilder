@@ -134,10 +134,6 @@
 ///     // prints "1, 3"
 ///     print("\(foo2.a), \(foo2.b)")
 ///
-/// ********************************************************
-/// * TODO: add more details about builders
-/// ********************************************************
-///
 @attached(conformance)
 @attached(member, names: named(Builder), named(init(with:)), named(toBuilder))
 public macro AutoBuilder() = #externalMacro(module: "AutoBuilderMacros", type: "AutoBuilderMacro")
