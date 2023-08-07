@@ -58,9 +58,9 @@ struct Foo {
 }
 
 let foo = try Foo.Builder()
-  .appendTo(a: 1)
-  .insertInto(b: 2, forKey: "2")
-  .insertInto(c: 3)
+  .appendTo(a: 1) // Append element to Array
+  .insertInto(b: 2, forKey: "2") // Add key-value pair to Dictionary
+  .insertInto(c: 3) // Insert element into Set
   .build()
 
 // prints: "1, 2, 3"
