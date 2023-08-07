@@ -386,7 +386,7 @@ final class AutoBuilderMacroTests: XCTestCase {
                         return self
                     }
                     @discardableResult
-                    public func insertIntoA(key: String, value: Double) -> Builder {
+                    public func insertInto(a value: Double, forKey key: String) -> Builder {
                         a.insert(key: key, value: value)
                         return self
                     }

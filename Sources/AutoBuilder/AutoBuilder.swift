@@ -88,7 +88,7 @@
 /// ## Dictionary Values
 /// When the value of a client's property is a `Dictionary`, the `Builder` class adds the
 /// following methods:
-/// - `insertInto[capitalized_client_property_name](key:value:) -> Builder`:
+/// - `insertInto([client_property_name]:forKey:) -> Builder`:
 /// Inserts a key-value pair into the dictionary in the builder.
 /// - `mergeInto[capitalized_client_property_name](other:uniquingKeysWith:) -> Builder`:
 /// Merges the contents of another dictionary into the dictionary in the builder. Also takes a closure

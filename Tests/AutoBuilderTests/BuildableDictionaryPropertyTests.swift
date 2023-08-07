@@ -11,8 +11,8 @@ class BuildableDictionaryPropertyTests: XCTestCase {
 
     func testInsertElement() throws {
         let foo = try Foo.Builder()
-            .insertIntoA(key: "1", value: 1)
-            .insertIntoA(key: "2", value: 2)
+            .insertInto(a: 1, forKey: "1")
+            .insertInto(a: 2, forKey: "2")
             .build()
         XCTAssertEqual(foo.a, ["1":1, "2":2])
     }

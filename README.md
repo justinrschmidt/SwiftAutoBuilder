@@ -59,7 +59,7 @@ struct Foo {
 
 let foo = try Foo.Builder()
   .appendTo(a: 1)
-  .insertIntoB(key: "2", value: 2)
+  .insertInto(b: 2, forKey: "2")
   .insertInto(c: 3)
   .build()
 

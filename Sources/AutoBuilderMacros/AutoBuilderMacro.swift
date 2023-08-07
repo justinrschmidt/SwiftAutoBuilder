@@ -237,7 +237,7 @@ public struct AutoBuilderMacro: MemberMacro, ConformanceMacro {
         let insertExpression = MemberAccessExprSyntax(
             base: IdentifierExprSyntax(identifier: .identifier(property.identifier)),
             name: TokenSyntax(.identifier("insert"), presence: .present))
-        return try FunctionDeclSyntax("@discardableResult\npublic func insertInto\(raw: property.capitalizedIdentifier)(key: \(keyType.trimmed), value: \(valueType.trimmed)) -> Builder") {
+        return try FunctionDeclSyntax("@discardableResult\npublic func insertInto(\(raw: property.identifier) value: \(valueType.trimmed), forKey key: \(keyType.trimmed)) -> Builder") {
             functionCallExpr(insertExpression, [("key", "key"), ("value", "value")])
             returnSelfStmt()
         }
