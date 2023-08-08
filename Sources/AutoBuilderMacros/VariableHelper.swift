@@ -98,7 +98,7 @@ struct VariableHelper {
         return identifiers
     }
 
-    private static func getVariableType(from typeSyntax: TypeSyntax?) -> Property.VariableType {
+    static func getVariableType(from typeSyntax: TypeSyntax?) -> Property.VariableType {
         guard let typeSyntax = typeSyntax else {
             return .implicit
         }
