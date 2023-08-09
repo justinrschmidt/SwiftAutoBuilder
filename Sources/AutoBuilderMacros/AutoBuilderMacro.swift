@@ -80,38 +80,7 @@ public struct AutoBuilderMacro: MemberMacro, ConformanceMacro {
                 }
             }).cast(DeclSyntax.self),
             try createToBuilderFunction(from: properties, isPublic: isPublic).cast(DeclSyntax.self),
-            try ClassDeclSyntax("public class Builder: BuilderProtocol", membersBuilder: {
-                for property in properties {
-                    createVariableDecl(from: property)
-                }
-                try InitializerDeclSyntax("public required init()", bodyBuilder: {
-                    for property in properties {
-                        createBuildablePropertyInitializer(from: property)
-                    }
-                })
-                for property in properties {
-                    switch property.variableType {
-                    case let .array(elementType):
-                        try createSetValueFunction(from: property)
-                        try createAppendElementFunction(from: property, elementType: elementType)
-                        try createAppendCollectionFunction(from: property, elementType: elementType)
-                        try createRemoveAllFunction(from: property)
-                    case let .dictionary(keyType, valueType):
-                        try createSetValueFunction(from: property)
-                        try createInsertDictionaryFunction(from: property, keyType: keyType, valueType: valueType)
-                        try createMergeDictionaryFunction(from: property, keyType: keyType, valueType: valueType)
-                        try createRemoveAllFunction(from: property)
-                    case let .set(elementType):
-                        try createSetValueFunction(from: property)
-                        try createInsertSetFunction(from: property, elementType: elementType)
-                        try createFormUnionSetFunction(from: property, elementType: elementType)
-                        try createRemoveAllFunction(from: property)
-                    case .implicit, .explicit(_):
-                        try createSetValueFunction(from: property)
-                    }
-                }
-                try createBuildFunction(containerIdentifier: containerIdentifier)
-            }).cast(DeclSyntax.self)
+            try createBuilderClass(from: properties, containerIdentifier: containerIdentifier).cast(DeclSyntax.self)
         ]
     }
 
@@ -158,6 +127,43 @@ public struct AutoBuilderMacro: MemberMacro, ConformanceMacro {
             }
             ReturnStmtSyntax(expression: IdentifierExprSyntax(identifier: .identifier("builder")))
         }
+    }
+
+    // MARK: - Create Builder Class Syntax Tokens
+
+    private static func createBuilderClass(from properties: [Property], named builderClassName: String = "Builder", containerIdentifier: TokenSyntax) throws -> ClassDeclSyntax {
+        return try ClassDeclSyntax("public class \(raw: builderClassName): BuilderProtocol", membersBuilder: {
+            for property in properties {
+                createVariableDecl(from: property)
+            }
+            try InitializerDeclSyntax("public required init()", bodyBuilder: {
+                for property in properties {
+                    createBuildablePropertyInitializer(from: property)
+                }
+            })
+            for property in properties {
+                switch property.variableType {
+                case let .array(elementType):
+                    try createSetValueFunction(from: property)
+                    try createAppendElementFunction(from: property, elementType: elementType)
+                    try createAppendCollectionFunction(from: property, elementType: elementType)
+                    try createRemoveAllFunction(from: property)
+                case let .dictionary(keyType, valueType):
+                    try createSetValueFunction(from: property)
+                    try createInsertDictionaryFunction(from: property, keyType: keyType, valueType: valueType)
+                    try createMergeDictionaryFunction(from: property, keyType: keyType, valueType: valueType)
+                    try createRemoveAllFunction(from: property)
+                case let .set(elementType):
+                    try createSetValueFunction(from: property)
+                    try createInsertSetFunction(from: property, elementType: elementType)
+                    try createFormUnionSetFunction(from: property, elementType: elementType)
+                    try createRemoveAllFunction(from: property)
+                case .implicit, .explicit(_):
+                    try createSetValueFunction(from: property)
+                }
+            }
+            try createBuildFunction(containerIdentifier: containerIdentifier)
+        })
     }
 
     private static func createVariableDecl(from property: Property) -> VariableDeclSyntax {
@@ -295,6 +301,8 @@ public struct AutoBuilderMacro: MemberMacro, ConformanceMacro {
                         }))
         }
     }
+
+    // MARK: - Util
 
     private static func functionCallExpr(_ calledExpression: ExprSyntaxProtocol, _ arguments: [(label: String?, identifier: String)] = []) -> FunctionCallExprSyntax {
         FunctionCallExprSyntax(calledExpression: calledExpression, leftParen: .leftParenToken(), rightParen: .rightParenToken()) {
