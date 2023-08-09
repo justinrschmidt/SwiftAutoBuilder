@@ -7,6 +7,7 @@ import SwiftDiagnostics
 public struct AutoBuilderMacro: MemberMacro, ConformanceMacro {
     private enum DeclAnalysisResponse {
         case `struct`(structDecl: StructDeclSyntax, propertiesToBuild: [Property])
+        case `enum`(enumDecl: EnumDeclSyntax, cases: [EnumUnionCase])
         case error(diagnostics: [Diagnostic])
 
         var isError: Bool {
@@ -23,7 +24,7 @@ public struct AutoBuilderMacro: MemberMacro, ConformanceMacro {
         of node: AttributeSyntax,
         providingConformancesOf declaration: some DeclGroupSyntax,
         in context: some MacroExpansionContext) -> [(TypeSyntax, GenericWhereClauseSyntax?)] {
-            if !analyze(declaration: declaration, of: node).isError {
+            if !analyze(declaration: declaration, of: node).response.isError {
                 return [
                     (SimpleTypeIdentifierSyntax(name: .identifier("Buildable")).cast(TypeSyntax.self), nil)
                 ]
@@ -36,42 +37,62 @@ public struct AutoBuilderMacro: MemberMacro, ConformanceMacro {
         of node: AttributeSyntax,
         providingMembersOf declaration: some DeclGroupSyntax,
         in context: some MacroExpansionContext) throws -> [DeclSyntax] {
-            switch analyze(declaration: declaration, of: node) {
+            let (response, nonFatalDiagnostics) = analyze(declaration: declaration, of: node)
+            nonFatalDiagnostics.forEach(context.diagnose(_:))
+            switch response {
             case let .struct(structDecl, propertiesToBuild):
-                let isPublic = structDecl.modifiers?.contains(where: { modifier in
-                    modifier.name.tokenKind == .keyword(.public) || modifier.name.tokenKind == .keyword(.open)
-                }) ?? false
-                return try createDecls(from: propertiesToBuild, containerIdentifier: structDecl.identifier, isPublic: isPublic)
+                let isPublic = hasPublic(modifiers: structDecl.modifiers)
+                return try createStructDecls(from: propertiesToBuild, containerIdentifier: structDecl.identifier, isPublic: isPublic)
+            case let .enum(enumDecl, cases):
+                let isPublic = hasPublic(modifiers: enumDecl.modifiers)
+                return try createEnumDecls(from: cases, containerIdentifier: enumDecl.identifier, isPublic: isPublic)
             case let .error(diagnostics):
                 diagnostics.forEach(context.diagnose(_:))
                 return []
             }
         }
 
-    private static func analyze(declaration: some DeclGroupSyntax, of node: AttributeSyntax) -> DeclAnalysisResponse {
-        guard let structDecl = declaration.as(StructDeclSyntax.self) else {
-            return .error(diagnostics: [
-                Diagnostic(node: node.cast(Syntax.self), message: AutoBuilderDiagnostic.invalidTypeForAutoBuilder)
-            ])
-        }
-        let storedProperties = VariableHelper.getProperties(from: structDecl.memberBlock.members)
-        let impliedTypeVariableProperties = storedProperties.filter({ $0.bindingKeyword == .var && $0.variableType.isImplicit })
-        let diagnostics = impliedTypeVariableProperties.map({ property in
-            return Diagnostic(
-                node: property.identifierPattern.cast(Syntax.self),
-                message: AutoBuilderDiagnostic.impliedVariableType(identifier: property.identifier))
-        })
-        if diagnostics.isEmpty {
-            let propertiesToBuild = storedProperties.filter({ $0.isStoredProperty && $0.isIVar && !$0.isInitializedConstant })
-            return .struct(structDecl: structDecl, propertiesToBuild: propertiesToBuild)
+    private static func analyze(declaration: some DeclGroupSyntax, of node: AttributeSyntax) -> (response: DeclAnalysisResponse, nonErrorDiagnostics: [Diagnostic]) {
+        if let structDecl = declaration.as(StructDeclSyntax.self) {
+            let storedProperties = VariableHelper.getProperties(from: structDecl.memberBlock.members)
+            let impliedTypeVariableProperties = storedProperties.filter({ $0.bindingKeyword == .var && $0.variableType.isImplicit })
+            let diagnostics = impliedTypeVariableProperties.map({ property in
+                return Diagnostic(
+                    node: property.identifierPattern.cast(Syntax.self),
+                    message: AutoBuilderDiagnostic.impliedVariableType(identifier: property.identifier))
+            })
+            if diagnostics.isEmpty {
+                let propertiesToBuild = storedProperties.filter({ $0.isStoredProperty && $0.isIVar && !$0.isInitializedConstant })
+                return (.struct(structDecl: structDecl, propertiesToBuild: propertiesToBuild), [])
+            } else {
+                return (.error(diagnostics: diagnostics), [])
+            }
+        } else if let enumDecl = declaration.as(EnumDeclSyntax.self) {
+            let cases = EnumHelper.getCases(from: enumDecl.memberBlock.members)
+            var diagnostics: [Diagnostic] = []
+            let hasAssociatedValues = cases.contains(where: { !$0.associatedValues.isEmpty })
+            if !hasAssociatedValues {
+                diagnostics.append(Diagnostic(
+                    node: enumDecl.cast(Syntax.self),
+                    message: AutoBuilderDiagnostic.noAssociatedValues(enumName: enumDecl.identifier.trimmedDescription)))
+            }
+            return (.enum(enumDecl: enumDecl, cases: cases), diagnostics)
         } else {
-            return .error(diagnostics: diagnostics)
+            return (.error(diagnostics: [
+                Diagnostic(node: node.cast(Syntax.self), message: AutoBuilderDiagnostic.invalidTypeForAutoBuilder)
+            ]), [])
         }
     }
 
-    // MARK: - Create Syntax Tokens
+    private static func hasPublic(modifiers: ModifierListSyntax?) -> Bool {
+        return modifiers?.contains(where: { modifier in
+            modifier.name.tokenKind == .keyword(.public) || modifier.name.tokenKind == .keyword(.open)
+        }) ?? false
+    }
 
-    private static func createDecls(from properties: [Property], containerIdentifier: TokenSyntax, isPublic: Bool) throws -> [DeclSyntax] {
+    // MARK: - Create Struct Syntax Tokens
+
+    private static func createStructDecls(from properties: [Property], containerIdentifier: TokenSyntax, isPublic: Bool) throws -> [DeclSyntax] {
         let accessModifier = isPublic ? "public " : ""
         return [
             try InitializerDeclSyntax("\(raw: accessModifier)init(with builder: Builder) throws", bodyBuilder: {
@@ -126,6 +147,68 @@ public struct AutoBuilderMacro: MemberMacro, ConformanceMacro {
                     }
             }
             ReturnStmtSyntax(expression: IdentifierExprSyntax(identifier: .identifier("builder")))
+        }
+    }
+
+    // MARK: - Create Enum Syntax Tokens
+
+    private static func createEnumDecls(from cases: [EnumUnionCase], containerIdentifier: TokenSyntax, isPublic: Bool) throws -> [DeclSyntax] {
+        let accessModifier = isPublic ? "public " : ""
+        return [
+            try InitializerDeclSyntax("\(raw: accessModifier)init(with builder: Builder) throws", bodyBuilder: {
+                CodeBlockItemSyntax(item: CodeBlockItemSyntax.Item(SequenceExprSyntax(elementsBuilder: {
+                    IdentifierExprSyntax(identifier: .keyword(.`self`))
+                    AssignmentExprSyntax()
+                    functionCallExpr(MemberAccessExprSyntax(
+                        base: IdentifierExprSyntax(identifier: .identifier("builder")),
+                        name: .identifier("build")))
+                })))
+            }).cast(DeclSyntax.self),
+            try createEnumToBuilderFunction(from: cases, isPublic: isPublic).cast(DeclSyntax.self)
+        ]
+    }
+
+    private static func createEnumToBuilderFunction(from cases: [EnumUnionCase], isPublic: Bool) throws -> FunctionDeclSyntax {
+        let accessModifier = isPublic ? "public " : ""
+        return try FunctionDeclSyntax("\(raw: accessModifier)func toBuilder() -> Builder") {
+            VariableDeclSyntax(
+                .let,
+                name: IdentifierPatternSyntax(identifier: .identifier("builder")).cast(PatternSyntax.self),
+                initializer: InitializerClauseSyntax(
+                    value: functionCallExpr(IdentifierExprSyntax(identifier: .identifier("Builder")))))
+            try SwitchExprSyntax("switch self") {
+                for enumCase in cases {
+                    createEnumToBuilderCase(for: enumCase)
+                }
+            }
+            ReturnStmtSyntax(expression: IdentifierExprSyntax(identifier: .identifier("builder")))
+        }
+    }
+
+    private static func createEnumToBuilderCase(for enumCase: EnumUnionCase) -> SwitchCaseSyntax {
+        let valueIdentifiers = enumCase.associatedValues.enumerated().map({ (index, property) in
+            if property.identifier.isEmpty {
+                return "i\(index)"
+            } else {
+                return property.identifier
+            }
+        })
+        let caseBuilderIdentifier = TokenSyntax.identifier("\(enumCase.caseIdentifier)Builder")
+        return SwitchCaseSyntax("case let .\(raw: enumCase.caseIdentifier)(\(raw: valueIdentifiers.joined(separator: ", "))):") {
+            VariableDeclSyntax(
+                .let,
+                name: IdentifierPatternSyntax(identifier: caseBuilderIdentifier).cast(PatternSyntax.self),
+                initializer: InitializerClauseSyntax(
+                    value: MemberAccessExprSyntax(
+                        base: IdentifierExprSyntax(identifier: .identifier("builder")),
+                        name: .identifier("\(enumCase.caseIdentifier)"))))
+            for property in enumCase.associatedValues {
+                functionCallExpr(MemberAccessExprSyntax(
+                    base: IdentifierExprSyntax(identifier: caseBuilderIdentifier),
+                    name: .identifier("set")), [
+                        (property.identifier, property.identifier)
+                    ])
+            }
         }
     }
 
