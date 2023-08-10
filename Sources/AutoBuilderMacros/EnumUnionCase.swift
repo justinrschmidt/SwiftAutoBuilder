@@ -8,6 +8,14 @@ struct EnumUnionCase: Equatable, CustomStringConvertible {
         return caseIdentifierPattern.identifier.text
     }
 
+    var capitalizedCaseIdentifier: String {
+        let text = caseIdentifier
+        guard !text.isEmpty else {
+            return ""
+        }
+        return text.first!.uppercased() + text[text.index(after: text.startIndex)...]
+    }
+
     var description: String {
         return "(\(caseIdentifier), \(associatedValues)"
     }

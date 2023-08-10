@@ -39,6 +39,43 @@ final class AutoBuilderMacroEnumTests: XCTestCase {
                     }
                     return builder
                 }
+                public class Builder: BuilderProtocol {
+                    public class One: BuilderProtocol {
+                        public let a: BuildableProperty<Int>
+                        public required init() {
+                            a = BuildableProperty(name: "a")
+                        }
+                        @discardableResult
+                        public func set(a: Int) -> One {
+                            self.a.set(value: a)
+                            return self
+                        }
+                        public func build() throws -> Foo {
+                            return try .one(a: a.build())
+                        }
+                    }
+                    public class Two: BuilderProtocol {
+                        public let b: BuildableProperty<Double>
+                        public let c: BuildableProperty<String>
+                        public required init() {
+                            b = BuildableProperty(name: "b")
+                            c = BuildableProperty(name: "c")
+                        }
+                        @discardableResult
+                        public func set(b: Double) -> Two {
+                            self.b.set(value: b)
+                            return self
+                        }
+                        @discardableResult
+                        public func set(c: String) -> Two {
+                            self.c.set(value: c)
+                            return self
+                        }
+                        public func build() throws -> Foo {
+                            return try .two(b: b.build(), c: c.build())
+                        }
+                    }
+                }
             }
             extension Foo: Buildable {
             }
