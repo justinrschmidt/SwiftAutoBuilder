@@ -75,6 +75,10 @@ final class AutoBuilderMacroEnumTests: XCTestCase {
                             return try .two(b: b.build(), c: c.build())
                         }
                     }
+                    private enum BuilderCases {
+                        case one(One)
+                        case two(Two)
+                    }
                 }
             }
             extension Foo: Buildable {

@@ -239,6 +239,7 @@ public struct AutoBuilderMacro: MemberMacro, ConformanceMacro {
                     containerIdentifier: clientIdentifier,
                     buildFunction: createEnumBuildFunction(clientIdentifier: clientIdentifier, enumCase: enumCase))
             }
+            try createBuilderCasesEnum(from: cases)
         }
     }
 
@@ -258,6 +259,20 @@ public struct AutoBuilderMacro: MemberMacro, ConformanceMacro {
                                         name: .identifier("build"))))
                             }
                         }))
+        }
+    }
+
+    private static func createBuilderCasesEnum(from cases: [EnumUnionCase]) throws -> EnumDeclSyntax {
+        return try EnumDeclSyntax("private enum BuilderCases") {
+            for enumCase in cases {
+                EnumCaseDeclSyntax {
+                    EnumCaseElementSyntax(
+                        identifier: enumCase.caseIdentifierPattern.identifier,
+                        associatedValue: EnumCaseParameterClauseSyntax(parameterList: EnumCaseParameterListSyntax(itemsBuilder: {
+                            EnumCaseParameterSyntax(type: SimpleTypeIdentifierSyntax(name: .identifier(enumCase.capitalizedCaseIdentifier)))
+                        })))
+                }
+            }
         }
     }
 
