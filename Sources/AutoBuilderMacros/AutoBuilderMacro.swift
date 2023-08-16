@@ -69,6 +69,13 @@ public struct AutoBuilderMacro: MemberMacro, ConformanceMacro {
             }
         } else if let enumDecl = declaration.as(EnumDeclSyntax.self) {
             let cases = EnumHelper.getCases(from: enumDecl.memberBlock.members)
+            if cases.isEmpty {
+                return (.error(diagnostics: [
+                    Diagnostic(
+                        node: enumDecl.cast(Syntax.self),
+                        message: AutoBuilderDiagnostic.enumWithNoCases(enumName: enumDecl.identifier.trimmedDescription))
+                ]), [])
+            }
             var diagnostics: [Diagnostic] = []
             let hasAssociatedValues = cases.contains(where: { !$0.associatedValues.isEmpty })
             if !hasAssociatedValues {

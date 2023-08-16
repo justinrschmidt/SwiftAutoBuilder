@@ -9,6 +9,27 @@ final class AutoBuilderMacroEnumTests: XCTestCase {
         "AutoBuilder":AutoBuilderMacro.self
     ]
 
+        func testEnumWithNoCases() {
+            assertMacroExpansion(
+                """
+                @AutoBuilder
+                enum Foo {
+                }
+                """,
+                expandedSource:
+                """
+                enum Foo {
+                }
+                """, diagnostics: [
+                    DiagnosticSpec(
+                        id: MessageID(domain: AutoBuilderDiagnostic.domain, id: "EnumWithNoCases"),
+                        message: "Foo (aka: Never) does not have any cases and cannot be instantiated.",
+                        line: 1,
+                        column: 1,
+                        severity: .error)
+                ], macros: testMacros)
+        }
+    
     func testEnumWithCases() {
         assertMacroExpansion(
             """
