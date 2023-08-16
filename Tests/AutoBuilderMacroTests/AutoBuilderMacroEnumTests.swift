@@ -40,6 +40,63 @@ final class AutoBuilderMacroEnumTests: XCTestCase {
                     return builder
                 }
                 public class Builder: BuilderProtocol {
+                    private var currentCase: BuilderCases?
+                    public required init() {
+                        currentCase = nil
+                    }
+                    public var one: One {
+                        get {
+                            switch self {
+                            case let .some(.one(builder)):
+                                return builder
+                            default:
+                                let builder = One()
+                                currentCase = .one(builder)
+                                return builder
+                            }
+                        }
+                        set {
+                            self = .one(newValue)
+                        }
+                    }
+                    public var two: Two {
+                        get {
+                            switch self {
+                            case let .some(.two(builder)):
+                                return builder
+                            default:
+                                let builder = Two()
+                                currentCase = .two(builder)
+                                return builder
+                            }
+                        }
+                        set {
+                            self = .two(newValue)
+                        }
+                    }
+                    public func set(value: Foo) {
+                        switch value {
+                        case let .one(a):
+                            let builder = One()
+                            builder.set(a: a)
+                            currentCase = .one(builder)
+                        case let .two(b, c):
+                            let builder = Two()
+                            builder.set(b: b)
+                            builder.set(c: c)
+                            currentCase = .two(builder)
+                        }
+                    }
+                    public func build() throws -> Foo {
+                        switch currentCase {
+                        case let .some(.one(builder)):
+                            return try builder.build()
+                        case let .some(.two(builder)):
+                            return try builder.build()
+                        case .none:
+                            throw BuilderError.noEnumCaseSet
+                        }
+                    }
                     public class One: BuilderProtocol {
                         public let a: BuildableProperty<Int>
                         public required init() {

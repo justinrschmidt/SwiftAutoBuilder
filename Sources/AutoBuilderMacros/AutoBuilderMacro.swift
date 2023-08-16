@@ -232,18 +232,101 @@ public struct AutoBuilderMacro: MemberMacro, ConformanceMacro {
 
     private static func createEnumBuilderClass(from cases: [EnumUnionCase], clientIdentifier: TokenSyntax) throws -> ClassDeclSyntax {
         return try ClassDeclSyntax("public class Builder: BuilderProtocol") {
+            VariableDeclSyntax(
+                modifiers: ModifierListSyntax(arrayLiteral: DeclModifierSyntax(name: .keyword(.private))),
+                .var,
+                name: IdentifierPatternSyntax(identifier: .identifier("currentCase")).cast(PatternSyntax.self),
+                type: TypeAnnotationSyntax(type: OptionalTypeSyntax(wrappedType: SimpleTypeIdentifierSyntax(name: .identifier("BuilderCases")))))
+            try InitializerDeclSyntax("public required init()") {
+                CodeBlockItemSyntax(stringLiteral: "currentCase = nil")
+            }
+            for enumCase in cases {
+                try createCaseBuilderComputedProperty(from: enumCase)
+            }
+            try createEnumSetValueFunction(from: cases, clientIdentifier: clientIdentifier)
+            try createEnumBuildFunction(from: cases, clientIdentifier: clientIdentifier)
             for enumCase in cases {
                 try createBuilderClass(
                     from: enumCase.associatedValues,
                     named: enumCase.capitalizedCaseIdentifier,
                     containerIdentifier: clientIdentifier,
-                    buildFunction: createEnumBuildFunction(clientIdentifier: clientIdentifier, enumCase: enumCase))
+                    buildFunction: createEnumCaseBuildFunction(from: enumCase, clientIdentifier: clientIdentifier))
             }
             try createBuilderCasesEnum(from: cases)
         }
     }
 
-    private static func createEnumBuildFunction(clientIdentifier: TokenSyntax, enumCase: EnumUnionCase) throws -> FunctionDeclSyntax {
+    private static func createCaseBuilderComputedProperty(from enumCase: EnumUnionCase) throws -> VariableDeclSyntax {
+        return VariableDeclSyntax(
+            modifiers: ModifierListSyntax(arrayLiteral: DeclModifierSyntax(name: .keyword(.public))),
+            bindingKeyword: .keyword(.var),
+            bindings: try PatternBindingListSyntax(itemsBuilder: {
+                PatternBindingSyntax(
+                    pattern: enumCase.caseIdentifierPattern,
+                    typeAnnotation: TypeAnnotationSyntax(type: SimpleTypeIdentifierSyntax(name: .identifier(enumCase.capitalizedCaseIdentifier))),
+                    accessor: try .accessors(AccessorBlockSyntax(accessors: AccessorListSyntax(itemsBuilder: {
+                        try createCaseBuilderGetter(from: enumCase)
+                        AccessorDeclSyntax(accessorKind: .keyword(.set)) {
+                            CodeBlockItemSyntax(item: CodeBlockItemSyntax.Item(SequenceExprSyntax(elementsBuilder: {
+                                IdentifierExprSyntax(identifier: .keyword(.`self`))
+                                AssignmentExprSyntax()
+                                functionCallExpr(
+                                    MemberAccessExprSyntax(name: .identifier(enumCase.caseIdentifier)),
+                                    [(nil, "newValue")])
+                            })))
+                        }
+                    }))))
+            }))
+    }
+
+    private static func createCaseBuilderGetter(from enumCase: EnumUnionCase) throws -> AccessorDeclSyntax {
+        return try AccessorDeclSyntax(accessorKind: .keyword(.get)) {
+            try SwitchExprSyntax("switch self") {
+                SwitchCaseSyntax("case let .some(.\(raw: enumCase.caseIdentifier)(builder)):") {
+                    CodeBlockItemSyntax(stringLiteral: "return builder")
+                }
+                SwitchCaseSyntax("default:") {
+                    CodeBlockItemSyntax(stringLiteral: "let builder = \(enumCase.capitalizedCaseIdentifier)()")
+                    CodeBlockItemSyntax(stringLiteral: "currentCase = .\(enumCase.caseIdentifier)(builder)")
+                    CodeBlockItemSyntax(stringLiteral: "return builder")
+                }
+            }
+        }
+    }
+
+    private static func createEnumSetValueFunction(from cases: [EnumUnionCase], clientIdentifier: TokenSyntax) throws -> FunctionDeclSyntax {
+        return try FunctionDeclSyntax("public func set(value: \(clientIdentifier.trimmed))") {
+            try SwitchExprSyntax("switch value") {
+                for enumCase in cases {
+                    let valueIDs = enumCase.associatedValues.map({ $0.identifier })
+                    SwitchCaseSyntax("case let .\(raw: enumCase.caseIdentifier)(\(raw: valueIDs.joined(separator: ", "))):") {
+                        CodeBlockItemSyntax(stringLiteral: "let builder = \(enumCase.capitalizedCaseIdentifier)()")
+                        for value in enumCase.associatedValues {
+                            CodeBlockItemSyntax(stringLiteral: "builder.set(\(value.identifier): \(value.identifier))")
+                        }
+                        CodeBlockItemSyntax(stringLiteral: "currentCase = .\(enumCase.caseIdentifier)(builder)")
+                    }
+                }
+            }
+        }
+    }
+
+    private static func createEnumBuildFunction(from cases: [EnumUnionCase], clientIdentifier: TokenSyntax) throws -> FunctionDeclSyntax {
+        return try FunctionDeclSyntax("public func build() throws -> \(clientIdentifier.trimmed)") {
+            try SwitchExprSyntax("switch currentCase") {
+                for enumCase in cases {
+                    SwitchCaseSyntax("case let .some(.\(raw: enumCase.caseIdentifier)(builder)):") {
+                        CodeBlockItemSyntax(stringLiteral: "return try builder.build()")
+                    }
+                }
+                SwitchCaseSyntax("case .none:") {
+                    CodeBlockItemSyntax(stringLiteral: "throw BuilderError.noEnumCaseSet")
+                }
+            }
+        }
+    }
+
+    private static func createEnumCaseBuildFunction(from enumCase: EnumUnionCase, clientIdentifier: TokenSyntax) throws -> FunctionDeclSyntax {
         return try FunctionDeclSyntax("public func build() throws -> \(clientIdentifier.trimmed)") {
             ReturnStmtSyntax(
                 expression: TryExprSyntax(
