@@ -198,28 +198,25 @@ public struct AutoBuilderMacro: MemberMacro, ConformanceMacro {
     }
 
     private static func createEnumToBuilderCase(for enumCase: EnumUnionCase) -> SwitchCaseSyntax {
-        let valueIdentifiers = enumCase.associatedValues.enumerated().map({ (index, property) in
-            if property.identifier.isEmpty {
-                return "i\(index)"
-            } else {
-                return property.identifier
-            }
-        })
         let caseBuilderIdentifier = TokenSyntax.identifier("\(enumCase.caseIdentifier)Builder")
-        return SwitchCaseSyntax("case let .\(raw: enumCase.caseIdentifier)(\(raw: valueIdentifiers.joined(separator: ", "))):") {
-            VariableDeclSyntax(
-                .let,
-                name: IdentifierPatternSyntax(identifier: caseBuilderIdentifier).cast(PatternSyntax.self),
-                initializer: InitializerClauseSyntax(
-                    value: MemberAccessExprSyntax(
-                        base: IdentifierExprSyntax(identifier: .identifier("builder")),
-                        name: .identifier("\(enumCase.caseIdentifier)"))))
-            for property in enumCase.associatedValues {
-                functionCallExpr(MemberAccessExprSyntax(
-                    base: IdentifierExprSyntax(identifier: caseBuilderIdentifier),
-                    name: .identifier("set")), [
-                        (property.identifier, property.identifier)
-                    ])
+        let caseDeclaration: String
+        if enumCase.associatedValues.isEmpty {
+            caseDeclaration = "case .\(enumCase.caseIdentifier):"
+        } else {
+            caseDeclaration = "case let .\(enumCase.caseIdentifier)(\(enumCase.valueIdentifiers.joined(separator: ", "))):"
+        }
+        return SwitchCaseSyntax("\(raw: caseDeclaration)") {
+            if enumCase.associatedValues.isEmpty {
+                CodeBlockItemSyntax(stringLiteral: "_ = builder.\(enumCase.caseIdentifier)")
+            } else {
+                CodeBlockItemSyntax(stringLiteral: "let \(caseBuilderIdentifier) = builder.\(enumCase.caseIdentifier)")
+                for property in enumCase.associatedValues {
+                    functionCallExpr(MemberAccessExprSyntax(
+                        base: IdentifierExprSyntax(identifier: caseBuilderIdentifier),
+                        name: .identifier("set")), [
+                            (property.identifier, property.identifier)
+                        ])
+                }
             }
         }
     }
@@ -292,8 +289,12 @@ public struct AutoBuilderMacro: MemberMacro, ConformanceMacro {
         return try FunctionDeclSyntax("public func set(value: \(clientIdentifier.trimmed))") {
             try SwitchExprSyntax("switch value") {
                 for enumCase in cases {
-                    let valueIDs = enumCase.associatedValues.map({ $0.identifier })
-                    SwitchCaseSyntax("case let .\(raw: enumCase.caseIdentifier)(\(raw: valueIDs.joined(separator: ", "))):") {
+                    let caseDeclaration = if enumCase.associatedValues.isEmpty {
+                        "case .\(enumCase.caseIdentifier):"
+                    } else {
+                        "case let .\(enumCase.caseIdentifier)(\(enumCase.valueIdentifiers.joined(separator: ", "))):"
+                    }
+                    SwitchCaseSyntax("\(raw: caseDeclaration)") {
                         CodeBlockItemSyntax(stringLiteral: "let builder = \(enumCase.capitalizedCaseIdentifier)()")
                         for value in enumCase.associatedValues {
                             CodeBlockItemSyntax(stringLiteral: "builder.set(\(value.identifier): \(value.identifier))")
@@ -322,20 +323,24 @@ public struct AutoBuilderMacro: MemberMacro, ConformanceMacro {
 
     private static func createEnumCaseBuildFunction(from enumCase: EnumUnionCase, clientIdentifier: TokenSyntax) throws -> FunctionDeclSyntax {
         return try FunctionDeclSyntax("public func build() throws -> \(clientIdentifier.trimmed)") {
-            ReturnStmtSyntax(
-                expression: TryExprSyntax(
-                    expression: FunctionCallExprSyntax(
-                        calledExpression: MemberAccessExprSyntax(name: enumCase.caseIdentifierPattern.identifier),
-                        leftParen: .leftParenToken(),
-                        rightParen: .rightParenToken()) {
-                            for property in enumCase.associatedValues {
-                                TupleExprElementSyntax(
-                                    label: property.identifier,
-                                    expression: functionCallExpr(MemberAccessExprSyntax(
-                                        base: IdentifierExprSyntax(identifier: .identifier(property.identifier)),
-                                        name: .identifier("build"))))
-                            }
-                        }))
+            if enumCase.associatedValues.isEmpty {
+                CodeBlockItemSyntax(stringLiteral: "return .\(enumCase.caseIdentifier)")
+            } else {
+                ReturnStmtSyntax(
+                    expression: TryExprSyntax(
+                        expression: FunctionCallExprSyntax(
+                            calledExpression: MemberAccessExprSyntax(name: enumCase.caseIdentifierPattern.identifier),
+                            leftParen: .leftParenToken(),
+                            rightParen: .rightParenToken()) {
+                                for property in enumCase.associatedValues {
+                                    TupleExprElementSyntax(
+                                        label: property.identifier,
+                                        expression: functionCallExpr(MemberAccessExprSyntax(
+                                            base: IdentifierExprSyntax(identifier: .identifier(property.identifier)),
+                                            name: .identifier("build"))))
+                                }
+                            }))
+            }
         }
     }
 

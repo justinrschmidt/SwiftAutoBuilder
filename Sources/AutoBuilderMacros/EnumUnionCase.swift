@@ -16,6 +16,16 @@ struct EnumUnionCase: Equatable, CustomStringConvertible {
         return text.first!.uppercased() + text[text.index(after: text.startIndex)...]
     }
 
+    var valueIdentifiers: [String] {
+        return associatedValues.enumerated().map({ (index, property) in
+            if property.identifier.isEmpty {
+                return "i\(index)"
+            } else {
+                return property.identifier
+            }
+        })
+    }
+
     var description: String {
         return "(\(caseIdentifier), \(associatedValues)"
     }
