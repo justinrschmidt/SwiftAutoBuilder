@@ -24,7 +24,7 @@ final class AutoBuilderMacroEnumTests: XCTestCase {
                 case one(a: Int)
                 case two(b: Double, c: String)
                 init(with builder: Builder) throws {
-                    self = builder.build()
+                    self = try builder.build()
                 }
                 func toBuilder() -> Builder {
                     let builder = Builder()
@@ -46,7 +46,7 @@ final class AutoBuilderMacroEnumTests: XCTestCase {
                     }
                     public var one: One {
                         get {
-                            switch self {
+                            switch currentCase {
                             case let .some(.one(builder)):
                                 return builder
                             default:
@@ -56,12 +56,12 @@ final class AutoBuilderMacroEnumTests: XCTestCase {
                             }
                         }
                         set {
-                            self = .one(newValue)
+                            currentCase = .one(newValue)
                         }
                     }
                     public var two: Two {
                         get {
-                            switch self {
+                            switch currentCase {
                             case let .some(.two(builder)):
                                 return builder
                             default:
@@ -71,7 +71,7 @@ final class AutoBuilderMacroEnumTests: XCTestCase {
                             }
                         }
                         set {
-                            self = .two(newValue)
+                            currentCase = .two(newValue)
                         }
                     }
                     public func set(value: Foo) {

@@ -173,13 +173,7 @@ public struct AutoBuilderMacro: MemberMacro, ConformanceMacro {
         let accessModifier = isPublic ? "public " : ""
         return [
             try InitializerDeclSyntax("\(raw: accessModifier)init(with builder: Builder) throws", bodyBuilder: {
-                CodeBlockItemSyntax(item: CodeBlockItemSyntax.Item(SequenceExprSyntax(elementsBuilder: {
-                    IdentifierExprSyntax(identifier: .keyword(.`self`))
-                    AssignmentExprSyntax()
-                    functionCallExpr(MemberAccessExprSyntax(
-                        base: IdentifierExprSyntax(identifier: .identifier("builder")),
-                        name: .identifier("build")))
-                })))
+                CodeBlockItemSyntax(stringLiteral: "self = try builder.build()")
             }).cast(DeclSyntax.self),
             try createEnumToBuilderFunction(from: cases, isPublic: isPublic).cast(DeclSyntax.self),
             try createEnumBuilderClass(from: cases, clientIdentifier: clientIdentifier).cast(DeclSyntax.self)
@@ -268,7 +262,7 @@ public struct AutoBuilderMacro: MemberMacro, ConformanceMacro {
                         try createCaseBuilderGetter(from: enumCase)
                         AccessorDeclSyntax(accessorKind: .keyword(.set)) {
                             CodeBlockItemSyntax(item: CodeBlockItemSyntax.Item(SequenceExprSyntax(elementsBuilder: {
-                                IdentifierExprSyntax(identifier: .keyword(.`self`))
+                                IdentifierExprSyntax(identifier: .identifier("currentCase"))
                                 AssignmentExprSyntax()
                                 functionCallExpr(
                                     MemberAccessExprSyntax(name: .identifier(enumCase.caseIdentifier)),
@@ -281,7 +275,7 @@ public struct AutoBuilderMacro: MemberMacro, ConformanceMacro {
 
     private static func createCaseBuilderGetter(from enumCase: EnumUnionCase) throws -> AccessorDeclSyntax {
         return try AccessorDeclSyntax(accessorKind: .keyword(.get)) {
-            try SwitchExprSyntax("switch self") {
+            try SwitchExprSyntax("switch currentCase") {
                 SwitchCaseSyntax("case let .some(.\(raw: enumCase.caseIdentifier)(builder)):") {
                     CodeBlockItemSyntax(stringLiteral: "return builder")
                 }
