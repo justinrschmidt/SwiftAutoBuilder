@@ -42,7 +42,7 @@ final class EnumHelperTests: XCTestCase {
     func testGetCases_noIdentifier() {
         assertGetCases("case one(Int)", [
             ("one", [
-                ("", .explicit(typeNode: "Int"), .uninitialized)
+                (0, .explicit(typeNode: "Int"), .uninitialized)
             ])
         ])
     }
@@ -50,9 +50,9 @@ final class EnumHelperTests: XCTestCase {
     func testGetCases_valuesListInline_noIdentifiers() {
         assertGetCases("case one(Int, Double, String)", [
             ("one", [
-                ("", .explicit(typeNode: "Int"), .uninitialized),
-                ("", .explicit(typeNode: "Double"), .uninitialized),
-                ("", .explicit(typeNode: "String"), .uninitialized)
+                (0, .explicit(typeNode: "Int"), .uninitialized),
+                (1, .explicit(typeNode: "Double"), .uninitialized),
+                (2, .explicit(typeNode: "String"), .uninitialized)
             ])
         ])
     }
@@ -60,7 +60,7 @@ final class EnumHelperTests: XCTestCase {
     func testGetCases_mixedIdentifiers() {
         assertGetCases("case one(Int, b: Double)", [
             ("one", [
-                ("", .explicit(typeNode: "Int"), .uninitialized),
+                (0, .explicit(typeNode: "Int"), .uninitialized),
                 ("b", .explicit(typeNode: "Double"), .uninitialized)
             ])
         ])
@@ -77,7 +77,7 @@ final class EnumHelperTests: XCTestCase {
     func testGetCases_init_noIdentifier() {
         assertGetCases("case one(Int = 1)", [
             ("one", [
-                ("", .explicit(typeNode: "Int"), .initialized)
+                (0, .explicit(typeNode: "Int"), .initialized)
             ])
         ])
     }
@@ -89,7 +89,7 @@ final class EnumHelperTests: XCTestCase {
         _ cases: [(
             caseIdentifier: IdentifierPatternSyntax,
             associatedValues: [(
-                identifier: IdentifierPatternSyntax,
+                label: AssociatedValue.Label,
                 type: VariableTypeDescriptor,
                 initialized: InitializedStatus
             )]
@@ -105,7 +105,7 @@ final class EnumHelperTests: XCTestCase {
         _ cases: [(
             caseIdentifier: IdentifierPatternSyntax,
             associatedValues: [(
-                identifier: IdentifierPatternSyntax,
+                label: AssociatedValue.Label,
                 type: VariableTypeDescriptor,
                 initialized: InitializedStatus
             )]
@@ -117,12 +117,9 @@ final class EnumHelperTests: XCTestCase {
         let actualCases = EnumHelper.getCases(from: memberList)
         let expectedCases = cases.map({ EnumUnionCase(
             caseIdentifierPattern: $0.caseIdentifier,
-            associatedValues: $0.associatedValues.map({ Property(
-                isStoredProperty: true,
-                isIVar: true,
-                bindingKeyword: .var,
-                identifierPattern: $0.identifier,
-                type: $0.type.variableType,
+            associatedValues: $0.associatedValues.map({ AssociatedValue(
+                label: $0.label,
+                variableType: $0.type.variableType,
                 isInitialized: $0.initialized.isInitialized)
             }))
         })
@@ -142,5 +139,17 @@ extension EnumCaseDeclSyntax {
     init(declString: String) {
         var parser = Parser(declString)
         self.init(DeclSyntax.parse(from: &parser))!
+    }
+}
+
+extension AssociatedValue.Label: ExpressibleByStringLiteral {
+    public init(stringLiteral value: StringLiteralType) {
+        self = .identifierPattern(IdentifierPatternSyntax(identifier: .identifier(value)))
+    }
+}
+
+extension AssociatedValue.Label: ExpressibleByIntegerLiteral {
+    public init(integerLiteral value: IntegerLiteralType) {
+        self = .index(value)
     }
 }

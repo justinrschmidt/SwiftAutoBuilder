@@ -8,7 +8,7 @@ enum VariableTypeDescriptor {
     case set(elementType: String)
     case explicit(typeNode: String)
 
-    var variableType: Property.VariableType {
+    var variableType: VariableType {
         switch self {
         case .implicit:
             return .implicit

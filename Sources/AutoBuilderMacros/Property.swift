@@ -21,18 +21,7 @@ struct Property: Equatable, CustomStringConvertible {
     }
 
     var type: String {
-        switch variableType {
-        case .implicit:
-            return ""
-        case let .array(elementType):
-            return "[\(elementType.trimmedDescription)]"
-        case let .dictionary(keyType, valueType):
-            return "[\(keyType.trimmedDescription):\(valueType.trimmedDescription)]"
-        case let .set(elementType):
-            return "Set<\(elementType.trimmedDescription)>"
-        case let .explicit(typeNode):
-            return typeNode.trimmedDescription
-        }
+        return variableType.type
     }
 
     var isInitializedConstant: Bool {
@@ -43,13 +32,7 @@ struct Property: Equatable, CustomStringConvertible {
         let stored = isStoredProperty ? "stored" : "computed"
         let iVar = isIVar ? "iVar" : "static"
         let initialized = isInitialized ? "initialized" : "uninitialized"
-        let typePrefix = switch variableType {
-        case .implicit, .explicit(_): ""
-        case .array(_): "A:"
-        case .dictionary(_, _): "D:"
-        case .set(_): "S:"
-        }
-        return "(\(stored), \(iVar), \(identifier), \(typePrefix)\(type), \(initialized))"
+        return "(\(stored), \(iVar), \(identifier), \(variableType), \(initialized))"
     }
 
     init(isStoredProperty: Bool,
@@ -89,57 +72,6 @@ struct Property: Equatable, CustomStringConvertible {
             default:
                 return nil
             }
-        }
-    }
-
-    enum VariableType: Equatable {
-        case implicit
-        case array(elementType: TypeSyntax)
-        case dictionary(keyType: TypeSyntax, valueType: TypeSyntax)
-        case set(elementType: TypeSyntax)
-        case explicit(typeNode: TypeSyntax)
-
-        var isImplicit: Bool {
-            switch self {
-            case .implicit:
-                return true
-            default:
-                return false
-            }
-        }
-
-        var isExplicit: Bool {
-            return !isImplicit
-        }
-
-        var isCollection: Bool {
-            switch self {
-            case .array(_), .dictionary(_, _), .set(_):
-                return true
-            default:
-                return false
-            }
-        }
-
-        static func ==(lhs: VariableType, rhs: VariableType) -> Bool {
-            switch (lhs, rhs) {
-            case (.implicit, .implicit):
-                return true
-            case let (.array(lhsType), .array(rhsType)):
-                return typesAreEqual(lhsType, rhsType)
-            case let (.dictionary(lhsKey, lhsValue), .dictionary(rhsKey, rhsValue)):
-                return typesAreEqual(lhsKey, rhsKey) && typesAreEqual(lhsValue, rhsValue)
-            case let (.set(lhsType), .set(rhsType)):
-                return typesAreEqual(lhsType, rhsType)
-            case let (.explicit(lhsType), .explicit(rhsType)):
-                return typesAreEqual(lhsType, rhsType)
-            default:
-                return false
-            }
-        }
-
-        private static func typesAreEqual(_ lhs: TypeSyntax, _ rhs: TypeSyntax) -> Bool {
-            return lhs.trimmedDescription == rhs.trimmedDescription
         }
     }
 }

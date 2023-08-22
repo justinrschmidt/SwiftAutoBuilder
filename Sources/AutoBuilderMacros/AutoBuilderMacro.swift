@@ -244,8 +244,17 @@ public struct AutoBuilderMacro: MemberMacro, ConformanceMacro {
             try createEnumSetValueFunction(from: cases, clientIdentifier: clientIdentifier)
             try createEnumBuildFunction(from: cases, clientIdentifier: clientIdentifier)
             for enumCase in cases {
+                let builderProperties = enumCase.associatedValues.map({ value in
+                    return Property(
+                        isStoredProperty: true,
+                        isIVar: true,
+                        bindingKeyword: .var,
+                        identifierPattern: IdentifierPatternSyntax(identifier: .identifier(value.identifier)),
+                        type: value.variableType,
+                        isInitialized: value.isInitialized)
+                })
                 try createBuilderClass(
-                    from: enumCase.associatedValues,
+                    from: builderProperties,
                     named: enumCase.capitalizedCaseIdentifier,
                     containerIdentifier: clientIdentifier,
                     buildFunction: createEnumCaseBuildFunction(from: enumCase, clientIdentifier: clientIdentifier))

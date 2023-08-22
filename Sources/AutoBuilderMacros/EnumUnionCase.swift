@@ -2,7 +2,7 @@ import SwiftSyntax
 
 struct EnumUnionCase: Equatable, CustomStringConvertible {
     let caseIdentifierPattern: IdentifierPatternSyntax
-    let associatedValues: [Property]
+    let associatedValues: [AssociatedValue]
 
     var caseIdentifier: String {
         return caseIdentifierPattern.identifier.text

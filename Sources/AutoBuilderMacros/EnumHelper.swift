@@ -11,24 +11,26 @@ struct EnumHelper {
     }
 
     private static func getCase(from element: EnumCaseElementSyntax) -> EnumUnionCase {
-        let properties = (element.associatedValue?.parameterList).map(getProperties(from:)) ?? []
+        let values = (element.associatedValue?.parameterList).map(getAssociatedValues(from:)) ?? []
         return EnumUnionCase(
             caseIdentifierPattern: IdentifierPatternSyntax(identifier: element.identifier),
-            associatedValues: properties)
+            associatedValues: values)
     }
 
-    private static func getProperties(from list: EnumCaseParameterListSyntax) -> [Property] {
-        var properties: [Property] = []
-        for element in list {
-            let nameToken = element.firstName ?? .identifier("")
-            properties.append(Property(
-                isStoredProperty: true,
-                isIVar: true,
-                bindingKeyword: .var,
-                identifierPattern: IdentifierPatternSyntax(identifier: nameToken),
-                type: VariableHelper.getVariableType(from: element.type),
+    private static func getAssociatedValues(from list: EnumCaseParameterListSyntax) -> [AssociatedValue] {
+        var values: [AssociatedValue] = []
+        for (index, element) in list.enumerated() {
+            let label: AssociatedValue.Label
+            if let nameToken = element.firstName {
+                label = .identifierPattern(IdentifierPatternSyntax(identifier: nameToken))
+            } else {
+                label = .index(index)
+            }
+            values.append(AssociatedValue(
+                label: label,
+                variableType: VariableHelper.getVariableType(from: element.type),
                 isInitialized: element.defaultArgument != nil))
         }
-        return properties
+        return values
     }
 }
