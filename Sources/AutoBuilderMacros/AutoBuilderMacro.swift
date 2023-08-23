@@ -45,7 +45,7 @@ public struct AutoBuilderMacro: MemberMacro, ConformanceMacro {
                 return try createStructDecls(from: propertiesToBuild, containerIdentifier: structDecl.identifier, isPublic: isPublic)
             case let .enum(enumDecl, cases):
                 let isPublic = hasPublic(modifiers: enumDecl.modifiers)
-                return try createEnumDecls(from: cases, clientIdentifier: enumDecl.identifier, isPublic: isPublic)
+                return try createEnumDecls(from: cases, clientIdentifier: enumDecl.identifier.trimmed, isPublic: isPublic)
             case let .error(diagnostics):
                 diagnostics.forEach(context.diagnose(_:))
                 return []
@@ -238,47 +238,73 @@ public struct AutoBuilderMacro: MemberMacro, ConformanceMacro {
             try InitializerDeclSyntax("public required init()") {
                 CodeBlockItemSyntax(stringLiteral: "currentCase = nil")
             }
-            for enumCase in cases {
-                try createCaseBuilderComputedProperty(from: enumCase)
+            let squashedCases = squashOverloadedCases(in: cases)
+            for (caseIdentifier, _) in squashedCases {
+                try createCaseBuilderComputedProperty(named: caseIdentifier, builderCase: caseIdentifier, builderClassName: caseIdentifier.capitalized)
             }
             try createEnumSetValueFunction(from: cases, clientIdentifier: clientIdentifier)
-            try createEnumBuildFunction(from: cases, clientIdentifier: clientIdentifier)
-            for enumCase in cases {
-                let builderProperties = enumCase.associatedValues.map({ value in
-                    return Property(
-                        isStoredProperty: true,
-                        isIVar: true,
-                        bindingKeyword: .var,
-                        identifierPattern: IdentifierPatternSyntax(identifier: .identifier(value.identifier)),
-                        type: value.variableType,
-                        isInitialized: value.isInitialized)
-                })
-                try createBuilderClass(
-                    from: builderProperties,
-                    named: enumCase.capitalizedCaseIdentifier,
-                    containerIdentifier: clientIdentifier,
-                    buildFunction: createEnumCaseBuildFunction(from: enumCase, clientIdentifier: clientIdentifier))
+            try createEnumBuildFunction(from: squashedCases, clientIdentifier: clientIdentifier)
+            for (_, cases) in squashedCases {
+                if cases.count == 1 {
+                    let builderProperties = cases[0].associatedValues.map({ value in
+                        return Property(
+                            isStoredProperty: true,
+                            isIVar: true,
+                            bindingKeyword: .var,
+                            identifierPattern: IdentifierPatternSyntax(identifier: .identifier(value.identifier)),
+                            type: value.variableType,
+                            isInitialized: value.isInitialized)
+                    })
+                    try createBuilderClass(
+                        from: builderProperties,
+                        named: cases[0].capitalizedCaseIdentifier,
+                        containerIdentifier: clientIdentifier,
+                        buildFunction: createEnumCaseBuildFunction(from: cases[0], clientIdentifier: clientIdentifier))
+                } else {
+                    try createOverloadedCaseBuilderClass(from: cases, clientIdentifier: clientIdentifier)
+                }
             }
-            try createBuilderCasesEnum(from: cases)
+            try createBuilderCasesEnum(from: squashedCases.map({ $0.caseIdentifier }))
         }
     }
 
-    private static func createCaseBuilderComputedProperty(from enumCase: EnumUnionCase) throws -> VariableDeclSyntax {
+    private static func squashOverloadedCases(in cases: [EnumUnionCase]) -> [(caseIdentifier: String, cases: [EnumUnionCase])] {
+        var caseMap: [String:[EnumUnionCase]] = [:]
+        var caseList: [String] = []
+        for enumCase in cases {
+            if caseMap[enumCase.caseIdentifier] != nil {
+                caseMap[enumCase.caseIdentifier]!.append(enumCase)
+            } else {
+                caseMap[enumCase.caseIdentifier] = [enumCase]
+                caseList.append(enumCase.caseIdentifier)
+            }
+        }
+        return caseList.map({ caseIdentifier in
+            return (
+                caseIdentifier: caseIdentifier,
+                cases: caseMap[caseIdentifier]!.sorted(by: { a, b in
+                    a.associatedValues.count > b.associatedValues.count
+                })
+            )
+        })
+    }
+
+    private static func createCaseBuilderComputedProperty(named propertyName: String, builderCase: String, builderClassName: String) throws -> VariableDeclSyntax {
         return VariableDeclSyntax(
             modifiers: ModifierListSyntax(arrayLiteral: DeclModifierSyntax(name: .keyword(.public))),
             bindingKeyword: .keyword(.var),
             bindings: try PatternBindingListSyntax(itemsBuilder: {
                 PatternBindingSyntax(
-                    pattern: enumCase.caseIdentifierPattern,
-                    typeAnnotation: TypeAnnotationSyntax(type: SimpleTypeIdentifierSyntax(name: .identifier(enumCase.capitalizedCaseIdentifier))),
+                    pattern: IdentifierPatternSyntax(identifier: .identifier(propertyName)),
+                    typeAnnotation: TypeAnnotationSyntax(type: SimpleTypeIdentifierSyntax(name: .identifier(builderClassName))),
                     accessor: try .accessors(AccessorBlockSyntax(accessors: AccessorListSyntax(itemsBuilder: {
-                        try createCaseBuilderGetter(from: enumCase)
+                        try createCaseBuilderGetter(builderCase: builderCase, builderClassName: builderClassName)
                         AccessorDeclSyntax(accessorKind: .keyword(.set)) {
                             CodeBlockItemSyntax(item: CodeBlockItemSyntax.Item(SequenceExprSyntax(elementsBuilder: {
                                 IdentifierExprSyntax(identifier: .identifier("currentCase"))
                                 AssignmentExprSyntax()
                                 functionCallExpr(
-                                    MemberAccessExprSyntax(name: .identifier(enumCase.caseIdentifier)),
+                                    MemberAccessExprSyntax(name: .identifier(builderCase)),
                                     [(nil, "newValue")])
                             })))
                         }
@@ -286,15 +312,15 @@ public struct AutoBuilderMacro: MemberMacro, ConformanceMacro {
             }))
     }
 
-    private static func createCaseBuilderGetter(from enumCase: EnumUnionCase) throws -> AccessorDeclSyntax {
+    private static func createCaseBuilderGetter(builderCase: String, builderClassName: String) throws -> AccessorDeclSyntax {
         return try AccessorDeclSyntax(accessorKind: .keyword(.get)) {
             try SwitchExprSyntax("switch currentCase") {
-                SwitchCaseSyntax("case let .some(.\(raw: enumCase.caseIdentifier)(builder)):") {
+                SwitchCaseSyntax("case let .some(.\(raw: builderCase)(builder)):") {
                     CodeBlockItemSyntax(stringLiteral: "return builder")
                 }
                 SwitchCaseSyntax("default:") {
-                    CodeBlockItemSyntax(stringLiteral: "let builder = \(enumCase.capitalizedCaseIdentifier)()")
-                    CodeBlockItemSyntax(stringLiteral: "currentCase = .\(enumCase.caseIdentifier)(builder)")
+                    CodeBlockItemSyntax(stringLiteral: "let builder = \(builderClassName)()")
+                    CodeBlockItemSyntax(stringLiteral: "currentCase = .\(builderCase)(builder)")
                     CodeBlockItemSyntax(stringLiteral: "return builder")
                 }
             }
@@ -322,11 +348,11 @@ public struct AutoBuilderMacro: MemberMacro, ConformanceMacro {
         }
     }
 
-    private static func createEnumBuildFunction(from cases: [EnumUnionCase], clientIdentifier: TokenSyntax) throws -> FunctionDeclSyntax {
+    private static func createEnumBuildFunction(from squashedCases: [(caseIdentifier: String, cases: [EnumUnionCase])], clientIdentifier: TokenSyntax) throws -> FunctionDeclSyntax {
         return try FunctionDeclSyntax("public func build() throws -> \(clientIdentifier.trimmed)") {
             try SwitchExprSyntax("switch currentCase") {
-                for enumCase in cases {
-                    SwitchCaseSyntax("case let .some(.\(raw: enumCase.caseIdentifier)(builder)):") {
+                for (caseIdentifier, _) in squashedCases {
+                    SwitchCaseSyntax("case let .some(.\(raw: caseIdentifier)(builder)):") {
                         CodeBlockItemSyntax(stringLiteral: "return try builder.build()")
                     }
                 }
@@ -360,14 +386,78 @@ public struct AutoBuilderMacro: MemberMacro, ConformanceMacro {
         }
     }
 
-    private static func createBuilderCasesEnum(from cases: [EnumUnionCase]) throws -> EnumDeclSyntax {
+    private static func createOverloadedCaseBuilderClass(from cases: [EnumUnionCase], clientIdentifier: TokenSyntax) throws -> ClassDeclSyntax {
+        let className = cases[0].caseIdentifier.capitalized
+        return try ClassDeclSyntax("public class \(raw: className): BuilderProtocol") {
+            VariableDeclSyntax(
+                modifiers: ModifierListSyntax { DeclModifierSyntax(name: .keyword(.private)) },
+                .var,
+                name: IdentifierPatternSyntax(identifier: .identifier("valuesMap")).cast(PatternSyntax.self),
+                type: TypeAnnotationSyntax(type: SimpleTypeIdentifierSyntax(name: .identifier("AssociatedValuesMap"))))
+            try InitializerDeclSyntax("public required init()") {
+                CodeBlockItemSyntax(stringLiteral: "valuesMap = AssociatedValuesMap()")
+            }
+            for (label, type) in getOverloadedSetters(from: cases) {
+                try FunctionDeclSyntax("@discardableResult\npublic func set(\(raw: label.identifier): \(raw: type)) -> \(raw: className)") {
+                    switch label {
+                    case let .identifierPattern(pattern):
+                        CodeBlockItemSyntax(stringLiteral: "valuesMap.set(\(label.identifier), for: \"\(pattern.identifier.text)\")")
+                    case let .index(index):
+                        CodeBlockItemSyntax(stringLiteral: "valuesMap.set(\(label.identifier), for: \(index))")
+                    }
+                    CodeBlockItemSyntax(stringLiteral: "return self")
+                }
+            }
+            try FunctionDeclSyntax("public func build() throws -> \(clientIdentifier)") {
+                for enumCase in cases {
+                    let letExpressions = enumCase.associatedValues.map({ value in
+                        let label = value.identifier
+                        let subscriptArg = switch value.label {
+                        case .identifierPattern(_): "\"\(label)\""
+                        case let .index(index): "\(index)"
+                        }
+                        return "let \(label) = valuesMap[\(subscriptArg), \(value.variableType.type).self]"
+                    })
+                    let initArgs = enumCase.associatedValues.map({ value in
+                        let label = value.identifier
+                        switch value.label {
+                        case .identifierPattern(_):
+                            return "\(label): \(label)"
+                        case .index(_):
+                            return "\(label)"
+                        }
+                    })
+                    try IfExprSyntax("if \(raw: letExpressions.joined(separator: ", "))") {
+                        CodeBlockItemSyntax(stringLiteral: "return \(clientIdentifier).\(cases[0].caseIdentifier)(\(initArgs.joined(separator: ", ")))")
+                    }
+                }
+            }
+        }
+    }
+
+    private static func getOverloadedSetters(from cases: [EnumUnionCase]) -> [(label: AssociatedValue.Label, type: String)] {
+        var set = Set<Pair<AssociatedValue.Label, String>>()
+        var list: [(label: AssociatedValue.Label, type: String)] = []
+        for enumCase in cases {
+            for value in enumCase.associatedValues {
+                let type = value.variableType.type
+                if !set.contains(Pair(value.label, type)) {
+                    set.insert(Pair(value.label, type))
+                    list.append((value.label, type))
+                }
+            }
+        }
+        return list
+    }
+
+    private static func createBuilderCasesEnum(from caseIdentifiers: [String]) throws -> EnumDeclSyntax {
         return try EnumDeclSyntax("private enum BuilderCases") {
-            for enumCase in cases {
+            for caseIdentifier in caseIdentifiers {
                 EnumCaseDeclSyntax {
                     EnumCaseElementSyntax(
-                        identifier: enumCase.caseIdentifierPattern.identifier,
+                        identifier: .identifier(caseIdentifier),
                         associatedValue: EnumCaseParameterClauseSyntax(parameterList: EnumCaseParameterListSyntax(itemsBuilder: {
-                            EnumCaseParameterSyntax(type: SimpleTypeIdentifierSyntax(name: .identifier(enumCase.capitalizedCaseIdentifier)))
+                            EnumCaseParameterSyntax(type: SimpleTypeIdentifierSyntax(name: .identifier(caseIdentifier.capitalized)))
                         })))
                 }
             }

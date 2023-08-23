@@ -6,12 +6,7 @@ struct AssociatedValue: Equatable, CustomStringConvertible {
     let isInitialized: Bool
 
     var identifier: String {
-        switch label {
-        case let .identifierPattern(pattern):
-            return pattern.identifier.text
-        case let .index(index):
-            return "i\(index)"
-        }
+        return label.identifier
     }
 
     var description: String {
@@ -19,9 +14,27 @@ struct AssociatedValue: Equatable, CustomStringConvertible {
         return "(\(identifier), \(variableType), \(initialized))"
     }
 
-    enum Label: Equatable {
+    enum Label: Equatable, Hashable {
         case identifierPattern(IdentifierPatternSyntax)
         case index(Int)
+
+        var identifier: String {
+            switch self {
+            case let .identifierPattern(pattern):
+                return pattern.identifier.text
+            case let .index(index):
+                return "i\(index)"
+            }
+        }
+
+        func hash(into hasher: inout Hasher) {
+            switch self {
+            case let .identifierPattern(pattern):
+                hasher.combine(pattern.identifier.text)
+            case let .index(index):
+                hasher.combine(index)
+            }
+        }
 
         static func ==(lhs: Label, rhs: Label) -> Bool {
             switch (lhs, rhs) {
