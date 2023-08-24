@@ -374,11 +374,11 @@ public struct AutoBuilderMacro: MemberMacro, ConformanceMacro {
                             calledExpression: MemberAccessExprSyntax(name: enumCase.caseIdentifierPattern.identifier),
                             leftParen: .leftParenToken(),
                             rightParen: .rightParenToken()) {
-                                for property in enumCase.associatedValues {
+                                for value in enumCase.associatedValues {
                                     TupleExprElementSyntax(
-                                        label: property.identifier,
+                                        label: value.label.pattern?.identifier.text,
                                         expression: functionCallExpr(MemberAccessExprSyntax(
-                                            base: IdentifierExprSyntax(identifier: .identifier(property.identifier)),
+                                            base: IdentifierExprSyntax(identifier: .identifier(value.identifier)),
                                             name: .identifier("build"))))
                                 }
                             }))

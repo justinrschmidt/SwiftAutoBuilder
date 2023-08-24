@@ -483,7 +483,7 @@ final class AutoBuilderMacroEnumTests: XCTestCase {
                             return self
                         }
                         public func build() throws -> Foo {
-                            return try .one(i0: i0.build(), i1: i1.build(), i2: i2.build())
+                            return try .one(i0.build(), i1.build(), i2.build())
                         }
                     }
                     private enum BuilderCases {

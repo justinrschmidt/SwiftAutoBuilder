@@ -27,6 +27,14 @@ struct AssociatedValue: Equatable, CustomStringConvertible {
             }
         }
 
+        var pattern: IdentifierPatternSyntax? {
+            if case let .identifierPattern(identifierPatternSyntax) = self {
+                return identifierPatternSyntax
+            } else {
+                return nil
+            }
+        }
+
         func hash(into hasher: inout Hasher) {
             switch self {
             case let .identifierPattern(pattern):
