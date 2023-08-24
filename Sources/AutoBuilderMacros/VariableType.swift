@@ -44,6 +44,21 @@ enum VariableType: Equatable, CustomStringConvertible {
         }
     }
 
+    var typeSyntax: TypeSyntaxProtocol {
+        switch self {
+        case .implicit:
+            fatalError("Unable to create a TypeSyntax from an implicit type")
+        case let .array(elementType):
+            return ArrayTypeSyntax(elementType: elementType)
+        case let .dictionary(keyType, valueType):
+            return DictionaryTypeSyntax(keyType: keyType, valueType: valueType)
+        case let .set(elementType):
+            return SimpleTypeIdentifierSyntax(name: "Set", genericTypes: [elementType])
+        case let .explicit(typeNode):
+            return typeNode
+        }
+    }
+
     var description: String {
         let typePrefix = switch self {
         case .implicit, .explicit(_): ""
@@ -52,6 +67,11 @@ enum VariableType: Equatable, CustomStringConvertible {
         case .set(_): "S:"
         }
         return "\(typePrefix)\(type)"
+    }
+
+    init(explicitString typeString: String, genericTypes: [TypeSyntaxProtocol] = []) {
+        let typeIdentifier = SimpleTypeIdentifierSyntax(name: typeString, genericTypes: genericTypes)
+        self = .explicit(typeNode: typeIdentifier.cast(TypeSyntax.self))
     }
 
     static func ==(lhs: VariableType, rhs: VariableType) -> Bool {
