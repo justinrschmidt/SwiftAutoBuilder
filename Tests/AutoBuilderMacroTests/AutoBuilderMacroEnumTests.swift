@@ -516,140 +516,14 @@ final class AutoBuilderMacroEnumTests: XCTestCase {
                 case one(Int, a: Int)
                 case one(a: Int, Int)
                 case one(b: Double, Int)
-                init(with builder: Builder) throws {
-                    self = try builder.build()
-                }
-                func toBuilder() -> Builder {
-                    let builder = Builder()
-                    switch self {
-                    case let .one(i0):
-                        let oneBuilder = builder.one
-                        oneBuilder.set(i0: i0)
-                    case let .one(i0, i1):
-                        let oneBuilder = builder.one
-                        oneBuilder.set(i0: i0)
-                        oneBuilder.set(i1: i1)
-                    case let .one(i0, a):
-                        let oneBuilder = builder.one
-                        oneBuilder.set(i0: i0)
-                        oneBuilder.set(a: a)
-                    case let .one(a, i1):
-                        let oneBuilder = builder.one
-                        oneBuilder.set(a: a)
-                        oneBuilder.set(i1: i1)
-                    case let .one(b, i1):
-                        let oneBuilder = builder.one
-                        oneBuilder.set(b: b)
-                        oneBuilder.set(i1: i1)
-                    }
-                    return builder
-                }
-                public class Builder: BuilderProtocol {
-                    private var currentCase: BuilderCases?
-                    public required init() {
-                        currentCase = nil
-                    }
-                    public var one: One {
-                        get {
-                            switch currentCase {
-                            case let .some(.one(builder)):
-                                return builder
-                            default:
-                                let builder = One()
-                                currentCase = .one(builder)
-                                return builder
-                            }
-                        }
-                        set {
-                            currentCase = .one(newValue)
-                        }
-                    }
-                    public func set(value: Foo) {
-                        switch value {
-                        case let .one(i0):
-                            let builder = One()
-                            builder.set(i0: i0)
-                            currentCase = .one(builder)
-                        case let .one(i0, i1):
-                            let builder = One()
-                            builder.set(i0: i0)
-                            builder.set(i1: i1)
-                            currentCase = .one(builder)
-                        case let .one(i0, a):
-                            let builder = One()
-                            builder.set(i0: i0)
-                            builder.set(a: a)
-                            currentCase = .one(builder)
-                        case let .one(a, i1):
-                            let builder = One()
-                            builder.set(a: a)
-                            builder.set(i1: i1)
-                            currentCase = .one(builder)
-                        case let .one(b, i1):
-                            let builder = One()
-                            builder.set(b: b)
-                            builder.set(i1: i1)
-                            currentCase = .one(builder)
-                        }
-                    }
-                    public func build() throws -> Foo {
-                        switch currentCase {
-                        case let .some(.one(builder)):
-                            return try builder.build()
-                        case .none:
-                            throw BuilderError.noEnumCaseSet
-                        }
-                    }
-                    public class One: BuilderProtocol {
-                        private var valuesMap: AssociatedValuesMap
-                        public required init() {
-                            valuesMap = AssociatedValuesMap()
-                        }
-                        @discardableResult
-                        public func set(i0: Int) -> One {
-                            valuesMap.set(i0, for: 0)
-                            return self
-                        }
-                        @discardableResult
-                        public func set(i1: Int) -> One {
-                            valuesMap.set(i1, for: 1)
-                            return self
-                        }
-                        @discardableResult
-                        public func set(a: Int) -> One {
-                            valuesMap.set(a, for: "a")
-                            return self
-                        }
-                        @discardableResult
-                        public func set(b: Double) -> One {
-                            valuesMap.set(b, for: "b")
-                            return self
-                        }
-                        public func build() throws -> Foo {
-                            if let i0 = valuesMap[0, Int.self], let i1 = valuesMap[1, Int.self] {
-                                return Foo.one(i0, i1)
-                            }
-                            if let i0 = valuesMap[0, Int.self], let a = valuesMap["a", Int.self] {
-                                return Foo.one(i0, a: a)
-                            }
-                            if let a = valuesMap["a", Int.self], let i1 = valuesMap[1, Int.self] {
-                                return Foo.one(a: a, i1)
-                            }
-                            if let b = valuesMap["b", Double.self], let i1 = valuesMap[1, Int.self] {
-                                return Foo.one(b: b, i1)
-                            }
-                            if let i0 = valuesMap[0, Int.self] {
-                                return Foo.one(i0)
-                            }
-                        }
-                    }
-                    private enum BuilderCases {
-                        case one(One)
-                    }
-                }
             }
-            extension Foo: Buildable {
-            }
-            """, macros: testMacros)
+            """, diagnostics: [
+                DiagnosticSpec(
+                    id: MessageID(domain: AutoBuilderDiagnostic.domain, id: "EnumWithOverloadedCases"),
+                    message: "@AutoBuilder does not support overloaded cases (one) due to ambiguity caused by SE-0155 not being fully implemented.",
+                    line: 1,
+                    column: 1,
+                    severity: .error)
+            ], macros: testMacros)
     }
 }
