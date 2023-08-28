@@ -45,7 +45,11 @@ public struct AutoBuilderMacro: MemberMacro, ConformanceMacro {
                 return try createStructDecls(from: propertiesToBuild, containerIdentifier: structDecl.identifier, isPublic: isPublic)
             case let .enum(enumDecl, cases):
                 let isPublic = hasPublic(modifiers: enumDecl.modifiers)
-                return try createEnumDecls(from: cases, clientIdentifier: enumDecl.identifier.trimmed, isPublic: isPublic)
+                return try createEnumDecls(
+                    from: cases,
+                    clientIdentifier: enumDecl.identifier.trimmed,
+                    isPublic: isPublic,
+                    in: context)
             case let .error(diagnostics):
                 diagnostics.forEach(context.diagnose(_:))
                 return []
@@ -201,14 +205,19 @@ public struct AutoBuilderMacro: MemberMacro, ConformanceMacro {
 
     // MARK: - Create Enum Syntax Tokens
 
-    private static func createEnumDecls(from cases: [EnumUnionCase], clientIdentifier: TokenSyntax, isPublic: Bool) throws -> [DeclSyntax] {
+    private static func createEnumDecls(
+        from cases: [EnumUnionCase],
+        clientIdentifier: TokenSyntax,
+        isPublic: Bool,
+        in context: some MacroExpansionContext
+    ) throws -> [DeclSyntax] {
         let accessModifier = isPublic ? "public " : ""
         return [
             try InitializerDeclSyntax("\(raw: accessModifier)init(with builder: Builder) throws", bodyBuilder: {
                 CodeBlockItemSyntax(stringLiteral: "self = try builder.build()")
             }).cast(DeclSyntax.self),
             try createEnumToBuilderFunction(from: cases, isPublic: isPublic).cast(DeclSyntax.self),
-            try createEnumBuilderClass(from: cases, clientIdentifier: clientIdentifier).cast(DeclSyntax.self)
+            try createEnumBuilderClass(from: cases, clientIdentifier: clientIdentifier, in: context).cast(DeclSyntax.self)
         ]
     }
 
@@ -242,18 +251,23 @@ public struct AutoBuilderMacro: MemberMacro, ConformanceMacro {
                 CodeBlockItemSyntax(stringLiteral: "_ = builder.\(enumCase.caseIdentifier)")
             } else {
                 CodeBlockItemSyntax(stringLiteral: "let \(caseBuilderIdentifier) = builder.\(enumCase.caseIdentifier)")
-                for property in enumCase.associatedValues {
-                    functionCallExpr(MemberAccessExprSyntax(
-                        base: IdentifierExprSyntax(identifier: caseBuilderIdentifier),
-                        name: .identifier("set")), [
-                            (property.identifier, property.identifier)
-                        ])
+                for value in enumCase.associatedValues {
+                    switch value.label {
+                    case let .identifierPattern(pattern):
+                        CodeBlockItemSyntax(stringLiteral: "\(caseBuilderIdentifier).set(\(pattern.identifier.text): \(pattern.identifier.text))")
+                    case let .index(index):
+                        CodeBlockItemSyntax(stringLiteral: "\(caseBuilderIdentifier).setIndex\(index)(i\(index))")
+                    }
                 }
             }
         }
     }
 
-    private static func createEnumBuilderClass(from cases: [EnumUnionCase], clientIdentifier: TokenSyntax) throws -> ClassDeclSyntax {
+    private static func createEnumBuilderClass(
+        from cases: [EnumUnionCase],
+        clientIdentifier: TokenSyntax,
+        in context: some MacroExpansionContext
+    ) throws -> ClassDeclSyntax {
         return try ClassDeclSyntax("public class Builder: BuilderProtocol") {
             VariableDeclSyntax(
                 modifiers: ModifierListSyntax(arrayLiteral: DeclModifierSyntax(name: .keyword(.private))),
@@ -270,20 +284,7 @@ public struct AutoBuilderMacro: MemberMacro, ConformanceMacro {
             try createEnumSetValueFunction(from: cases, clientIdentifier: clientIdentifier)
             try createEnumBuildFunction(from: cases, clientIdentifier: clientIdentifier)
             for enumCase in cases {
-                let builderProperties = enumCase.associatedValues.map({ value in
-                    return Property(
-                        isStoredProperty: true,
-                        isIVar: true,
-                        bindingKeyword: .var,
-                        identifierPattern: IdentifierPatternSyntax(identifier: .identifier(value.identifier)),
-                        type: value.variableType,
-                        isInitialized: value.isInitialized)
-                })
-                try createBuilderClass(
-                    from: builderProperties,
-                    named: enumCase.capitalizedCaseIdentifier,
-                    containerIdentifier: clientIdentifier,
-                    buildFunction: createEnumCaseBuildFunction(from: enumCase, clientIdentifier: clientIdentifier))
+                try createEnumCaseBuilderClass(from: enumCase, clientIdentifier: clientIdentifier, in: context)
             }
             try createBuilderCasesEnum(from: cases.map({ $0.caseIdentifier }))
         }
@@ -339,7 +340,13 @@ public struct AutoBuilderMacro: MemberMacro, ConformanceMacro {
                     SwitchCaseSyntax("\(raw: caseDeclaration)") {
                         CodeBlockItemSyntax(stringLiteral: "let builder = \(enumCase.capitalizedCaseIdentifier)()")
                         for value in enumCase.associatedValues {
-                            CodeBlockItemSyntax(stringLiteral: "builder.set(\(value.identifier): \(value.identifier))")
+                            switch value.label {
+                            case let .identifierPattern(pattern):
+                                let identifier = pattern.identifier.text
+                                CodeBlockItemSyntax(stringLiteral: "builder.set(\(identifier): \(identifier))")
+                            case let .index(index):
+                                CodeBlockItemSyntax(stringLiteral: "builder.setIndex\(index)(i\(index))")
+                            }
                         }
                         CodeBlockItemSyntax(stringLiteral: "currentCase = .\(enumCase.caseIdentifier)(builder)")
                     }
@@ -363,27 +370,103 @@ public struct AutoBuilderMacro: MemberMacro, ConformanceMacro {
         }
     }
 
-    private static func createEnumCaseBuildFunction(from enumCase: EnumUnionCase, clientIdentifier: TokenSyntax) throws -> FunctionDeclSyntax {
-        return try FunctionDeclSyntax("public func build() throws -> \(clientIdentifier.trimmed)") {
-            if enumCase.associatedValues.isEmpty {
-                CodeBlockItemSyntax(stringLiteral: "return .\(enumCase.caseIdentifier)")
-            } else {
-                ReturnStmtSyntax(
-                    expression: TryExprSyntax(
-                        expression: FunctionCallExprSyntax(
-                            calledExpression: MemberAccessExprSyntax(name: enumCase.caseIdentifierPattern.identifier),
-                            leftParen: .leftParenToken(),
-                            rightParen: .rightParenToken()) {
-                                for value in enumCase.associatedValues {
-                                    TupleExprElementSyntax(
-                                        label: value.label.pattern?.identifier.text,
-                                        expression: functionCallExpr(MemberAccessExprSyntax(
-                                            base: IdentifierExprSyntax(identifier: .identifier(value.identifier)),
-                                            name: .identifier("build"))))
-                                }
-                            }))
+    private static func createEnumCaseBuilderClass(
+        from enumCase: EnumUnionCase,
+        clientIdentifier: TokenSyntax,
+        in context: some MacroExpansionContext
+    ) throws -> ClassDeclSyntax {
+        let builderClassName = enumCase.caseIdentifier.capitalized
+        let hasUnlabeledValues = enumCase.associatedValues.contains(where: { $0.label.isIndex })
+        let indexesPropertyName = context.makeUniqueName("indexes").text
+        return try ClassDeclSyntax("public class \(raw: builderClassName): BuilderProtocol", membersBuilder: {
+            if hasUnlabeledValues {
+                variableDecl(
+                    modifierKeywords: [.private],
+                    bindingKeyword: .let,
+                    identifier: indexesPropertyName,
+                    type: SimpleTypeIdentifierSyntax(name: "Indexes"))
             }
-        }
+            for value in enumCase.associatedValues {
+                if case let .identifierPattern(pattern) = value.label {
+                    buildablePropertyVariableDecl(
+                        modifierKeywords: [.public],
+                        bindingKeyword: .let,
+                        identifier: pattern.trimmedDescription,
+                        type: value.variableType)
+                }
+            }
+            try InitializerDeclSyntax("public required init()", bodyBuilder: {
+                if hasUnlabeledValues {
+                    CodeBlockItemSyntax(stringLiteral: "\(indexesPropertyName) = Indexes()")
+                }
+                for value in enumCase.associatedValues {
+                    if case let .identifierPattern(pattern) = value.label {
+                        createBuildablePropertyInitializer(identifier: pattern.identifier.text, variableType: value.variableType)
+                    }
+                }
+            })
+            for value in enumCase.associatedValues {
+                if case let .index(index) = value.label {
+                    try FunctionDeclSyntax("public func getIndex\(raw: index)() -> BuildableProperty<\(value.variableType.typeSyntax)>") {
+                        CodeBlockItemSyntax(stringLiteral: "return \(indexesPropertyName).i\(index)")
+                    }
+                }
+            }
+            for value in enumCase.associatedValues {
+                switch value.label {
+                case let .identifierPattern(pattern):
+                    for item in try createSetValueFunctions(
+                        identifier: pattern.identifier.text,
+                        variableType: value.variableType,
+                        returnType: builderClassName
+                    ) {
+                        item
+                    }
+                case let .index(index):
+                    try FunctionDeclSyntax("@discardableResult\npublic func setIndex\(raw: index)(_ i\(raw: index): \(value.variableType.typeSyntax)) -> \(raw: builderClassName)") {
+                        CodeBlockItemSyntax(stringLiteral: "self.\(indexesPropertyName).i\(index).set(value: i\(index))")
+                        CodeBlockItemSyntax(stringLiteral: "return self")
+                    }
+                }
+            }
+            try FunctionDeclSyntax("public func build() throws -> \(clientIdentifier)") {
+                if enumCase.associatedValues.isEmpty {
+                    CodeBlockItemSyntax(stringLiteral: "return .\(enumCase.caseIdentifier)")
+                } else {
+                    let args = enumCase.associatedValues.map({ value in
+                        switch value.label {
+                        case let .identifierPattern(pattern):
+                            let text = pattern.identifier.text
+                            return "\(text): \(text).build()"
+                        case let .index(index):
+                            return "\(indexesPropertyName).i\(index).build()"
+                        }
+                    }).joined(separator: ", ")
+                    CodeBlockItemSyntax(stringLiteral: "return try .\(enumCase.caseIdentifier)(\(args))")
+                }
+            }
+            if hasUnlabeledValues {
+                try ClassDeclSyntax("private class Indexes") {
+                    for value in enumCase.associatedValues {
+                        if case let .index(index) = value.label {
+                            variableDecl(
+                                bindingKeyword: .let,
+                                identifier: "i\(index)",
+                                type: SimpleTypeIdentifierSyntax(
+                                    name: "BuildableProperty",
+                                    genericTypes: [value.variableType.typeSyntax]))
+                        }
+                    }
+                    try InitializerDeclSyntax("init()") {
+                        for value in enumCase.associatedValues {
+                            if case let .index(index) = value.label {
+                                CodeBlockItemSyntax(stringLiteral: "i\(index) = BuildableProperty(name: \"index \(index)\")")
+                            }
+                        }
+                    }
+                }
+            }
+        })
     }
 
     private static func createBuilderCasesEnum(from caseIdentifiers: [String]) throws -> EnumDeclSyntax {
@@ -414,28 +497,16 @@ public struct AutoBuilderMacro: MemberMacro, ConformanceMacro {
             }
             try InitializerDeclSyntax("public required init()", bodyBuilder: {
                 for property in properties {
-                    createBuildablePropertyInitializer(from: property)
+                    createBuildablePropertyInitializer(identifier: property.identifier, variableType: property.variableType)
                 }
             })
             for property in properties {
-                switch property.variableType {
-                case let .array(elementType):
-                    try createSetValueFunction(from: property, returnType: builderClassName)
-                    try createAppendElementFunction(from: property, elementType: elementType, returnType: builderClassName)
-                    try createAppendCollectionFunction(from: property, elementType: elementType, returnType: builderClassName)
-                    try createRemoveAllFunction(from: property, returnType: builderClassName)
-                case let .dictionary(keyType, valueType):
-                    try createSetValueFunction(from: property, returnType: builderClassName)
-                    try createInsertDictionaryFunction(from: property, keyType: keyType, valueType: valueType, returnType: builderClassName)
-                    try createMergeDictionaryFunction(from: property, keyType: keyType, valueType: valueType, returnType: builderClassName)
-                    try createRemoveAllFunction(from: property, returnType: builderClassName)
-                case let .set(elementType):
-                    try createSetValueFunction(from: property, returnType: builderClassName)
-                    try createInsertSetFunction(from: property, elementType: elementType, returnType: builderClassName)
-                    try createFormUnionSetFunction(from: property, elementType: elementType, returnType: builderClassName)
-                    try createRemoveAllFunction(from: property, returnType: builderClassName)
-                case .implicit, .explicit(_):
-                    try createSetValueFunction(from: property, returnType: builderClassName)
+                for item in try createSetValueFunctions(
+                    identifier: property.identifier,
+                    variableType: property.variableType,
+                    returnType: builderClassName
+                ) {
+                    item
                 }
             }
             buildFunction
@@ -443,30 +514,15 @@ public struct AutoBuilderMacro: MemberMacro, ConformanceMacro {
     }
 
     private static func createVariableDecl(from property: Property) -> VariableDeclSyntax {
-        let modifiers = ModifierListSyntax {
-            DeclModifierSyntax(name: .keyword(.public))
-        }
-        let bindingKeyword = TokenSyntax(.keyword(.let), presence: .present)
-        let identifierPattern = IdentifierPatternSyntax(identifier: .identifier(property.identifier))
-        let typeIdentifier = switch property.variableType {
-        case .implicit: ""
-        case let .array(elementType): "BuildableArrayProperty<\(elementType.trimmedDescription)>"
-        case let .dictionary(keyType, valueType): "BuildableDictionaryProperty<\(keyType.trimmedDescription), \(valueType.trimmedDescription)>"
-        case let .set(elementType): "BuildableSetProperty<\(elementType.trimmedDescription)>"
-        case let .explicit(typeNode): "BuildableProperty<\(typeNode.trimmedDescription)>"
-        }
-        let typeAnnotation = TypeAnnotationSyntax(
-            type: SimpleTypeIdentifierSyntax(
-                name: TokenSyntax(.identifier(typeIdentifier), presence: .present)))
-        return VariableDeclSyntax(modifiers: modifiers, bindingKeyword: bindingKeyword) {
-            PatternBindingListSyntax {
-                PatternBindingSyntax(pattern: identifierPattern, typeAnnotation: typeAnnotation)
-            }
-        }
+        return buildablePropertyVariableDecl(
+            modifierKeywords: [.public],
+            bindingKeyword: .let,
+            identifier: property.identifier,
+            type: property.variableType)
     }
 
-    private static func createBuildablePropertyInitializer(from property: Property) -> CodeBlockItemSyntax {
-        let typeIdentifier = switch property.variableType {
+    private static func createBuildablePropertyInitializer(identifier: String, variableType: VariableType) -> CodeBlockItemSyntax {
+        let typeIdentifier = switch variableType {
         case .implicit: ""
         case .array(_): "BuildableArrayProperty"
         case .dictionary(_, _): "BuildableDictionaryProperty"
@@ -475,91 +531,122 @@ public struct AutoBuilderMacro: MemberMacro, ConformanceMacro {
         }
         let initExpression = IdentifierExprSyntax(identifier: TokenSyntax(.identifier(typeIdentifier), presence: .present))
         return CodeBlockItemSyntax(item: CodeBlockItemSyntax.Item(SequenceExprSyntax(elementsBuilder: {
-            IdentifierExprSyntax(identifier: .identifier(property.identifier))
+            IdentifierExprSyntax(identifier: .identifier(identifier))
             AssignmentExprSyntax()
             FunctionCallExprSyntax(calledExpression: initExpression, leftParen: .leftParenToken(), rightParen: .rightParenToken()) {
-                if !property.variableType.isCollection {
-                    TupleExprElementSyntax(label: "name", expression: StringLiteralExprSyntax(content: property.identifier))
+                if !variableType.isCollection {
+                    TupleExprElementSyntax(label: "name", expression: StringLiteralExprSyntax(content: identifier))
                 }
             }
         })))
     }
 
-    private static func createSetValueFunction(from property: Property, returnType: String) throws -> FunctionDeclSyntax {
+    private static func createSetValueFunctions(identifier: String, variableType: VariableType, returnType: String) throws -> [DeclSyntaxProtocol] {
+        let type = variableType.typeSyntax
+        switch variableType {
+        case let .array(elementType):
+            return [
+                try createSetValueFunction(identifier: identifier, type: type, returnType: returnType),
+                try createAppendElementFunction(identifier: identifier, elementType: elementType, returnType: returnType),
+                try createAppendCollectionFunction(identifier: identifier, elementType: elementType, returnType: returnType),
+                try createRemoveAllFunction(identifier: identifier, returnType: returnType)
+            ]
+        case let .dictionary(keyType, valueType):
+            return [
+                try createSetValueFunction(identifier: identifier, type: type, returnType: returnType),
+                try createInsertDictionaryFunction(identifier: identifier, keyType: keyType, valueType: valueType, returnType: returnType),
+                try createMergeDictionaryFunction(identifier: identifier, keyType: keyType, valueType: valueType, returnType: returnType),
+                try createRemoveAllFunction(identifier: identifier, returnType: returnType)
+            ]
+        case let .set(elementType):
+            return [
+                try createSetValueFunction(identifier: identifier, type: type, returnType: returnType),
+                try createInsertSetFunction(identifier: identifier, elementType: elementType, returnType: returnType),
+                try createFormUnionSetFunction(identifier: identifier, elementType: elementType, returnType: returnType),
+                try createRemoveAllFunction(identifier: identifier, returnType: returnType)
+            ]
+        case .implicit, .explicit(_):
+            return [
+                try createSetValueFunction(identifier: identifier, type: type, returnType: returnType)
+            ]
+        }
+    }
+
+    private static func createSetValueFunction(identifier: String,  type: TypeSyntaxProtocol, returnType: String) throws -> FunctionDeclSyntax {
         let selfIdentifier = IdentifierExprSyntax(identifier: .keyword(.`self`))
-        let selfExpression = MemberAccessExprSyntax(base: selfIdentifier, name: TokenSyntax(.identifier(property.identifier), presence: .present))
+        let selfExpression = MemberAccessExprSyntax(base: selfIdentifier, name: TokenSyntax(.identifier(identifier), presence: .present))
         let setValueExpression = MemberAccessExprSyntax(base: selfExpression, name: TokenSyntax(.identifier("set"), presence: .present))
-        return try FunctionDeclSyntax("@discardableResult\npublic func set(\(raw: property.identifier): \(raw: property.type)) -> \(raw: returnType)") {
-            functionCallExpr(setValueExpression, [("value", property.identifier)])
+        return try FunctionDeclSyntax("@discardableResult\npublic func set(\(raw: identifier): \(type)) -> \(raw: returnType)") {
+            functionCallExpr(setValueExpression, [("value", identifier)])
             returnSelfStmt()
         }
     }
 
-    private static func createAppendElementFunction(from property: Property, elementType: TypeSyntax, returnType: String) throws -> FunctionDeclSyntax {
+    private static func createAppendElementFunction(identifier: String, elementType: TypeSyntax, returnType: String) throws -> FunctionDeclSyntax {
         let selfIdentifier = IdentifierExprSyntax(identifier: .keyword(.`self`))
-        let selfExpression = MemberAccessExprSyntax(base: selfIdentifier, name: TokenSyntax(.identifier(property.identifier), presence: .present))
+        let selfExpression = MemberAccessExprSyntax(base: selfIdentifier, name: TokenSyntax(.identifier(identifier), presence: .present))
         let appendElementExpression = MemberAccessExprSyntax(base: selfExpression, name: TokenSyntax(.identifier("append"), presence: .present))
-        return try FunctionDeclSyntax("@discardableResult\npublic func appendTo(\(raw: property.identifier) element: \(elementType.trimmed)) -> \(raw: returnType)") {
+        return try FunctionDeclSyntax("@discardableResult\npublic func appendTo(\(raw: identifier) element: \(elementType.trimmed)) -> \(raw: returnType)") {
             functionCallExpr(appendElementExpression, [("element", "element")])
             returnSelfStmt()
         }
     }
 
-    private static func createAppendCollectionFunction(from property: Property, elementType: TypeSyntax, returnType: String) throws -> FunctionDeclSyntax {
+    private static func createAppendCollectionFunction(identifier: String, elementType: TypeSyntax, returnType: String) throws -> FunctionDeclSyntax {
         let selfIdentifier = IdentifierExprSyntax(identifier: .keyword(.`self`))
-        let selfExpression = MemberAccessExprSyntax(base: selfIdentifier, name: TokenSyntax(.identifier(property.identifier), presence: .present))
+        let selfExpression = MemberAccessExprSyntax(base: selfIdentifier, name: TokenSyntax(.identifier(identifier), presence: .present))
         let appendCollectionExpression = MemberAccessExprSyntax(base: selfExpression, name: TokenSyntax(.identifier("append"), presence: .present))
-        return try FunctionDeclSyntax("@discardableResult\npublic func appendTo<C>(\(raw: property.identifier) collection: C) -> \(raw: returnType) where C: Collection, C.Element == \(elementType.trimmed)") {
+        return try FunctionDeclSyntax("@discardableResult\npublic func appendTo<C>(\(raw: identifier) collection: C) -> \(raw: returnType) where C: Collection, C.Element == \(elementType.trimmed)") {
             functionCallExpr(appendCollectionExpression, [("contentsOf", "collection")])
             returnSelfStmt()
         }
     }
 
-    private static func createInsertDictionaryFunction(from property: Property, keyType: TypeSyntax, valueType: TypeSyntax, returnType: String) throws -> FunctionDeclSyntax {
+    private static func createInsertDictionaryFunction(identifier: String, keyType: TypeSyntax, valueType: TypeSyntax, returnType: String) throws -> FunctionDeclSyntax {
         let insertExpression = MemberAccessExprSyntax(
-            base: IdentifierExprSyntax(identifier: .identifier(property.identifier)),
+            base: IdentifierExprSyntax(identifier: .identifier(identifier)),
             name: TokenSyntax(.identifier("insert"), presence: .present))
-        return try FunctionDeclSyntax("@discardableResult\npublic func insertInto(\(raw: property.identifier) value: \(valueType.trimmed), forKey key: \(keyType.trimmed)) -> \(raw: returnType)") {
+        return try FunctionDeclSyntax("@discardableResult\npublic func insertInto(\(raw: identifier) value: \(valueType.trimmed), forKey key: \(keyType.trimmed)) -> \(raw: returnType)") {
             functionCallExpr(insertExpression, [("key", "key"), ("value", "value")])
             returnSelfStmt()
         }
     }
 
-    private static func createMergeDictionaryFunction(from property: Property, keyType: TypeSyntax, valueType: TypeSyntax, returnType: String) throws -> FunctionDeclSyntax {
+    private static func createMergeDictionaryFunction(identifier: String, keyType: TypeSyntax, valueType: TypeSyntax, returnType: String) throws -> FunctionDeclSyntax {
         let mergeExpression = MemberAccessExprSyntax(
-            base: IdentifierExprSyntax(identifier: .identifier(property.identifier)),
+            base: IdentifierExprSyntax(identifier: .identifier(identifier)),
             name: TokenSyntax(.identifier("merge"), presence: .present))
-        return try FunctionDeclSyntax("@discardableResult\npublic func mergeInto\(raw: property.capitalizedIdentifier)(other: [\(keyType.trimmed): \(valueType.trimmed)], uniquingKeysWith combine: (\(valueType.trimmed), \(valueType.trimmed)) throws -> \(valueType.trimmed)) rethrows -> \(raw: returnType)") {
+        return try FunctionDeclSyntax("@discardableResult\npublic func mergeInto\(raw: identifier.capitalized)(other: [\(keyType.trimmed): \(valueType.trimmed)], uniquingKeysWith combine: (\(valueType.trimmed), \(valueType.trimmed)) throws -> \(valueType.trimmed)) rethrows -> \(raw: returnType)") {
             TryExprSyntax(expression: functionCallExpr(mergeExpression, [("other", "other"), ("uniquingKeysWith", "combine")]))
             returnSelfStmt()
         }
     }
 
-    private static func createInsertSetFunction(from property: Property, elementType: TypeSyntax, returnType: String) throws -> FunctionDeclSyntax {
+    private static func createInsertSetFunction(identifier: String, elementType: TypeSyntax, returnType: String) throws -> FunctionDeclSyntax {
         let insertExpression = MemberAccessExprSyntax(
-            base: IdentifierExprSyntax(identifier: .identifier(property.identifier)),
+            base: IdentifierExprSyntax(identifier: .identifier(identifier)),
             name: TokenSyntax(.identifier("insert"), presence: .present))
-        return try FunctionDeclSyntax("@discardableResult\npublic func insertInto(\(raw: property.identifier) element: \(elementType.trimmed)) -> \(raw: returnType)") {
+        return try FunctionDeclSyntax("@discardableResult\npublic func insertInto(\(raw: identifier) element: \(elementType.trimmed)) -> \(raw: returnType)") {
             functionCallExpr(insertExpression, [("element", "element")])
             returnSelfStmt()
         }
     }
 
-    private static func createFormUnionSetFunction(from property: Property, elementType: TypeSyntax, returnType: String) throws -> FunctionDeclSyntax {
+    private static func createFormUnionSetFunction(identifier: String, elementType: TypeSyntax, returnType: String) throws -> FunctionDeclSyntax {
         let formUnionExpression = MemberAccessExprSyntax(
-            base: IdentifierExprSyntax(identifier: .identifier(property.identifier)),
+            base: IdentifierExprSyntax(identifier: .identifier(identifier)),
             name: TokenSyntax(.identifier("formUnion"), presence: .present))
-        return try FunctionDeclSyntax("@discardableResult\npublic func formUnionWith\(raw: property.capitalizedIdentifier)(other: Set<\(elementType.trimmed)>) -> \(raw: returnType)") {
+        return try FunctionDeclSyntax("@discardableResult\npublic func formUnionWith\(raw: identifier.capitalized)(other: Set<\(elementType.trimmed)>) -> \(raw: returnType)") {
             functionCallExpr(formUnionExpression, [("other", "other")])
             returnSelfStmt()
         }
     }
 
-    private static func createRemoveAllFunction(from property: Property, returnType: String) throws -> FunctionDeclSyntax {
+    private static func createRemoveAllFunction(identifier: String, returnType: String) throws -> FunctionDeclSyntax {
         let appendElementExpression = MemberAccessExprSyntax(
-            base: IdentifierExprSyntax(identifier: .identifier(property.identifier)),
+            base: IdentifierExprSyntax(identifier: .identifier(identifier)),
             name: TokenSyntax(.identifier("removeAll"), presence: .present))
-        return try FunctionDeclSyntax("@discardableResult\npublic func removeAllFrom\(raw: property.capitalizedIdentifier)() -> \(raw: returnType)") {
+        return try FunctionDeclSyntax("@discardableResult\npublic func removeAllFrom\(raw: identifier.capitalized)() -> \(raw: returnType)") {
             functionCallExpr(appendElementExpression)
             returnSelfStmt()
         }
@@ -577,6 +664,67 @@ public struct AutoBuilderMacro: MemberMacro, ConformanceMacro {
 
     private static func returnSelfStmt() -> ReturnStmtSyntax {
         return ReturnStmtSyntax(expression: IdentifierExprSyntax(identifier: .keyword(.`self`)))
+    }
+
+    private static func buildablePropertyVariableDecl(
+        modifierKeywords: [Keyword] = [],
+        bindingKeyword: Keyword,
+        identifier: String,
+        type: VariableType
+    ) -> VariableDeclSyntax {
+        let modifiers: ModifierListSyntax?
+        if modifierKeywords.isEmpty {
+            modifiers = nil
+        } else {
+            modifiers = ModifierListSyntax {
+                for keyword in modifierKeywords {
+                    DeclModifierSyntax(name: .keyword(keyword))
+                }
+            }
+        }
+        let binding = TokenSyntax(.keyword(bindingKeyword), presence: .present)
+        let identifierPattern = IdentifierPatternSyntax(identifier: .identifier(identifier))
+        let typeIdentifier = switch type {
+        case .implicit: ""
+        case let .array(elementType): "BuildableArrayProperty<\(elementType.trimmedDescription)>"
+        case let .dictionary(keyType, valueType): "BuildableDictionaryProperty<\(keyType.trimmedDescription), \(valueType.trimmedDescription)>"
+        case let .set(elementType): "BuildableSetProperty<\(elementType.trimmedDescription)>"
+        case let .explicit(typeNode): "BuildableProperty<\(typeNode.trimmedDescription)>"
+        }
+        let typeAnnotation = TypeAnnotationSyntax(
+            type: SimpleTypeIdentifierSyntax(
+                name: TokenSyntax(.identifier(typeIdentifier), presence: .present)))
+        return VariableDeclSyntax(modifiers: modifiers, bindingKeyword: binding) {
+            PatternBindingListSyntax {
+                PatternBindingSyntax(pattern: identifierPattern, typeAnnotation: typeAnnotation)
+            }
+        }
+    }
+
+    private static func variableDecl(
+        modifierKeywords: [Keyword] = [],
+        bindingKeyword: Keyword,
+        identifier: String,
+        type: TypeSyntaxProtocol
+    ) -> VariableDeclSyntax {
+        let modifiers: ModifierListSyntax?
+        if modifierKeywords.isEmpty {
+            modifiers = nil
+        } else {
+            modifiers = ModifierListSyntax {
+                for keyword in modifierKeywords {
+                    DeclModifierSyntax(name: .keyword(keyword))
+                }
+            }
+        }
+        let binding = TokenSyntax(.keyword(bindingKeyword), presence: .present)
+        let identifierPattern = IdentifierPatternSyntax(identifier: .identifier(identifier))
+        let typeAnnotation = TypeAnnotationSyntax(type: type)
+        return VariableDeclSyntax(modifiers: modifiers, bindingKeyword: binding) {
+            PatternBindingListSyntax {
+                PatternBindingSyntax(pattern: identifierPattern, typeAnnotation: typeAnnotation)
+            }
+        }
     }
 }
 

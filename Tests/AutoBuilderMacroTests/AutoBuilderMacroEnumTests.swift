@@ -394,29 +394,30 @@ final class AutoBuilderMacroEnumTests: XCTestCase {
         """, macros: testMacros)
     }
 
-    func testEnumCaseWithNoLabels() {
+    func testEnumCaseWithMissingLabels() {
+        let indexesIdentifier = "__macro_local_7indexesfMu_"
         assertMacroExpansion(
             """
             @AutoBuilder
             enum Foo {
-                case one(Int, Double, String)
+                case one(Int, b: Double, String)
             }
             """,
             expandedSource:
             """
             enum Foo {
-                case one(Int, Double, String)
+                case one(Int, b: Double, String)
                 init(with builder: Builder) throws {
                     self = try builder.build()
                 }
                 func toBuilder() -> Builder {
                     let builder = Builder()
                     switch self {
-                    case let .one(i0, i1, i2):
+                    case let .one(i0, b, i2):
                         let oneBuilder = builder.one
-                        oneBuilder.set(i0: i0)
-                        oneBuilder.set(i1: i1)
-                        oneBuilder.set(i2: i2)
+                        oneBuilder.setIndex0(i0)
+                        oneBuilder.set(b: b)
+                        oneBuilder.setIndex2(i2)
                     }
                     return builder
                 }
@@ -442,11 +443,11 @@ final class AutoBuilderMacroEnumTests: XCTestCase {
                     }
                     public func set(value: Foo) {
                         switch value {
-                        case let .one(i0, i1, i2):
+                        case let .one(i0, b, i2):
                             let builder = One()
-                            builder.set(i0: i0)
-                            builder.set(i1: i1)
-                            builder.set(i2: i2)
+                            builder.setIndex0(i0)
+                            builder.set(b: b)
+                            builder.setIndex2(i2)
                             currentCase = .one(builder)
                         }
                     }
@@ -459,31 +460,43 @@ final class AutoBuilderMacroEnumTests: XCTestCase {
                         }
                     }
                     public class One: BuilderProtocol {
-                        public let i0: BuildableProperty<Int>
-                        public let i1: BuildableProperty<Double>
-                        public let i2: BuildableProperty<String>
+                        private let \(indexesIdentifier): Indexes
+                        public let b: BuildableProperty<Double>
                         public required init() {
-                            i0 = BuildableProperty(name: "i0")
-                            i1 = BuildableProperty(name: "i1")
-                            i2 = BuildableProperty(name: "i2")
+                            \(indexesIdentifier) = Indexes()
+                            b = BuildableProperty(name: "b")
+                        }
+                        public func getIndex0() -> BuildableProperty<Int> {
+                            return \(indexesIdentifier).i0
+                        }
+                        public func getIndex2() -> BuildableProperty<String> {
+                            return \(indexesIdentifier).i2
                         }
                         @discardableResult
-                        public func set(i0: Int) -> One {
-                            self.i0.set(value: i0)
+                        public func setIndex0(_ i0: Int) -> One {
+                            self.\(indexesIdentifier).i0.set(value: i0)
                             return self
                         }
                         @discardableResult
-                        public func set(i1: Double) -> One {
-                            self.i1.set(value: i1)
+                        public func set(b: Double) -> One {
+                            self.b.set(value: b)
                             return self
                         }
                         @discardableResult
-                        public func set(i2: String) -> One {
-                            self.i2.set(value: i2)
+                        public func setIndex2(_ i2: String) -> One {
+                            self.\(indexesIdentifier).i2.set(value: i2)
                             return self
                         }
                         public func build() throws -> Foo {
-                            return try .one(i0.build(), i1.build(), i2.build())
+                            return try .one(\(indexesIdentifier).i0.build(), b: b.build(), \(indexesIdentifier).i2.build())
+                        }
+                        private class Indexes {
+                            let i0: BuildableProperty<Int>
+                            let i2: BuildableProperty<String>
+                            init() {
+                                i0 = BuildableProperty(name: "index 0")
+                                i2 = BuildableProperty(name: "index 2")
+                            }
                         }
                     }
                     private enum BuilderCases {

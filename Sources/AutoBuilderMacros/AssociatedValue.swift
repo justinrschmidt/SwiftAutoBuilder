@@ -35,6 +35,15 @@ struct AssociatedValue: Equatable, CustomStringConvertible {
             }
         }
 
+        var isIndex: Bool {
+            switch self {
+            case .index(_):
+                return true
+            default:
+                return false
+            }
+        }
+
         func hash(into hasher: inout Hasher) {
             switch self {
             case let .identifierPattern(pattern):
