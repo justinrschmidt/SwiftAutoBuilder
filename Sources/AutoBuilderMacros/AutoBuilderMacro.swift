@@ -646,24 +646,32 @@ public struct AutoBuilderMacro: MemberMacro, ConformanceMacro {
     }
 
     private static func createInsertSetFunction(identifier: SetValueFunctionIdentifier, elementType: TypeSyntax, returnType: String) throws -> FunctionDeclSyntax {
-        guard case let .label(label) = identifier else { fatalError() }
-        let insertExpression = MemberAccessExprSyntax(
-            base: IdentifierExprSyntax(identifier: .identifier(label)),
-            name: TokenSyntax(.identifier("insert"), presence: .present))
-        return try FunctionDeclSyntax("@discardableResult\npublic func insertInto(\(raw: label) element: \(elementType.trimmed)) -> \(raw: returnType)") {
-            functionCallExpr(insertExpression, [("element", "element")])
-            returnSelfStmt()
+        switch identifier {
+        case let .label(label):
+            return try FunctionDeclSyntax("@discardableResult\npublic func insertInto(\(raw: label) element: \(elementType.trimmed)) -> \(raw: returnType)") {
+                "\(raw: label).insert(element: element)"
+                "return self"
+            }
+        case let .index(index, indexesPropertyName):
+            return try FunctionDeclSyntax("@discardableResult\npublic func insertIntoIndex\(raw: index)(_ element: \(elementType.trimmed)) -> \(raw: returnType)") {
+                "self.\(raw: indexesPropertyName).i\(raw: index).insert(element: element)"
+                "return self"
+            }
         }
     }
 
     private static func createFormUnionSetFunction(identifier: SetValueFunctionIdentifier, elementType: TypeSyntax, returnType: String) throws -> FunctionDeclSyntax {
-        guard case let .label(label) = identifier else { fatalError() }
-        let formUnionExpression = MemberAccessExprSyntax(
-            base: IdentifierExprSyntax(identifier: .identifier(label)),
-            name: TokenSyntax(.identifier("formUnion"), presence: .present))
-        return try FunctionDeclSyntax("@discardableResult\npublic func formUnionWith\(raw: label.capitalized)(other: Set<\(elementType.trimmed)>) -> \(raw: returnType)") {
-            functionCallExpr(formUnionExpression, [("other", "other")])
-            returnSelfStmt()
+        switch identifier {
+        case let .label(label):
+            return try FunctionDeclSyntax("@discardableResult\npublic func formUnionWith\(raw: label.capitalized)(other: Set<\(elementType.trimmed)>) -> \(raw: returnType)") {
+                "\(raw: label).formUnion(other: other)"
+                "return self"
+            }
+        case let .index(index, indexesPropertyName):
+            return try FunctionDeclSyntax("@discardableResult\npublic func formUnionWithIndex\(raw: index)(other: Set<\(elementType.trimmed)>) -> \(raw: returnType)") {
+                "self.\(raw: indexesPropertyName).i\(raw: index).formUnion(other: other)"
+                "return self"
+            }
         }
     }
 

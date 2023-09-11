@@ -13,5 +13,5 @@ enum Bar {
     case four
     case five(d: [Int], [Int])
     case six(e: [String:Int], [String:Int])
-    case seven(f: Set<Int>)
+    case seven(f: Set<Int>, Set<Int>)
 }
