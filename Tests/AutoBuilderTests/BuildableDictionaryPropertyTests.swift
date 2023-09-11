@@ -9,11 +9,18 @@ class BuildableDictionaryPropertyTests: XCTestCase {
         XCTAssertEqual(foo.a, ["1":1, "2":2])
     }
 
-    func testSetDictionary_enum() throws {
+    func testSetDictionary_enumWithLabel() throws {
         let bar = try Bar.Builder().one
             .set(a: ["1":1, "2":2])
             .build()
         XCTAssertEqual(bar.a, ["1":1, "2":2])
+    }
+
+    func testSetDictionary_enumWithoutLabel() throws {
+        let bar = try Bar.Builder().two
+            .setIndex0(["1":1, "2":2])
+            .build()
+        XCTAssertEqual(bar.b, ["1":1, "2":2])
     }
 
     func testInsertElement_struct() throws {
@@ -24,12 +31,20 @@ class BuildableDictionaryPropertyTests: XCTestCase {
         XCTAssertEqual(foo.a, ["1":1, "2":2])
     }
 
-    func testInsertElement_enum() throws {
+    func testInsertElement_enumWithLabel() throws {
         let bar = try Bar.Builder().one
             .insertInto(a: 1, forKey: "1")
             .insertInto(a: 2, forKey: "2")
             .build()
         XCTAssertEqual(bar.a, ["1":1, "2":2])
+    }
+
+    func testInsertElement_enumWithoutLabel() throws {
+        let bar = try Bar.Builder().two
+            .insertIntoIndex0(1, forKey: "1")
+            .insertIntoIndex0(2, forKey: "2")
+            .build()
+        XCTAssertEqual(bar.b, ["1":1, "2":2])
     }
 
     func testMergeDictionary_struct() throws {
@@ -40,12 +55,20 @@ class BuildableDictionaryPropertyTests: XCTestCase {
         XCTAssertEqual(foo.a, ["1":1, "2":2])
     }
 
-    func testMergeDictionary_enum() throws {
+    func testMergeDictionary_enumWithLabel() throws {
         let bar = try Bar.Builder().one
             .set(a: ["1":1])
             .mergeIntoA(other: ["2":2], uniquingKeysWith: { $1 })
             .build()
         XCTAssertEqual(bar.a, ["1":1, "2":2])
+    }
+
+    func testMergeDictionary_enumWithoutLabel() throws {
+        let bar = try Bar.Builder().two
+            .setIndex0(["1":1])
+            .mergeIntoIndex0(other: ["2":2], uniquingKeysWith: { $1 })
+            .build()
+        XCTAssertEqual(bar.b, ["1":1, "2":2])
     }
 
     func testRemoveAll_struct() throws {
@@ -56,12 +79,20 @@ class BuildableDictionaryPropertyTests: XCTestCase {
         XCTAssertEqual(foo2.a, [:])
     }
 
-    func testRemoveAll_enum() throws {
+    func testRemoveAll_enumWithLabel() throws {
         let bar = Bar.one(a: ["1":1, "2":2])
         let bar2 = try bar.toBuilder().one
             .removeAllFromA()
             .build()
         XCTAssertEqual(bar2.a, [:])
+    }
+
+    func testRemoveAll_enumWithoutLabel() throws {
+        let bar = Bar.two(["1":1, "2":2])
+        let bar2 = try bar.toBuilder().two
+            .removeAllFromIndex0()
+            .build()
+        XCTAssertEqual(bar2.b, [:])
     }
 
     @AutoBuilder
@@ -76,12 +107,20 @@ class BuildableDictionaryPropertyTests: XCTestCase {
     @AutoBuilder
     enum Bar {
         var a: [String:Int] {
-            switch self {
-            case let .one(a):
-                return a
+            return switch self {
+            case let .one(a): a
+            default: [:]
+            }
+        }
+
+        var b: [String:Int] {
+            return switch self {
+            case let .two(b): b
+            default: [:]
             }
         }
 
         case one(a: [String:Int])
+        case two([String:Int])
     }
 }

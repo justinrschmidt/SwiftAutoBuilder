@@ -672,4 +672,137 @@ final class AutoBuilderMacroEnumTests: XCTestCase {
             }
             """, macros: testMacros)
     }
+
+    func testEnumWithDictionaryAssociatedValue() {
+        let indexesIdentifier = "__macro_local_7indexesfMu_"
+        assertMacroExpansion(
+            """
+            @AutoBuilder
+            enum Foo {
+                case one(a: [String:Int], [String:Int])
+            }
+            """,
+            expandedSource:
+            """
+            enum Foo {
+                case one(a: [String: Int], [String: Int])
+                init(with builder: Builder) throws {
+                    self = try builder.build()
+                }
+                func toBuilder() -> Builder {
+                    let builder = Builder()
+                    switch self {
+                    case let .one(a, i1):
+                        let oneBuilder = builder.one
+                        oneBuilder.set(a: a)
+                        oneBuilder.setIndex1(i1)
+                    }
+                    return builder
+                }
+                public class Builder: BuilderProtocol {
+                    private var currentCase: BuilderCases?
+                    public required init() {
+                        currentCase = nil
+                    }
+                    public var one: One {
+                        get {
+                            switch currentCase {
+                            case let .some(.one(builder)):
+                                return builder
+                            default:
+                                let builder = One()
+                                currentCase = .one(builder)
+                                return builder
+                            }
+                        }
+                        set {
+                            currentCase = .one(newValue)
+                        }
+                    }
+                    public func set(value: Foo) {
+                        switch value {
+                        case let .one(a, i1):
+                            let builder = One()
+                            builder.set(a: a)
+                            builder.setIndex1(i1)
+                            currentCase = .one(builder)
+                        }
+                    }
+                    public func build() throws -> Foo {
+                        switch currentCase {
+                        case let .some(.one(builder)):
+                            return try builder.build()
+                        case .none:
+                            throw BuilderError.noEnumCaseSet
+                        }
+                    }
+                    public class One: BuilderProtocol {
+                        private let \(indexesIdentifier): Indexes
+                        public let a: BuildableDictionaryProperty<String, Int>
+                        public required init() {
+                            \(indexesIdentifier) = Indexes()
+                            a = BuildableDictionaryProperty()
+                        }
+                        public func getIndex1() -> BuildableDictionaryProperty<String, Int> {
+                            return \(indexesIdentifier).i1
+                        }
+                        @discardableResult
+                        public func set(a: [String: Int]) -> One {
+                            self.a.set(value: a)
+                            return self
+                        }
+                        @discardableResult
+                        public func insertInto(a value: Int, forKey key: String) -> One {
+                            a.insert(key: key, value: value)
+                            return self
+                        }
+                        @discardableResult
+                        public func mergeIntoA(other: [String: Int], uniquingKeysWith combine: (Int, Int) throws -> Int) rethrows -> One {
+                            try a.merge(other: other, uniquingKeysWith: combine)
+                            return self
+                        }
+                        @discardableResult
+                        public func removeAllFromA() -> One {
+                            a.removeAll()
+                            return self
+                        }
+                        @discardableResult
+                        public func setIndex1(_ i1: [String: Int]) -> One {
+                            self.\(indexesIdentifier).i1.set(value: i1)
+                            return self
+                        }
+                        @discardableResult
+                        public func insertIntoIndex1(_ value: Int, forKey key: String) -> One {
+                            self.\(indexesIdentifier).i1.insert(key: key, value: value)
+                            return self
+                        }
+                        @discardableResult
+                        public func mergeIntoIndex1(other: [String: Int], uniquingKeysWith combine: (Int, Int) throws -> Int) rethrows -> One {
+                            try self.\(indexesIdentifier).i1.merge(other: other, uniquingKeysWith: combine)
+                            return self
+                        }
+                        @discardableResult
+                        public func removeAllFromIndex1() -> One {
+                            self.\(indexesIdentifier).i1.removeAll()
+                            return self
+                        }
+                        public func build() throws -> Foo {
+                            return try .one(a: a.build(), \(indexesIdentifier).i1.build())
+                        }
+                        private class Indexes {
+                            let i1: BuildableDictionaryProperty<String, Int>
+                            init() {
+                                i1 = BuildableDictionaryProperty()
+                            }
+                        }
+                    }
+                    private enum BuilderCases {
+                        case one(One)
+                    }
+                }
+            }
+            extension Foo: Buildable {
+            }
+            """, macros: testMacros)
+    }
 }

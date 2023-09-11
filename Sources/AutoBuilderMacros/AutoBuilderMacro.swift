@@ -616,24 +616,32 @@ public struct AutoBuilderMacro: MemberMacro, ConformanceMacro {
     }
 
     private static func createInsertDictionaryFunction(identifier: SetValueFunctionIdentifier, keyType: TypeSyntax, valueType: TypeSyntax, returnType: String) throws -> FunctionDeclSyntax {
-        guard case let .label(label) = identifier else { fatalError() }
-        let insertExpression = MemberAccessExprSyntax(
-            base: IdentifierExprSyntax(identifier: .identifier(label)),
-            name: TokenSyntax(.identifier("insert"), presence: .present))
-        return try FunctionDeclSyntax("@discardableResult\npublic func insertInto(\(raw: label) value: \(valueType.trimmed), forKey key: \(keyType.trimmed)) -> \(raw: returnType)") {
-            functionCallExpr(insertExpression, [("key", "key"), ("value", "value")])
-            returnSelfStmt()
+        switch identifier {
+        case let .label(label):
+            return try FunctionDeclSyntax("@discardableResult\npublic func insertInto(\(raw: label) value: \(valueType.trimmed), forKey key: \(keyType.trimmed)) -> \(raw: returnType)") {
+                "\(raw: label).insert(key: key, value: value)"
+                "return self"
+            }
+        case let .index(index, indexesPropertyName):
+            return try FunctionDeclSyntax("@discardableResult\npublic func insertIntoIndex\(raw: index)(_ value: \(valueType.trimmed), forKey key: \(keyType.trimmed)) -> \(raw: returnType)") {
+                "self.\(raw: indexesPropertyName).i\(raw: index).insert(key: key, value: value)"
+                "return self"
+            }
         }
     }
 
     private static func createMergeDictionaryFunction(identifier: SetValueFunctionIdentifier, keyType: TypeSyntax, valueType: TypeSyntax, returnType: String) throws -> FunctionDeclSyntax {
-        guard case let .label(label) = identifier else { fatalError() }
-        let mergeExpression = MemberAccessExprSyntax(
-            base: IdentifierExprSyntax(identifier: .identifier(label)),
-            name: TokenSyntax(.identifier("merge"), presence: .present))
-        return try FunctionDeclSyntax("@discardableResult\npublic func mergeInto\(raw: label.capitalized)(other: [\(keyType.trimmed): \(valueType.trimmed)], uniquingKeysWith combine: (\(valueType.trimmed), \(valueType.trimmed)) throws -> \(valueType.trimmed)) rethrows -> \(raw: returnType)") {
-            TryExprSyntax(expression: functionCallExpr(mergeExpression, [("other", "other"), ("uniquingKeysWith", "combine")]))
-            returnSelfStmt()
+        switch identifier {
+        case let .label(label):
+            return try FunctionDeclSyntax("@discardableResult\npublic func mergeInto\(raw: label.capitalized)(other: [\(keyType.trimmed): \(valueType.trimmed)], uniquingKeysWith combine: (\(valueType.trimmed), \(valueType.trimmed)) throws -> \(valueType.trimmed)) rethrows -> \(raw: returnType)") {
+                "try \(raw: label).merge(other: other, uniquingKeysWith: combine)"
+                "return self"
+            }
+        case let .index(index, indexesPropertyName):
+            return try FunctionDeclSyntax("@discardableResult\npublic func mergeIntoIndex\(raw: index)(other: [\(keyType.trimmed): \(valueType.trimmed)], uniquingKeysWith combine: (\(valueType.trimmed), \(valueType.trimmed)) throws -> \(valueType.trimmed)) rethrows -> \(raw: returnType)") {
+                "try self.\(raw: indexesPropertyName).i\(raw: index).merge(other: other, uniquingKeysWith: combine)"
+                "return self"
+            }
         }
     }
 
