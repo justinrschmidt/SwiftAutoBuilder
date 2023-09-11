@@ -9,11 +9,18 @@ class BuildableArrayPropertyTests: XCTestCase {
         XCTAssertEqual(foo.a, [1, 2, 3])
     }
 
-    func testSetArray_enum() throws {
+    func testSetArray_enumWithLabel() throws {
         let bar = try Bar.Builder().one
             .set(a: [1, 2, 3])
             .build()
         XCTAssertEqual(bar.a, [1, 2, 3])
+    }
+
+    func testSetArray_enumWithoutLabel() throws {
+        let bar = try Bar.Builder().two
+            .setIndex0([1, 2, 3])
+            .build()
+        XCTAssertEqual(bar.b, [1, 2, 3])
     }
 
     func testAppendElement_struct() throws {
@@ -25,13 +32,20 @@ class BuildableArrayPropertyTests: XCTestCase {
         XCTAssertEqual(foo.a, [1, 2, 3])
     }
 
-    func testAppendElement_enum() throws {
+    func testAppendElement_enumWithLabel() throws {
         let bar = try Bar.Builder().one
             .appendTo(a: 1)
             .appendTo(a: 2)
             .appendTo(a: 3)
             .build()
         XCTAssertEqual(bar.a, [1, 2, 3])
+    }
+
+    func testAppendElement_enumWithoutLabel() throws {
+        let bar = try Bar.Builder().two
+            .appendToIndex0([1, 2, 3])
+            .build()
+        XCTAssertEqual(bar.b, [1, 2, 3])
     }
 
     func testAppendCollection_struct() throws {
@@ -42,12 +56,20 @@ class BuildableArrayPropertyTests: XCTestCase {
         XCTAssertEqual(foo.a, [1, 2, 3, 4])
     }
 
-    func testAppendCollection_enum() throws {
+    func testAppendCollection_enumWithLabel() throws {
         let bar = try Bar.Builder().one
             .appendTo(a: [1, 2])
             .appendTo(a: [3, 4])
             .build()
         XCTAssertEqual(bar.a, [1, 2, 3, 4])
+    }
+
+    func testAppendCollection_enumWithoutLabel() throws {
+        let bar = try Bar.Builder().two
+            .appendToIndex0([1, 2])
+            .appendToIndex0([3, 4])
+            .build()
+        XCTAssertEqual(bar.b, [1, 2, 3, 4])
     }
 
     func testRemoveAll_struct() throws {
@@ -58,12 +80,20 @@ class BuildableArrayPropertyTests: XCTestCase {
         XCTAssertEqual(foo2.a, [])
     }
 
-    func testRemoveAll_enum() throws {
+    func testRemoveAll_enumWithLabel() throws {
         let bar = Bar.one(a: [1, 2, 3])
         let bar2 = try bar.toBuilder().one
             .removeAllFromA()
             .build()
         XCTAssertEqual(bar2.a, [])
+    }
+
+    func testRemoveAll_enumWithoutLabel() throws {
+        let bar = Bar.two([1, 2, 3])
+        let bar2 = try bar.toBuilder().two
+            .removeAllFromIndex0()
+            .build()
+        XCTAssertEqual(bar2.b, [])
     }
 
     @AutoBuilder
@@ -78,12 +108,20 @@ class BuildableArrayPropertyTests: XCTestCase {
     @AutoBuilder
     enum Bar {
         var a: [Int] {
-            switch self {
-            case let .one(a):
-                return a
+            return switch self {
+            case let .one(a): a
+            default: []
+            }
+        }
+
+        var b: [Int] {
+            return switch self {
+            case let .two(b): b
+            default: []
             }
         }
 
         case one(a: [Int])
+        case two([Int])
     }
 }
