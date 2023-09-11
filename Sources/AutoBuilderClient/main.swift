@@ -12,4 +12,5 @@ enum Bar {
     case three(Int, Double, String)
     case four
     case five(d: [Int])
+    case six(e: [String:Int])
 }
