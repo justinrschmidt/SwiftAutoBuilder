@@ -395,7 +395,6 @@ final class AutoBuilderMacroEnumTests: XCTestCase {
     }
 
     func testEnumCaseWithMissingLabels() {
-        let indexesIdentifier = "__macro_local_7indexesfMu_"
         assertMacroExpansion(
             """
             @AutoBuilder
@@ -415,9 +414,9 @@ final class AutoBuilderMacroEnumTests: XCTestCase {
                     switch self {
                     case let .one(i0, b, i2):
                         let oneBuilder = builder.one
-                        oneBuilder.setIndex0(i0)
+                        oneBuilder.set(index_0: i0)
                         oneBuilder.set(b: b)
-                        oneBuilder.setIndex2(i2)
+                        oneBuilder.set(index_2: i2)
                     }
                     return builder
                 }
@@ -445,9 +444,9 @@ final class AutoBuilderMacroEnumTests: XCTestCase {
                         switch value {
                         case let .one(i0, b, i2):
                             let builder = One()
-                            builder.setIndex0(i0)
+                            builder.set(index_0: i0)
                             builder.set(b: b)
-                            builder.setIndex2(i2)
+                            builder.set(index_2: i2)
                             currentCase = .one(builder)
                         }
                     }
@@ -460,21 +459,17 @@ final class AutoBuilderMacroEnumTests: XCTestCase {
                         }
                     }
                     public class One: BuilderProtocol {
-                        private let \(indexesIdentifier): Indexes
+                        public let index_0: BuildableProperty<Int>
                         public let b: BuildableProperty<Double>
+                        public let index_2: BuildableProperty<String>
                         public required init() {
-                            \(indexesIdentifier) = Indexes()
+                            index_0 = BuildableProperty(name: "index_0")
                             b = BuildableProperty(name: "b")
-                        }
-                        public func getIndex0() -> BuildableProperty<Int> {
-                            return \(indexesIdentifier).i0
-                        }
-                        public func getIndex2() -> BuildableProperty<String> {
-                            return \(indexesIdentifier).i2
+                            index_2 = BuildableProperty(name: "index_2")
                         }
                         @discardableResult
-                        public func setIndex0(_ i0: Int) -> One {
-                            self.\(indexesIdentifier).i0.set(value: i0)
+                        public func set(index_0: Int) -> One {
+                            self.index_0.set(value: index_0)
                             return self
                         }
                         @discardableResult
@@ -483,20 +478,12 @@ final class AutoBuilderMacroEnumTests: XCTestCase {
                             return self
                         }
                         @discardableResult
-                        public func setIndex2(_ i2: String) -> One {
-                            self.\(indexesIdentifier).i2.set(value: i2)
+                        public func set(index_2: String) -> One {
+                            self.index_2.set(value: index_2)
                             return self
                         }
                         public func build() throws -> Foo {
-                            return try .one(\(indexesIdentifier).i0.build(), b: b.build(), \(indexesIdentifier).i2.build())
-                        }
-                        private class Indexes {
-                            let i0: BuildableProperty<Int>
-                            let i2: BuildableProperty<String>
-                            init() {
-                                i0 = BuildableProperty(name: "index 0")
-                                i2 = BuildableProperty(name: "index 2")
-                            }
+                            return try .one(index_0.build(), b: b.build(), index_2.build())
                         }
                     }
                     private enum BuilderCases {
@@ -541,7 +528,6 @@ final class AutoBuilderMacroEnumTests: XCTestCase {
     }
 
     func testEnumWithArrayAssociatedValue() {
-        let indexesIdentifier = "__macro_local_7indexesfMu_"
         assertMacroExpansion(
             """
             @AutoBuilder
@@ -562,7 +548,7 @@ final class AutoBuilderMacroEnumTests: XCTestCase {
                     case let .one(a, i1):
                         let oneBuilder = builder.one
                         oneBuilder.set(a: a)
-                        oneBuilder.setIndex1(i1)
+                        oneBuilder.set(index_1: i1)
                     }
                     return builder
                 }
@@ -591,7 +577,7 @@ final class AutoBuilderMacroEnumTests: XCTestCase {
                         case let .one(a, i1):
                             let builder = One()
                             builder.set(a: a)
-                            builder.setIndex1(i1)
+                            builder.set(index_1: i1)
                             currentCase = .one(builder)
                         }
                     }
@@ -604,14 +590,11 @@ final class AutoBuilderMacroEnumTests: XCTestCase {
                         }
                     }
                     public class One: BuilderProtocol {
-                        private let \(indexesIdentifier): Indexes
                         public let a: BuildableArrayProperty<Int>
+                        public let index_1: BuildableArrayProperty<Int>
                         public required init() {
-                            \(indexesIdentifier) = Indexes()
                             a = BuildableArrayProperty()
-                        }
-                        public func getIndex1() -> BuildableArrayProperty<Int> {
-                            return \(indexesIdentifier).i1
+                            index_1 = BuildableArrayProperty()
                         }
                         @discardableResult
                         public func set(a: [Int]) -> One {
@@ -634,33 +617,27 @@ final class AutoBuilderMacroEnumTests: XCTestCase {
                             return self
                         }
                         @discardableResult
-                        public func setIndex1(_ i1: [Int]) -> One {
-                            self.\(indexesIdentifier).i1.set(value: i1)
+                        public func set(index_1: [Int]) -> One {
+                            self.index_1.set(value: index_1)
                             return self
                         }
                         @discardableResult
-                        public func appendToIndex1(_ element: Int) -> One {
-                            self.\(indexesIdentifier).i1.append(element: element)
+                        public func appendTo(index_1 element: Int) -> One {
+                            self.index_1.append(element: element)
                             return self
                         }
                         @discardableResult
-                        public func appendToIndex1<C>(_ collection: C) -> One where C: Collection, C.Element == Int {
-                            self.\(indexesIdentifier).i1.append(contentsOf: collection)
+                        public func appendTo<C>(index_1 collection: C) -> One where C: Collection, C.Element == Int {
+                            self.index_1.append(contentsOf: collection)
                             return self
                         }
                         @discardableResult
-                        public func removeAllFromIndex1() -> One {
-                            self.\(indexesIdentifier).i1.removeAll()
+                        public func removeAllFromIndex_1() -> One {
+                            index_1.removeAll()
                             return self
                         }
                         public func build() throws -> Foo {
-                            return try .one(a: a.build(), \(indexesIdentifier).i1.build())
-                        }
-                        private class Indexes {
-                            let i1: BuildableArrayProperty<Int>
-                            init() {
-                                i1 = BuildableArrayProperty()
-                            }
+                            return try .one(a: a.build(), index_1.build())
                         }
                     }
                     private enum BuilderCases {
@@ -674,7 +651,6 @@ final class AutoBuilderMacroEnumTests: XCTestCase {
     }
 
     func testEnumWithDictionaryAssociatedValue() {
-        let indexesIdentifier = "__macro_local_7indexesfMu_"
         assertMacroExpansion(
             """
             @AutoBuilder
@@ -695,7 +671,7 @@ final class AutoBuilderMacroEnumTests: XCTestCase {
                     case let .one(a, i1):
                         let oneBuilder = builder.one
                         oneBuilder.set(a: a)
-                        oneBuilder.setIndex1(i1)
+                        oneBuilder.set(index_1: i1)
                     }
                     return builder
                 }
@@ -724,7 +700,7 @@ final class AutoBuilderMacroEnumTests: XCTestCase {
                         case let .one(a, i1):
                             let builder = One()
                             builder.set(a: a)
-                            builder.setIndex1(i1)
+                            builder.set(index_1: i1)
                             currentCase = .one(builder)
                         }
                     }
@@ -737,14 +713,11 @@ final class AutoBuilderMacroEnumTests: XCTestCase {
                         }
                     }
                     public class One: BuilderProtocol {
-                        private let \(indexesIdentifier): Indexes
                         public let a: BuildableDictionaryProperty<String, Int>
+                        public let index_1: BuildableDictionaryProperty<String, Int>
                         public required init() {
-                            \(indexesIdentifier) = Indexes()
                             a = BuildableDictionaryProperty()
-                        }
-                        public func getIndex1() -> BuildableDictionaryProperty<String, Int> {
-                            return \(indexesIdentifier).i1
+                            index_1 = BuildableDictionaryProperty()
                         }
                         @discardableResult
                         public func set(a: [String: Int]) -> One {
@@ -767,33 +740,27 @@ final class AutoBuilderMacroEnumTests: XCTestCase {
                             return self
                         }
                         @discardableResult
-                        public func setIndex1(_ i1: [String: Int]) -> One {
-                            self.\(indexesIdentifier).i1.set(value: i1)
+                        public func set(index_1: [String: Int]) -> One {
+                            self.index_1.set(value: index_1)
                             return self
                         }
                         @discardableResult
-                        public func insertIntoIndex1(_ value: Int, forKey key: String) -> One {
-                            self.\(indexesIdentifier).i1.insert(key: key, value: value)
+                        public func insertInto(index_1 value: Int, forKey key: String) -> One {
+                            index_1.insert(key: key, value: value)
                             return self
                         }
                         @discardableResult
-                        public func mergeIntoIndex1(other: [String: Int], uniquingKeysWith combine: (Int, Int) throws -> Int) rethrows -> One {
-                            try self.\(indexesIdentifier).i1.merge(other: other, uniquingKeysWith: combine)
+                        public func mergeIntoIndex_1(other: [String: Int], uniquingKeysWith combine: (Int, Int) throws -> Int) rethrows -> One {
+                            try index_1.merge(other: other, uniquingKeysWith: combine)
                             return self
                         }
                         @discardableResult
-                        public func removeAllFromIndex1() -> One {
-                            self.\(indexesIdentifier).i1.removeAll()
+                        public func removeAllFromIndex_1() -> One {
+                            index_1.removeAll()
                             return self
                         }
                         public func build() throws -> Foo {
-                            return try .one(a: a.build(), \(indexesIdentifier).i1.build())
-                        }
-                        private class Indexes {
-                            let i1: BuildableDictionaryProperty<String, Int>
-                            init() {
-                                i1 = BuildableDictionaryProperty()
-                            }
+                            return try .one(a: a.build(), index_1.build())
                         }
                     }
                     private enum BuilderCases {
@@ -807,7 +774,6 @@ final class AutoBuilderMacroEnumTests: XCTestCase {
     }
 
     func testEnumWithSetAssociatedValue() {
-        let indexesIdentifier = "__macro_local_7indexesfMu_"
         assertMacroExpansion(
             """
             @AutoBuilder
@@ -828,7 +794,7 @@ final class AutoBuilderMacroEnumTests: XCTestCase {
                     case let .one(a, i1):
                         let oneBuilder = builder.one
                         oneBuilder.set(a: a)
-                        oneBuilder.setIndex1(i1)
+                        oneBuilder.set(index_1: i1)
                     }
                     return builder
                 }
@@ -857,7 +823,7 @@ final class AutoBuilderMacroEnumTests: XCTestCase {
                         case let .one(a, i1):
                             let builder = One()
                             builder.set(a: a)
-                            builder.setIndex1(i1)
+                            builder.set(index_1: i1)
                             currentCase = .one(builder)
                         }
                     }
@@ -870,14 +836,11 @@ final class AutoBuilderMacroEnumTests: XCTestCase {
                         }
                     }
                     public class One: BuilderProtocol {
-                        private let \(indexesIdentifier): Indexes
                         public let a: BuildableSetProperty<Int>
+                        public let index_1: BuildableSetProperty<Int>
                         public required init() {
-                            \(indexesIdentifier) = Indexes()
                             a = BuildableSetProperty()
-                        }
-                        public func getIndex1() -> BuildableSetProperty<Int> {
-                            return \(indexesIdentifier).i1
+                            index_1 = BuildableSetProperty()
                         }
                         @discardableResult
                         public func set(a: Set<Int>) -> One {
@@ -900,33 +863,27 @@ final class AutoBuilderMacroEnumTests: XCTestCase {
                             return self
                         }
                         @discardableResult
-                        public func setIndex1(_ i1: Set<Int>) -> One {
-                            self.\(indexesIdentifier).i1.set(value: i1)
+                        public func set(index_1: Set<Int>) -> One {
+                            self.index_1.set(value: index_1)
                             return self
                         }
                         @discardableResult
-                        public func insertIntoIndex1(_ element: Int) -> One {
-                            self.\(indexesIdentifier).i1.insert(element: element)
+                        public func insertInto(index_1 element: Int) -> One {
+                            index_1.insert(element: element)
                             return self
                         }
                         @discardableResult
-                        public func formUnionWithIndex1(other: Set<Int>) -> One {
-                            self.\(indexesIdentifier).i1.formUnion(other: other)
+                        public func formUnionWithIndex_1(other: Set<Int>) -> One {
+                            index_1.formUnion(other: other)
                             return self
                         }
                         @discardableResult
-                        public func removeAllFromIndex1() -> One {
-                            self.\(indexesIdentifier).i1.removeAll()
+                        public func removeAllFromIndex_1() -> One {
+                            index_1.removeAll()
                             return self
                         }
                         public func build() throws -> Foo {
-                            return try .one(a: a.build(), \(indexesIdentifier).i1.build())
-                        }
-                        private class Indexes {
-                            let i1: BuildableSetProperty<Int>
-                            init() {
-                                i1 = BuildableSetProperty()
-                            }
+                            return try .one(a: a.build(), index_1.build())
                         }
                     }
                     private enum BuilderCases {

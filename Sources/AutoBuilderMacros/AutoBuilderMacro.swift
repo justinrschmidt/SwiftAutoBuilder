@@ -256,7 +256,7 @@ public struct AutoBuilderMacro: MemberMacro, ConformanceMacro {
                     case let .identifierPattern(pattern):
                         CodeBlockItemSyntax(stringLiteral: "\(caseBuilderIdentifier).set(\(pattern.identifier.text): \(pattern.identifier.text))")
                     case let .index(index):
-                        CodeBlockItemSyntax(stringLiteral: "\(caseBuilderIdentifier).setIndex\(index)(i\(index))")
+                        CodeBlockItemSyntax(stringLiteral: "\(caseBuilderIdentifier).set(index_\(index): i\(index))")
                     }
                 }
             }
@@ -345,7 +345,7 @@ public struct AutoBuilderMacro: MemberMacro, ConformanceMacro {
                                 let identifier = pattern.identifier.text
                                 CodeBlockItemSyntax(stringLiteral: "builder.set(\(identifier): \(identifier))")
                             case let .index(index):
-                                CodeBlockItemSyntax(stringLiteral: "builder.setIndex\(index)(i\(index))")
+                                CodeBlockItemSyntax(stringLiteral: "builder.set(index_\(index): i\(index))")
                             }
                         }
                         CodeBlockItemSyntax(stringLiteral: "currentCase = .\(enumCase.caseIdentifier)(builder)")
@@ -376,48 +376,38 @@ public struct AutoBuilderMacro: MemberMacro, ConformanceMacro {
         in context: some MacroExpansionContext
     ) throws -> ClassDeclSyntax {
         let builderClassName = enumCase.caseIdentifier.capitalized
-        let hasUnlabeledValues = enumCase.associatedValues.contains(where: { $0.label.isIndex })
-        let indexesPropertyName = context.makeUniqueName("indexes").text
         return try ClassDeclSyntax("public class \(raw: builderClassName): BuilderProtocol", membersBuilder: {
-            if hasUnlabeledValues {
-                variableDecl(
-                    modifierKeywords: [.private],
-                    bindingKeyword: .let,
-                    identifier: indexesPropertyName,
-                    type: SimpleTypeIdentifierSyntax(name: "Indexes"))
-            }
             for value in enumCase.associatedValues {
-                if case let .identifierPattern(pattern) = value.label {
+                switch value.label {
+                case let .identifierPattern(pattern):
                     buildablePropertyVariableDecl(
                         modifierKeywords: [.public],
                         bindingKeyword: .let,
                         identifier: pattern.trimmedDescription,
                         type: value.variableType)
+                case let .index(index):
+                    buildablePropertyVariableDecl(
+                        modifierKeywords: [.public],
+                        bindingKeyword: .let,
+                        identifier: "index_\(index)",
+                        type: value.variableType)
                 }
             }
             try InitializerDeclSyntax("public required init()", bodyBuilder: {
-                if hasUnlabeledValues {
-                    CodeBlockItemSyntax(stringLiteral: "\(indexesPropertyName) = Indexes()")
-                }
                 for value in enumCase.associatedValues {
-                    if case let .identifierPattern(pattern) = value.label {
+                    switch value.label {
+                    case let .identifierPattern(pattern):
                         createBuildablePropertyInitializer(identifier: pattern.identifier.text, variableType: value.variableType)
+                    case let .index(index):
+                        createBuildablePropertyInitializer(identifier: "index_\(index)", variableType: value.variableType)
                     }
                 }
             })
             for value in enumCase.associatedValues {
-                if case let .index(index) = value.label {
-                    let typeIdentifier = buildablePropertyTypeIdentifier(for: value.variableType, includeGenericClause: true)
-                    try FunctionDeclSyntax("public func getIndex\(raw: index)() -> \(raw: typeIdentifier)") {
-                        CodeBlockItemSyntax(stringLiteral: "return \(indexesPropertyName).i\(index)")
-                    }
-                }
-            }
-            for value in enumCase.associatedValues {
                 switch value.label {
                 case let .identifierPattern(pattern):
                     for item in try createSetValueFunctions(
-                        identifier: .label(pattern.identifier.text),
+                        identifier: pattern.identifier.text,
                         variableType: value.variableType,
                         returnType: builderClassName
                     ) {
@@ -425,7 +415,7 @@ public struct AutoBuilderMacro: MemberMacro, ConformanceMacro {
                     }
                 case let .index(index):
                     for item in try createSetValueFunctions(
-                        identifier: .index(index, indexesPropertyName: indexesPropertyName),
+                        identifier: "index_\(index)",
                         variableType: value.variableType,
                         returnType: builderClassName
                     ) {
@@ -443,29 +433,10 @@ public struct AutoBuilderMacro: MemberMacro, ConformanceMacro {
                             let text = pattern.identifier.text
                             return "\(text): \(text).build()"
                         case let .index(index):
-                            return "\(indexesPropertyName).i\(index).build()"
+                            return "index_\(index).build()"
                         }
                     }).joined(separator: ", ")
                     CodeBlockItemSyntax(stringLiteral: "return try .\(enumCase.caseIdentifier)(\(args))")
-                }
-            }
-            if hasUnlabeledValues {
-                try ClassDeclSyntax("private class Indexes") {
-                    for value in enumCase.associatedValues {
-                        if case let .index(index) = value.label {
-                            buildablePropertyVariableDecl(
-                                bindingKeyword: .let,
-                                identifier: "i\(index)",
-                                type: value.variableType)
-                        }
-                    }
-                    try InitializerDeclSyntax("init()") {
-                        for value in enumCase.associatedValues {
-                            if case let .index(index) = value.label {
-                                createBuildablePropertyInitializer(identifier: "i\(index)", variableType: value.variableType, name: "index \(index)")
-                            }
-                        }
-                    }
                 }
             }
         })
@@ -504,7 +475,7 @@ public struct AutoBuilderMacro: MemberMacro, ConformanceMacro {
             })
             for property in properties {
                 for item in try createSetValueFunctions(
-                    identifier: .label(property.identifier),
+                    identifier: property.identifier,
                     variableType: property.variableType,
                     returnType: builderClassName
                 ) {
@@ -539,7 +510,7 @@ public struct AutoBuilderMacro: MemberMacro, ConformanceMacro {
 
     // MARK: - Set Value Functions
 
-    private static func createSetValueFunctions(identifier: SetValueFunctionIdentifier, variableType: VariableType, returnType: String) throws -> [DeclSyntaxProtocol] {
+    private static func createSetValueFunctions(identifier: String, variableType: VariableType, returnType: String) throws -> [DeclSyntaxProtocol] {
         let type = variableType.typeSyntax
         switch variableType {
         case let .array(elementType):
@@ -570,123 +541,59 @@ public struct AutoBuilderMacro: MemberMacro, ConformanceMacro {
         }
     }
 
-    private static func createSetValueFunction(identifier: SetValueFunctionIdentifier,  type: TypeSyntaxProtocol, returnType: String) throws -> FunctionDeclSyntax {
-        switch identifier {
-        case let .label(label):
-            return try FunctionDeclSyntax("@discardableResult\npublic func set(\(raw: label): \(type)) -> \(raw: returnType)") {
-                "self.\(raw: label).set(value: \(raw: label))"
-                "return self"
-            }
-        case let .index(index, indexesPropertyName):
-            return try FunctionDeclSyntax("@discardableResult\npublic func setIndex\(raw: index)(_ i\(raw: index): \(type)) -> \(raw: returnType)") {
-                "self.\(raw: indexesPropertyName).i\(raw: index).set(value: i\(raw: index))"
-                "return self"
-            }
+    private static func createSetValueFunction(identifier: String,  type: TypeSyntaxProtocol, returnType: String) throws -> FunctionDeclSyntax {
+        return try FunctionDeclSyntax("@discardableResult\npublic func set(\(raw: identifier): \(type)) -> \(raw: returnType)") {
+            "self.\(raw: identifier).set(value: \(raw: identifier))"
+            "return self"
         }
     }
 
-    private static func createAppendElementFunction(identifier: SetValueFunctionIdentifier, elementType: TypeSyntax, returnType: String) throws -> FunctionDeclSyntax {
-        switch identifier {
-        case let .label(label):
-            return try FunctionDeclSyntax("@discardableResult\npublic func appendTo(\(raw: label) element: \(elementType.trimmed)) -> \(raw: returnType)") {
-                "self.\(raw: label).append(element: element)"
-                "return self"
-            }
-        case let .index(index, indexesPropertyName):
-            return try FunctionDeclSyntax("@discardableResult\npublic func appendToIndex\(raw: index)(_ element: \(elementType.trimmed)) -> \(raw: returnType)") {
-                "self.\(raw: indexesPropertyName).i\(raw: index).append(element: element)"
-                "return self"
-            }
+    private static func createAppendElementFunction(identifier: String, elementType: TypeSyntax, returnType: String) throws -> FunctionDeclSyntax {
+        return try FunctionDeclSyntax("@discardableResult\npublic func appendTo(\(raw: identifier) element: \(elementType.trimmed)) -> \(raw: returnType)") {
+            "self.\(raw: identifier).append(element: element)"
+            "return self"
         }
     }
 
-    private static func createAppendCollectionFunction(identifier: SetValueFunctionIdentifier, elementType: TypeSyntax, returnType: String) throws -> FunctionDeclSyntax {
-        switch identifier {
-        case let .label(label):
-            return try FunctionDeclSyntax("@discardableResult\npublic func appendTo<C>(\(raw: label) collection: C) -> \(raw: returnType) where C: Collection, C.Element == \(elementType.trimmed)") {
-                "self.\(raw: label).append(contentsOf: collection)"
-                "return self"
-            }
-        case let .index(index, indexesPropertyName):
-            return try FunctionDeclSyntax("@discardableResult\npublic func appendToIndex\(raw: index)<C>(_ collection: C) -> \(raw: returnType) where C: Collection, C.Element == \(elementType.trimmed)") {
-                "self.\(raw: indexesPropertyName).i\(raw: index).append(contentsOf: collection)"
-                "return self"
-            }
+    private static func createAppendCollectionFunction(identifier: String, elementType: TypeSyntax, returnType: String) throws -> FunctionDeclSyntax {
+        return try FunctionDeclSyntax("@discardableResult\npublic func appendTo<C>(\(raw: identifier) collection: C) -> \(raw: returnType) where C: Collection, C.Element == \(elementType.trimmed)") {
+            "self.\(raw: identifier).append(contentsOf: collection)"
+            "return self"
         }
     }
 
-    private static func createInsertDictionaryFunction(identifier: SetValueFunctionIdentifier, keyType: TypeSyntax, valueType: TypeSyntax, returnType: String) throws -> FunctionDeclSyntax {
-        switch identifier {
-        case let .label(label):
-            return try FunctionDeclSyntax("@discardableResult\npublic func insertInto(\(raw: label) value: \(valueType.trimmed), forKey key: \(keyType.trimmed)) -> \(raw: returnType)") {
-                "\(raw: label).insert(key: key, value: value)"
-                "return self"
-            }
-        case let .index(index, indexesPropertyName):
-            return try FunctionDeclSyntax("@discardableResult\npublic func insertIntoIndex\(raw: index)(_ value: \(valueType.trimmed), forKey key: \(keyType.trimmed)) -> \(raw: returnType)") {
-                "self.\(raw: indexesPropertyName).i\(raw: index).insert(key: key, value: value)"
-                "return self"
-            }
+    private static func createInsertDictionaryFunction(identifier: String, keyType: TypeSyntax, valueType: TypeSyntax, returnType: String) throws -> FunctionDeclSyntax {
+        return try FunctionDeclSyntax("@discardableResult\npublic func insertInto(\(raw: identifier) value: \(valueType.trimmed), forKey key: \(keyType.trimmed)) -> \(raw: returnType)") {
+            "\(raw: identifier).insert(key: key, value: value)"
+            "return self"
         }
     }
 
-    private static func createMergeDictionaryFunction(identifier: SetValueFunctionIdentifier, keyType: TypeSyntax, valueType: TypeSyntax, returnType: String) throws -> FunctionDeclSyntax {
-        switch identifier {
-        case let .label(label):
-            return try FunctionDeclSyntax("@discardableResult\npublic func mergeInto\(raw: label.capitalized)(other: [\(keyType.trimmed): \(valueType.trimmed)], uniquingKeysWith combine: (\(valueType.trimmed), \(valueType.trimmed)) throws -> \(valueType.trimmed)) rethrows -> \(raw: returnType)") {
-                "try \(raw: label).merge(other: other, uniquingKeysWith: combine)"
-                "return self"
-            }
-        case let .index(index, indexesPropertyName):
-            return try FunctionDeclSyntax("@discardableResult\npublic func mergeIntoIndex\(raw: index)(other: [\(keyType.trimmed): \(valueType.trimmed)], uniquingKeysWith combine: (\(valueType.trimmed), \(valueType.trimmed)) throws -> \(valueType.trimmed)) rethrows -> \(raw: returnType)") {
-                "try self.\(raw: indexesPropertyName).i\(raw: index).merge(other: other, uniquingKeysWith: combine)"
-                "return self"
-            }
+    private static func createMergeDictionaryFunction(identifier: String, keyType: TypeSyntax, valueType: TypeSyntax, returnType: String) throws -> FunctionDeclSyntax {
+        return try FunctionDeclSyntax("@discardableResult\npublic func mergeInto\(raw: identifier.capitalized)(other: [\(keyType.trimmed): \(valueType.trimmed)], uniquingKeysWith combine: (\(valueType.trimmed), \(valueType.trimmed)) throws -> \(valueType.trimmed)) rethrows -> \(raw: returnType)") {
+            "try \(raw: identifier).merge(other: other, uniquingKeysWith: combine)"
+            "return self"
         }
     }
 
-    private static func createInsertSetFunction(identifier: SetValueFunctionIdentifier, elementType: TypeSyntax, returnType: String) throws -> FunctionDeclSyntax {
-        switch identifier {
-        case let .label(label):
-            return try FunctionDeclSyntax("@discardableResult\npublic func insertInto(\(raw: label) element: \(elementType.trimmed)) -> \(raw: returnType)") {
-                "\(raw: label).insert(element: element)"
-                "return self"
-            }
-        case let .index(index, indexesPropertyName):
-            return try FunctionDeclSyntax("@discardableResult\npublic func insertIntoIndex\(raw: index)(_ element: \(elementType.trimmed)) -> \(raw: returnType)") {
-                "self.\(raw: indexesPropertyName).i\(raw: index).insert(element: element)"
-                "return self"
-            }
+    private static func createInsertSetFunction(identifier: String, elementType: TypeSyntax, returnType: String) throws -> FunctionDeclSyntax {
+        return try FunctionDeclSyntax("@discardableResult\npublic func insertInto(\(raw: identifier) element: \(elementType.trimmed)) -> \(raw: returnType)") {
+            "\(raw: identifier).insert(element: element)"
+            "return self"
         }
     }
 
-    private static func createFormUnionSetFunction(identifier: SetValueFunctionIdentifier, elementType: TypeSyntax, returnType: String) throws -> FunctionDeclSyntax {
-        switch identifier {
-        case let .label(label):
-            return try FunctionDeclSyntax("@discardableResult\npublic func formUnionWith\(raw: label.capitalized)(other: Set<\(elementType.trimmed)>) -> \(raw: returnType)") {
-                "\(raw: label).formUnion(other: other)"
-                "return self"
-            }
-        case let .index(index, indexesPropertyName):
-            return try FunctionDeclSyntax("@discardableResult\npublic func formUnionWithIndex\(raw: index)(other: Set<\(elementType.trimmed)>) -> \(raw: returnType)") {
-                "self.\(raw: indexesPropertyName).i\(raw: index).formUnion(other: other)"
-                "return self"
-            }
+    private static func createFormUnionSetFunction(identifier: String, elementType: TypeSyntax, returnType: String) throws -> FunctionDeclSyntax {
+        return try FunctionDeclSyntax("@discardableResult\npublic func formUnionWith\(raw: identifier.capitalized)(other: Set<\(elementType.trimmed)>) -> \(raw: returnType)") {
+            "\(raw: identifier).formUnion(other: other)"
+            "return self"
         }
     }
 
-    private static func createRemoveAllFunction(identifier: SetValueFunctionIdentifier, returnType: String) throws -> FunctionDeclSyntax {
-        switch identifier {
-        case let .label(label):
-            return try FunctionDeclSyntax("@discardableResult\npublic func removeAllFrom\(raw: label.capitalized)() -> \(raw: returnType)") {
-                "\(raw: label).removeAll()"
-                "return self"
-            }
-        case let .index(index, indexesPropertyName):
-            return try FunctionDeclSyntax("@discardableResult\npublic func removeAllFromIndex\(raw: index)() -> \(raw: returnType)") {
-                "self.\(raw: indexesPropertyName).i\(raw: index).removeAll()"
-                "return self"
-            }
+    private static func createRemoveAllFunction(identifier: String, returnType: String) throws -> FunctionDeclSyntax {
+        return try FunctionDeclSyntax("@discardableResult\npublic func removeAllFrom\(raw: identifier.capitalized)() -> \(raw: returnType)") {
+            "\(raw: identifier).removeAll()"
+            "return self"
         }
     }
 

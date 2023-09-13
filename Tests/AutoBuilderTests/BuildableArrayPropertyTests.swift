@@ -18,7 +18,7 @@ class BuildableArrayPropertyTests: XCTestCase {
 
     func testSetArray_enumWithoutLabel() throws {
         let bar = try Bar.Builder().two
-            .setIndex0([1, 2, 3])
+            .set(index_0: [1, 2, 3])
             .build()
         XCTAssertEqual(bar.b, [1, 2, 3])
     }
@@ -43,7 +43,7 @@ class BuildableArrayPropertyTests: XCTestCase {
 
     func testAppendElement_enumWithoutLabel() throws {
         let bar = try Bar.Builder().two
-            .appendToIndex0([1, 2, 3])
+            .appendTo(index_0: [1, 2, 3])
             .build()
         XCTAssertEqual(bar.b, [1, 2, 3])
     }
@@ -66,8 +66,8 @@ class BuildableArrayPropertyTests: XCTestCase {
 
     func testAppendCollection_enumWithoutLabel() throws {
         let bar = try Bar.Builder().two
-            .appendToIndex0([1, 2])
-            .appendToIndex0([3, 4])
+            .appendTo(index_0: [1, 2])
+            .appendTo(index_0: [3, 4])
             .build()
         XCTAssertEqual(bar.b, [1, 2, 3, 4])
     }
@@ -91,7 +91,7 @@ class BuildableArrayPropertyTests: XCTestCase {
     func testRemoveAll_enumWithoutLabel() throws {
         let bar = Bar.two([1, 2, 3])
         let bar2 = try bar.toBuilder().two
-            .removeAllFromIndex0()
+            .removeAllFromIndex_0()
             .build()
         XCTAssertEqual(bar2.b, [])
     }

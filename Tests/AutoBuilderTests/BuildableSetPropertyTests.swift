@@ -18,7 +18,7 @@ class BuildableSetPropertyTests: XCTestCase {
 
     func testSetSet_enumWithoutLabel() throws {
         let bar = try Bar.Builder().two
-            .setIndex0([1, 2, 3])
+            .set(index_0: [1, 2, 3])
             .build()
         XCTAssertEqual(bar.b, [1, 2, 3])
     }
@@ -43,9 +43,9 @@ class BuildableSetPropertyTests: XCTestCase {
 
     func testInsertElement_enumWithoutLabel() throws {
         let bar = try Bar.Builder().two
-            .insertIntoIndex0(1)
-            .insertIntoIndex0(2)
-            .insertIntoIndex0(3)
+            .insertInto(index_0: 1)
+            .insertInto(index_0: 2)
+            .insertInto(index_0: 3)
             .build()
         XCTAssertEqual(bar.b, [1, 2, 3])
     }
@@ -68,8 +68,8 @@ class BuildableSetPropertyTests: XCTestCase {
 
     func testFormUnion_enumWithoutLabel() throws {
         let bar = try Bar.Builder().two
-            .formUnionWithIndex0(other: [1, 2])
-            .formUnionWithIndex0(other: [3, 4])
+            .formUnionWithIndex_0(other: [1, 2])
+            .formUnionWithIndex_0(other: [3, 4])
             .build()
         XCTAssertEqual(bar.b, [1, 2, 3, 4])
     }
@@ -93,7 +93,7 @@ class BuildableSetPropertyTests: XCTestCase {
     func testRemoveAll_enumWithoutLabel() throws {
         let bar = Bar.two([1, 2, 3])
         let bar2 = try bar.toBuilder().two
-            .removeAllFromIndex0()
+            .removeAllFromIndex_0()
             .build()
         XCTAssertEqual(bar2.b, [])
     }
