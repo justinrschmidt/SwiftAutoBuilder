@@ -4,6 +4,7 @@ struct AssociatedValue: Equatable, CustomStringConvertible {
     let label: Label
     let variableType: VariableType
     let isInitialized: Bool
+    let firstNameToken: TokenSyntax?
 
     var identifier: String {
         return label.identifier
@@ -12,6 +13,14 @@ struct AssociatedValue: Equatable, CustomStringConvertible {
     var description: String {
         let initialized = isInitialized ? "initialized" : "uninitialized"
         return "(\(identifier), \(variableType), \(initialized))"
+    }
+
+    static func ==(lhs: AssociatedValue, rhs: AssociatedValue) -> Bool {
+        guard lhs.label == rhs.label else { return false }
+        guard lhs.variableType == rhs.variableType else { return false }
+        guard lhs.isInitialized == rhs.isInitialized else { return false }
+        guard lhs.firstNameToken?.text == rhs.firstNameToken?.text else { return false }
+        return true
     }
 
     enum Label: Equatable, Hashable {

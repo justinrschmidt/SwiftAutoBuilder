@@ -895,4 +895,27 @@ final class AutoBuilderMacroEnumTests: XCTestCase {
             }
             """, macros: testMacros)
     }
+
+    func testEnumWithInvalidAssociatedValueLabels() {
+        assertMacroExpansion(
+            """
+            @AutoBuilder
+            enum Foo {
+                case one(_index_0: Int, index_0_: Int, index_123: Int)
+            }
+            """,
+            expandedSource:
+            """
+            enum Foo {
+                case one(_index_0: Int, index_0_: Int, index_123: Int)
+            }
+            """, diagnostics: [
+                DiagnosticSpec(
+                    id: MessageID(domain: AutoBuilderDiagnostic.domain, id: "InvalidEnumAssociatedValueLabel"),
+                    message: "@AutoBuilder enum associated value labels must not match \"^index_[0-9]+$\".",
+                    line: 3,
+                    column: 44,
+                    severity: .error)
+            ], macros: testMacros)
+    }
 }

@@ -29,7 +29,8 @@ struct EnumHelper {
             values.append(AssociatedValue(
                 label: label,
                 variableType: VariableHelper.getVariableType(from: element.type),
-                isInitialized: element.defaultArgument != nil))
+                isInitialized: element.defaultArgument != nil,
+                firstNameToken: element.firstName))
         }
         return values
     }

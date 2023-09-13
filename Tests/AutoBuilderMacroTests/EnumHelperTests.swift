@@ -120,7 +120,8 @@ final class EnumHelperTests: XCTestCase {
             associatedValues: $0.associatedValues.map({ AssociatedValue(
                 label: $0.label,
                 variableType: $0.type.variableType,
-                isInitialized: $0.initialized.isInitialized)
+                isInitialized: $0.initialized.isInitialized,
+                firstNameToken: $0.label.pattern?.identifier)
             }))
         })
         XCTAssertEqual(actualCases, expectedCases, file: file, line: line)

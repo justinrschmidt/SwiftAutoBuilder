@@ -1,4 +1,5 @@
 import SwiftCompilerPlugin
+import Foundation
 import SwiftSyntax
 import SwiftSyntaxBuilder
 import SwiftSyntaxMacros
@@ -73,20 +74,21 @@ public struct AutoBuilderMacro: MemberMacro, ConformanceMacro {
             }
         } else if let enumDecl = declaration.as(EnumDeclSyntax.self) {
             let cases = EnumHelper.getCases(from: enumDecl.memberBlock.members)
+            var errorDiagnostics: [Diagnostic] = []
             if cases.isEmpty {
-                return (.error(diagnostics: [
-                    Diagnostic(
-                        node: enumDecl.cast(Syntax.self),
-                        message: AutoBuilderDiagnostic.enumWithNoCases(enumName: enumDecl.identifier.trimmedDescription))
-                ]), [])
+                errorDiagnostics.append(Diagnostic(
+                    node: enumDecl.cast(Syntax.self),
+                    message: AutoBuilderDiagnostic.enumWithNoCases(enumName: enumDecl.identifier.trimmedDescription)))
             }
             let overloadedCases = getOverloadedCases(cases)
             if !overloadedCases.isEmpty {
-                return (.error(diagnostics: [
-                    Diagnostic(
-                        node: enumDecl.cast(Syntax.self),
-                        message: AutoBuilderDiagnostic.enumWithOverloadedCases(overloadedCases: overloadedCases))
-                ]), [])
+                errorDiagnostics.append(Diagnostic(
+                    node: enumDecl.cast(Syntax.self),
+                    message: AutoBuilderDiagnostic.enumWithOverloadedCases(overloadedCases: overloadedCases)))
+            }
+            errorDiagnostics += getInvalidAssociatedValueLabelsDiagnostics(cases)
+            if !errorDiagnostics.isEmpty {
+                return (.error(diagnostics: errorDiagnostics), [])
             }
             var diagnostics: [Diagnostic] = []
             let hasAssociatedValues = cases.contains(where: { !$0.associatedValues.isEmpty })
@@ -118,6 +120,25 @@ public struct AutoBuilderMacro: MemberMacro, ConformanceMacro {
             }
         }
         return Array(overloadedCases)
+    }
+
+    private static func getInvalidAssociatedValueLabelsDiagnostics(_ cases: [EnumUnionCase]) -> [Diagnostic] {
+        let regex = try! NSRegularExpression(pattern: "^index_[0-9]+$", options: [.caseInsensitive])
+        var diagnostics: [Diagnostic] = []
+        for enumCase in cases {
+            for value in enumCase.associatedValues {
+                if case let .identifierPattern(pattern) = value.label {
+                    let label = pattern.identifier.text
+                    let range = NSRange(label.startIndex..., in: label)
+                    if regex.numberOfMatches(in: pattern.identifier.text, options: [], range: range) > 0 {
+                        diagnostics.append(Diagnostic(
+                            node: value.firstNameToken!.cast(Syntax.self),
+                            message: AutoBuilderDiagnostic.invalidEnumAssociatedValueLabel))
+                    }
+                }
+            }
+        }
+        return diagnostics
     }
 
     private static func hasPublic(modifiers: ModifierListSyntax?) -> Bool {

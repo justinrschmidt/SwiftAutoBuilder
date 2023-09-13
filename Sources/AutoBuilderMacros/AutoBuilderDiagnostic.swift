@@ -8,6 +8,7 @@ public enum AutoBuilderDiagnostic: DiagnosticMessage {
     case noAssociatedValues(enumName: String)
     case enumWithNoCases(enumName: String)
     case enumWithOverloadedCases(overloadedCases: [String])
+    case invalidEnumAssociatedValueLabel
     case invalidTypeForAutoBuilder
 
     public var severity: DiagnosticSeverity {
@@ -15,7 +16,8 @@ public enum AutoBuilderDiagnostic: DiagnosticMessage {
         case .impliedVariableType(_),
                 .invalidTypeForAutoBuilder,
                 .enumWithNoCases(_),
-                .enumWithOverloadedCases(_):
+                .enumWithOverloadedCases(_),
+                .invalidEnumAssociatedValueLabel:
             return .error
         case .noAssociatedValues(_):
             return .warning
@@ -32,6 +34,8 @@ public enum AutoBuilderDiagnostic: DiagnosticMessage {
             return "\(enumName) (aka: Never) does not have any cases and cannot be instantiated."
         case let .enumWithOverloadedCases(overloadedCases):
             return "@AutoBuilder does not support overloaded cases (\(overloadedCases.joined(separator: ", "))) due to ambiguity caused by SE-0155 not being fully implemented."
+        case .invalidEnumAssociatedValueLabel:
+            return "@AutoBuilder enum associated value labels must not match \"^index_[0-9]+$\"."
         case .invalidTypeForAutoBuilder:
             return "@AutoBuilder can only be applied to structs"
         }
@@ -47,6 +51,8 @@ public enum AutoBuilderDiagnostic: DiagnosticMessage {
             return MessageID(domain: Self.domain, id: "EnumWithNoCases")
         case .enumWithOverloadedCases(_):
             return MessageID(domain: Self.domain, id: "EnumWithOverloadedCases")
+        case .invalidEnumAssociatedValueLabel:
+            return MessageID(domain: Self.domain, id: "InvalidEnumAssociatedValueLabel")
         case .invalidTypeForAutoBuilder:
             return MessageID(domain: Self.domain, id: "InvalidTypeForAutoBuilder")
         }
