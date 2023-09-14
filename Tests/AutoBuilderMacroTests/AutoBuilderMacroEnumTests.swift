@@ -902,12 +902,14 @@ final class AutoBuilderMacroEnumTests: XCTestCase {
             @AutoBuilder
             enum Foo {
                 case one(_index_0: Int, index_0_: Int, index_123: Int)
+                case two(index_0: Int, index_1: Int)
             }
             """,
             expandedSource:
             """
             enum Foo {
                 case one(_index_0: Int, index_0_: Int, index_123: Int)
+                case two(index_0: Int, index_1: Int)
             }
             """, diagnostics: [
                 DiagnosticSpec(
@@ -915,6 +917,18 @@ final class AutoBuilderMacroEnumTests: XCTestCase {
                     message: "@AutoBuilder enum associated value labels must not match \"^index_[0-9]+$\".",
                     line: 3,
                     column: 44,
+                    severity: .error),
+                DiagnosticSpec(
+                    id: MessageID(domain: AutoBuilderDiagnostic.domain, id: "InvalidEnumAssociatedValueLabel"),
+                    message: "@AutoBuilder enum associated value labels must not match \"^index_[0-9]+$\".",
+                    line: 4,
+                    column: 14,
+                    severity: .error),
+                DiagnosticSpec(
+                    id: MessageID(domain: AutoBuilderDiagnostic.domain, id: "InvalidEnumAssociatedValueLabel"),
+                    message: "@AutoBuilder enum associated value labels must not match \"^index_[0-9]+$\".",
+                    line: 4,
+                    column: 28,
                     severity: .error)
             ], macros: testMacros)
     }
