@@ -49,15 +49,7 @@ final class AutoBuilderMacroEnumTests: XCTestCase {
                 }
                 func toBuilder() -> Builder {
                     let builder = Builder()
-                    switch self {
-                    case let .one(a):
-                        let oneBuilder = builder.one
-                        oneBuilder.set(a: a)
-                    case let .two(b, c):
-                        let twoBuilder = builder.two
-                        twoBuilder.set(b: b)
-                        twoBuilder.set(c: c)
-                    }
+                    builder.set(value: self)
                     return builder
                 }
                 public class Builder: BuilderProtocol {
@@ -183,12 +175,7 @@ final class AutoBuilderMacroEnumTests: XCTestCase {
                 }
                 func toBuilder() -> Builder {
                     let builder = Builder()
-                    switch self {
-                    case .one:
-                        _ = builder.one
-                    case .two:
-                        _ = builder.two
-                    }
+                    builder.set(value: self)
                     return builder
                 }
                 public class Builder: BuilderProtocol {
@@ -297,13 +284,7 @@ final class AutoBuilderMacroEnumTests: XCTestCase {
             }
             func toBuilder() -> Builder {
                 let builder = Builder()
-                switch self {
-                case let .one(a):
-                    let oneBuilder = builder.one
-                    oneBuilder.set(a: a)
-                case .two:
-                    _ = builder.two
-                }
+                builder.set(value: self)
                 return builder
             }
             public class Builder: BuilderProtocol {
@@ -411,13 +392,7 @@ final class AutoBuilderMacroEnumTests: XCTestCase {
                 }
                 func toBuilder() -> Builder {
                     let builder = Builder()
-                    switch self {
-                    case let .one(i0, b, i2):
-                        let oneBuilder = builder.one
-                        oneBuilder.set(index_0: i0)
-                        oneBuilder.set(b: b)
-                        oneBuilder.set(index_2: i2)
-                    }
+                    builder.set(value: self)
                     return builder
                 }
                 public class Builder: BuilderProtocol {
@@ -544,12 +519,7 @@ final class AutoBuilderMacroEnumTests: XCTestCase {
                 }
                 func toBuilder() -> Builder {
                     let builder = Builder()
-                    switch self {
-                    case let .one(a, i1):
-                        let oneBuilder = builder.one
-                        oneBuilder.set(a: a)
-                        oneBuilder.set(index_1: i1)
-                    }
+                    builder.set(value: self)
                     return builder
                 }
                 public class Builder: BuilderProtocol {
@@ -667,12 +637,7 @@ final class AutoBuilderMacroEnumTests: XCTestCase {
                 }
                 func toBuilder() -> Builder {
                     let builder = Builder()
-                    switch self {
-                    case let .one(a, i1):
-                        let oneBuilder = builder.one
-                        oneBuilder.set(a: a)
-                        oneBuilder.set(index_1: i1)
-                    }
+                    builder.set(value: self)
                     return builder
                 }
                 public class Builder: BuilderProtocol {
@@ -790,12 +755,7 @@ final class AutoBuilderMacroEnumTests: XCTestCase {
                 }
                 func toBuilder() -> Builder {
                     let builder = Builder()
-                    switch self {
-                    case let .one(a, i1):
-                        let oneBuilder = builder.one
-                        oneBuilder.set(a: a)
-                        oneBuilder.set(index_1: i1)
-                    }
+                    builder.set(value: self)
                     return builder
                 }
                 public class Builder: BuilderProtocol {
@@ -950,12 +910,7 @@ final class AutoBuilderMacroEnumTests: XCTestCase {
                 }
                 func toBuilder() -> Builder {
                     let builder = Builder()
-                    switch self {
-                    case let .one(a, b):
-                        let oneBuilder = builder.one
-                        oneBuilder.set(a: a)
-                        oneBuilder.set(b: b)
-                    }
+                    builder.set(value: self)
                     return builder
                 }
                 public class Builder: BuilderProtocol {

@@ -245,17 +245,9 @@ public struct AutoBuilderMacro: MemberMacro, ConformanceMacro {
     private static func createEnumToBuilderFunction(from cases: [EnumUnionCase], isPublic: Bool) throws -> FunctionDeclSyntax {
         let accessModifier = isPublic ? "public " : ""
         return try FunctionDeclSyntax("\(raw: accessModifier)func toBuilder() -> Builder") {
-            VariableDeclSyntax(
-                .let,
-                name: IdentifierPatternSyntax(identifier: .identifier("builder")).cast(PatternSyntax.self),
-                initializer: InitializerClauseSyntax(
-                    value: functionCallExpr(IdentifierExprSyntax(identifier: .identifier("Builder")))))
-            try SwitchExprSyntax("switch self") {
-                for enumCase in cases {
-                    createEnumToBuilderCase(for: enumCase)
-                }
-            }
-            ReturnStmtSyntax(expression: IdentifierExprSyntax(identifier: .identifier("builder")))
+            "let builder = Builder()"
+            "builder.set(value: self)"
+            "return builder"
         }
     }
 
