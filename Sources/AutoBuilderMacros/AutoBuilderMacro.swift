@@ -705,11 +705,6 @@ public struct AutoBuilderMacro: MemberMacro, ConformanceMacro {
             }
         }
     }
-
-    private enum SetValueFunctionIdentifier {
-        case label(String)
-        case index(Int, indexesPropertyName: String)
-    }
 }
 
 @main
