@@ -637,7 +637,7 @@ final class AutoBuilderMacroEnumTests: XCTestCase {
                             return self
                         }
                         public func build() throws -> Foo {
-                            return try .one(a: a.build(), index_1.build())
+                            return .one(a: a.build(), index_1.build())
                         }
                     }
                     private enum BuilderCases {
@@ -760,7 +760,7 @@ final class AutoBuilderMacroEnumTests: XCTestCase {
                             return self
                         }
                         public func build() throws -> Foo {
-                            return try .one(a: a.build(), index_1.build())
+                            return .one(a: a.build(), index_1.build())
                         }
                     }
                     private enum BuilderCases {
@@ -883,7 +883,7 @@ final class AutoBuilderMacroEnumTests: XCTestCase {
                             return self
                         }
                         public func build() throws -> Foo {
-                            return try .one(a: a.build(), index_1.build())
+                            return .one(a: a.build(), index_1.build())
                         }
                     }
                     private enum BuilderCases {
@@ -931,5 +931,113 @@ final class AutoBuilderMacroEnumTests: XCTestCase {
                     column: 28,
                     severity: .error)
             ], macros: testMacros)
+    }
+
+    func testEnumWithMixedAssociatedValueCollectionTypes() {
+        assertMacroExpansion(
+            """
+            @AutoBuilder
+            enum Foo {
+                case one(a: Int, b: [String])
+            }
+            """,
+            expandedSource:
+            """
+            enum Foo {
+                case one(a: Int, b: [String])
+                init(with builder: Builder) throws {
+                    self = try builder.build()
+                }
+                func toBuilder() -> Builder {
+                    let builder = Builder()
+                    switch self {
+                    case let .one(a, b):
+                        let oneBuilder = builder.one
+                        oneBuilder.set(a: a)
+                        oneBuilder.set(b: b)
+                    }
+                    return builder
+                }
+                public class Builder: BuilderProtocol {
+                    private var currentCase: BuilderCases?
+                    public required init() {
+                        currentCase = nil
+                    }
+                    public var one: One {
+                        get {
+                            switch currentCase {
+                            case let .some(.one(builder)):
+                                return builder
+                            default:
+                                let builder = One()
+                                currentCase = .one(builder)
+                                return builder
+                            }
+                        }
+                        set {
+                            currentCase = .one(newValue)
+                        }
+                    }
+                    public func set(value: Foo) {
+                        switch value {
+                        case let .one(a, b):
+                            let builder = One()
+                            builder.set(a: a)
+                            builder.set(b: b)
+                            currentCase = .one(builder)
+                        }
+                    }
+                    public func build() throws -> Foo {
+                        switch currentCase {
+                        case let .some(.one(builder)):
+                            return try builder.build()
+                        case .none:
+                            throw BuilderError.noEnumCaseSet
+                        }
+                    }
+                    public class One: BuilderProtocol {
+                        public let a: BuildableProperty<Int>
+                        public let b: BuildableArrayProperty<String>
+                        public required init() {
+                            a = BuildableProperty(name: "a")
+                            b = BuildableArrayProperty()
+                        }
+                        @discardableResult
+                        public func set(a: Int) -> One {
+                            self.a.set(value: a)
+                            return self
+                        }
+                        @discardableResult
+                        public func set(b: [String]) -> One {
+                            self.b.set(value: b)
+                            return self
+                        }
+                        @discardableResult
+                        public func appendTo(b element: String) -> One {
+                            self.b.append(element: element)
+                            return self
+                        }
+                        @discardableResult
+                        public func appendTo<C>(b collection: C) -> One where C: Collection, C.Element == String {
+                            self.b.append(contentsOf: collection)
+                            return self
+                        }
+                        @discardableResult
+                        public func removeAllFromB() -> One {
+                            b.removeAll()
+                            return self
+                        }
+                        public func build() throws -> Foo {
+                            return try .one(a: a.build(), b: b.build())
+                        }
+                    }
+                    private enum BuilderCases {
+                        case one(One)
+                    }
+                }
+            }
+            extension Foo: Buildable {
+            }
+            """, macros: testMacros)
     }
 }

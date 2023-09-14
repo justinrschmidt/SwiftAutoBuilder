@@ -457,7 +457,12 @@ public struct AutoBuilderMacro: MemberMacro, ConformanceMacro {
                             return "index_\(index).build()"
                         }
                     }).joined(separator: ", ")
-                    CodeBlockItemSyntax(stringLiteral: "return try .\(enumCase.caseIdentifier)(\(args))")
+                    let hasFailableBuilders = enumCase.associatedValues.reduce(false, { $0 || variableTypeBuilderCanFail($1.variableType) })
+                    if hasFailableBuilders {
+                        "return try .\(raw: enumCase.caseIdentifier)(\(raw: args))"
+                    } else {
+                        "return .\(raw: enumCase.caseIdentifier)(\(raw: args))"
+                    }
                 }
             }
         })
@@ -703,6 +708,13 @@ public struct AutoBuilderMacro: MemberMacro, ConformanceMacro {
             PatternBindingListSyntax {
                 PatternBindingSyntax(pattern: identifierPattern, typeAnnotation: typeAnnotation)
             }
+        }
+    }
+
+    private static func variableTypeBuilderCanFail(_ variableType: VariableType) -> Bool {
+        return switch variableType {
+        case .array(_), .dictionary(_, _), .set(_): false
+        case .implicit, .explicit(_): true
         }
     }
 }
