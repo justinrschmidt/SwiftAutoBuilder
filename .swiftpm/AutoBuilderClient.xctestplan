@@ -1,0 +1,36 @@
+{
+  "configurations" : [
+    {
+      "id" : "73FA3CD2-D98C-4553-B5E3-57622CB84F10",
+      "name" : "Test Scheme Action",
+      "options" : {
+
+      }
+    }
+  ],
+  "defaultOptions" : {
+    "codeCoverage" : false,
+    "targetForVariableExpansion" : {
+      "containerPath" : "container:",
+      "identifier" : "AutoBuilderClient",
+      "name" : "AutoBuilderClient"
+    }
+  },
+  "testTargets" : [
+    {
+      "target" : {
+        "containerPath" : "container:",
+        "identifier" : "AutoBuilderMacroTests",
+        "name" : "AutoBuilderMacroTests"
+      }
+    },
+    {
+      "target" : {
+        "containerPath" : "container:",
+        "identifier" : "AutoBuilderTests",
+        "name" : "AutoBuilderTests"
+      }
+    }
+  ],
+  "version" : 1
+}

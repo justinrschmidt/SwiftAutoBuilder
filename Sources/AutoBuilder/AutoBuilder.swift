@@ -134,6 +134,7 @@
 ///     // prints "1, 3"
 ///     print("\(foo2.a), \(foo2.b)")
 ///
-@attached(conformance)
-@attached(member, names: named(Builder), named(init(with:)), named(toBuilder))
+import AutoBuilderMacros
+
+@attached(extension, conformances: Buildable, names: named(Builder), named(init(with:)), named(toBuilder))
 public macro AutoBuilder() = #externalMacro(module: "AutoBuilderMacros", type: "AutoBuilderMacro")

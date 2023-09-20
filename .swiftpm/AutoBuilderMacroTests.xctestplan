@@ -1,0 +1,24 @@
+{
+  "configurations" : [
+    {
+      "id" : "BD876AC9-4BDD-4530-887F-B6D9D05CCE88",
+      "name" : "Test Scheme Action",
+      "options" : {
+
+      }
+    }
+  ],
+  "defaultOptions" : {
+    "codeCoverage" : false
+  },
+  "testTargets" : [
+    {
+      "target" : {
+        "containerPath" : "container:",
+        "identifier" : "AutoBuilderMacroTests",
+        "name" : "AutoBuilderMacroTests"
+      }
+    }
+  ],
+  "version" : 1
+}

@@ -5,7 +5,7 @@ import SwiftSyntaxBuilder
 import SwiftSyntaxMacros
 import SwiftDiagnostics
 
-public struct AutoBuilderMacro: MemberMacro, ConformanceMacro {
+public struct AutoBuilderMacro: ExtensionMacro {
     private enum DeclAnalysisResponse {
         case `struct`(structDecl: StructDeclSyntax, propertiesToBuild: [Property])
         case `enum`(enumDecl: EnumDeclSyntax, cases: [EnumUnionCase])
@@ -21,41 +21,44 @@ public struct AutoBuilderMacro: MemberMacro, ConformanceMacro {
         }
     }
 
+    // TODO: Look at the types passed into conformingTo once issue #2031 is fixed.
+    // Issue #2031 describes how `assertMacroExpansion()` always passes an empty array
+    // into the conformingTo parameter in tests.
+    // https://github.com/apple/swift-syntax/issues/2031
     public static func expansion(
         of node: AttributeSyntax,
-        providingConformancesOf declaration: some DeclGroupSyntax,
-        in context: some MacroExpansionContext) -> [(TypeSyntax, GenericWhereClauseSyntax?)] {
-            if !analyze(declaration: declaration, of: node).response.isError {
-                return [
-                    (SimpleTypeIdentifierSyntax(name: .identifier("Buildable")).cast(TypeSyntax.self), nil)
-                ]
-            } else {
-                return []
-            }
-    }
-
-    public static func expansion(
-        of node: AttributeSyntax,
-        providingMembersOf declaration: some DeclGroupSyntax,
-        in context: some MacroExpansionContext) throws -> [DeclSyntax] {
+        attachedTo declaration: some DeclGroupSyntax,
+        providingExtensionsOf type: some TypeSyntaxProtocol,
+        conformingTo protocols: [TypeSyntax],
+        in context: some MacroExpansionContext) throws -> [ExtensionDeclSyntax] {
             let (response, nonFatalDiagnostics) = analyze(declaration: declaration, of: node)
             nonFatalDiagnostics.forEach(context.diagnose(_:))
             switch response {
             case let .struct(structDecl, propertiesToBuild):
                 let isPublic = hasPublic(modifiers: structDecl.modifiers)
-                return try createStructDecls(from: propertiesToBuild, containerIdentifier: structDecl.identifier, isPublic: isPublic)
+                let decls = try createStructDecls(from: propertiesToBuild, clientType: type.trimmed, isPublic: isPublic)
+                return try [
+                    ExtensionDeclSyntax("extension \(type.trimmed): Buildable") {
+                        for decl in decls {
+                            decl
+                        }
+                    }
+                ]
             case let .enum(enumDecl, cases):
                 let isPublic = hasPublic(modifiers: enumDecl.modifiers)
-                return try createEnumDecls(
-                    from: cases,
-                    clientIdentifier: enumDecl.identifier.trimmed,
-                    isPublic: isPublic,
-                    in: context)
+                let decls = try createEnumDecls(from: cases, clientType: type.trimmed, isPublic: isPublic, in: context)
+                return try [
+                    ExtensionDeclSyntax("extension \(type.trimmed): Buildable") {
+                        for decl in decls {
+                            decl
+                        }
+                    }
+                ]
             case let .error(diagnostics):
                 diagnostics.forEach(context.diagnose(_:))
                 return []
             }
-        }
+    }
 
     private static func analyze(declaration: some DeclGroupSyntax, of node: AttributeSyntax) -> (response: DeclAnalysisResponse, nonErrorDiagnostics: [Diagnostic]) {
         if let structDecl = declaration.as(StructDeclSyntax.self) {
@@ -149,7 +152,7 @@ public struct AutoBuilderMacro: MemberMacro, ConformanceMacro {
 
     // MARK: - Create Struct Syntax Tokens
 
-    private static func createStructDecls(from properties: [Property], containerIdentifier: TokenSyntax, isPublic: Bool) throws -> [DeclSyntax] {
+    private static func createStructDecls(from properties: [Property], clientType: TypeSyntaxProtocol, isPublic: Bool) throws -> [DeclSyntax] {
         let accessModifier = isPublic ? "public " : ""
         return [
             try InitializerDeclSyntax("\(raw: accessModifier)init(with builder: Builder) throws", bodyBuilder: {
@@ -160,8 +163,7 @@ public struct AutoBuilderMacro: MemberMacro, ConformanceMacro {
             try createToBuilderFunction(from: properties, isPublic: isPublic).cast(DeclSyntax.self),
             try createBuilderClass(
                 from: properties,
-                containerIdentifier: containerIdentifier,
-                buildFunction: createStructBuildFunction(containerIdentifier: containerIdentifier)
+                buildFunction: createStructBuildFunction(clientType: clientType)
             ).cast(DeclSyntax.self)
         ]
     }
@@ -211,16 +213,9 @@ public struct AutoBuilderMacro: MemberMacro, ConformanceMacro {
         }
     }
 
-    private static func createStructBuildFunction(containerIdentifier: TokenSyntax) throws -> FunctionDeclSyntax {
-        return try FunctionDeclSyntax("public func build() throws -> \(raw: containerIdentifier.text)") {
-            ReturnStmtSyntax(
-                expression: TryExprSyntax(
-                    expression: FunctionCallExprSyntax(
-                        calledExpression: IdentifierExprSyntax(identifier: .identifier(containerIdentifier.text)),
-                        leftParen: .leftParenToken(),
-                        rightParen: .rightParenToken()) {
-                            TupleExprElementSyntax(label: "with", expression: IdentifierExprSyntax(identifier: .keyword(.self)))
-                        }))
+    private static func createStructBuildFunction(clientType: TypeSyntaxProtocol) throws -> FunctionDeclSyntax {
+        return try FunctionDeclSyntax("public func build() throws -> \(clientType)") {
+            "return try \(clientType)(with: self)"
         }
     }
 
@@ -228,7 +223,7 @@ public struct AutoBuilderMacro: MemberMacro, ConformanceMacro {
 
     private static func createEnumDecls(
         from cases: [EnumUnionCase],
-        clientIdentifier: TokenSyntax,
+        clientType: TypeSyntaxProtocol,
         isPublic: Bool,
         in context: some MacroExpansionContext
     ) throws -> [DeclSyntax] {
@@ -238,7 +233,7 @@ public struct AutoBuilderMacro: MemberMacro, ConformanceMacro {
                 CodeBlockItemSyntax(stringLiteral: "self = try builder.build()")
             }).cast(DeclSyntax.self),
             try createEnumToBuilderFunction(from: cases, isPublic: isPublic).cast(DeclSyntax.self),
-            try createEnumBuilderClass(from: cases, clientIdentifier: clientIdentifier, in: context).cast(DeclSyntax.self)
+            try createEnumBuilderClass(from: cases, clientType: clientType, in: context).cast(DeclSyntax.self)
         ]
     }
 
@@ -278,7 +273,7 @@ public struct AutoBuilderMacro: MemberMacro, ConformanceMacro {
 
     private static func createEnumBuilderClass(
         from cases: [EnumUnionCase],
-        clientIdentifier: TokenSyntax,
+        clientType: TypeSyntaxProtocol,
         in context: some MacroExpansionContext
     ) throws -> ClassDeclSyntax {
         return try ClassDeclSyntax("public class Builder: BuilderProtocol") {
@@ -294,10 +289,10 @@ public struct AutoBuilderMacro: MemberMacro, ConformanceMacro {
                 let caseIdentifier = enumCase.caseIdentifier
                 try createCaseBuilderComputedProperty(named: caseIdentifier, builderCase: caseIdentifier, builderClassName: caseIdentifier.capitalized)
             }
-            try createEnumSetValueFunction(from: cases, clientIdentifier: clientIdentifier)
-            try createEnumBuildFunction(from: cases, clientIdentifier: clientIdentifier)
+            try createEnumSetValueFunction(from: cases, clientType: clientType)
+            try createEnumBuildFunction(from: cases, clientType: clientType)
             for enumCase in cases {
-                try createEnumCaseBuilderClass(from: enumCase, clientIdentifier: clientIdentifier, in: context)
+                try createEnumCaseBuilderClass(from: enumCase, clientType: clientType, in: context)
             }
             try createBuilderCasesEnum(from: cases.map({ $0.caseIdentifier }))
         }
@@ -341,8 +336,8 @@ public struct AutoBuilderMacro: MemberMacro, ConformanceMacro {
         }
     }
 
-    private static func createEnumSetValueFunction(from cases: [EnumUnionCase], clientIdentifier: TokenSyntax) throws -> FunctionDeclSyntax {
-        return try FunctionDeclSyntax("public func set(value: \(clientIdentifier.trimmed))") {
+    private static func createEnumSetValueFunction(from cases: [EnumUnionCase], clientType: TypeSyntaxProtocol) throws -> FunctionDeclSyntax {
+        return try FunctionDeclSyntax("public func set(value: \(clientType))") {
             try SwitchExprSyntax("switch value") {
                 for enumCase in cases {
                     let caseDeclaration = if enumCase.associatedValues.isEmpty {
@@ -368,8 +363,8 @@ public struct AutoBuilderMacro: MemberMacro, ConformanceMacro {
         }
     }
 
-    private static func createEnumBuildFunction(from cases: [EnumUnionCase], clientIdentifier: TokenSyntax) throws -> FunctionDeclSyntax {
-        return try FunctionDeclSyntax("public func build() throws -> \(clientIdentifier.trimmed)") {
+    private static func createEnumBuildFunction(from cases: [EnumUnionCase], clientType: TypeSyntaxProtocol) throws -> FunctionDeclSyntax {
+        return try FunctionDeclSyntax("public func build() throws -> \(clientType)") {
             try SwitchExprSyntax("switch currentCase") {
                 for enumCase in cases {
                     SwitchCaseSyntax("case let .some(.\(raw: enumCase.caseIdentifier)(builder)):") {
@@ -385,7 +380,7 @@ public struct AutoBuilderMacro: MemberMacro, ConformanceMacro {
 
     private static func createEnumCaseBuilderClass(
         from enumCase: EnumUnionCase,
-        clientIdentifier: TokenSyntax,
+        clientType: TypeSyntaxProtocol,
         in context: some MacroExpansionContext
     ) throws -> ClassDeclSyntax {
         let builderClassName = enumCase.caseIdentifier.capitalized
@@ -436,7 +431,7 @@ public struct AutoBuilderMacro: MemberMacro, ConformanceMacro {
                     }
                 }
             }
-            try FunctionDeclSyntax("public func build() throws -> \(clientIdentifier)") {
+            try FunctionDeclSyntax("public func build() throws -> \(clientType)") {
                 if enumCase.associatedValues.isEmpty {
                     CodeBlockItemSyntax(stringLiteral: "return .\(enumCase.caseIdentifier)")
                 } else {
@@ -479,7 +474,6 @@ public struct AutoBuilderMacro: MemberMacro, ConformanceMacro {
     private static func createBuilderClass(
         from properties: [Property],
         named builderClassName: String = "Builder",
-        containerIdentifier: TokenSyntax,
         buildFunction: FunctionDeclSyntax
     ) throws -> ClassDeclSyntax {
         return try ClassDeclSyntax("public class \(raw: builderClassName): BuilderProtocol", membersBuilder: {

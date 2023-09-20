@@ -44,6 +44,8 @@ final class AutoBuilderMacroEnumTests: XCTestCase {
             enum Foo {
                 case one(a: Int)
                 case two(b: Double, c: String)
+            }
+            extension Foo: Buildable {
                 init(with builder: Builder) throws {
                     self = try builder.build()
                 }
@@ -151,8 +153,6 @@ final class AutoBuilderMacroEnumTests: XCTestCase {
                     }
                 }
             }
-            extension Foo: Buildable {
-            }
             """, macros: testMacros)
     }
     
@@ -170,6 +170,8 @@ final class AutoBuilderMacroEnumTests: XCTestCase {
             enum Foo {
                 case one
                 case two
+            }
+            extension Foo: Buildable {
                 init(with builder: Builder) throws {
                     self = try builder.build()
                 }
@@ -253,8 +255,6 @@ final class AutoBuilderMacroEnumTests: XCTestCase {
                     }
                 }
             }
-            extension Foo: Buildable {
-            }
             """, diagnostics: [
                 DiagnosticSpec(
                     id: MessageID(domain: AutoBuilderDiagnostic.domain, id: "NoAssociatedValues"),
@@ -279,6 +279,8 @@ final class AutoBuilderMacroEnumTests: XCTestCase {
         enum Foo {
             case one(a: Int)
             case two
+        }
+        extension Foo: Buildable {
             init(with builder: Builder) throws {
                 self = try builder.build()
             }
@@ -370,8 +372,6 @@ final class AutoBuilderMacroEnumTests: XCTestCase {
                 }
             }
         }
-        extension Foo: Buildable {
-        }
         """, macros: testMacros)
     }
 
@@ -387,6 +387,8 @@ final class AutoBuilderMacroEnumTests: XCTestCase {
             """
             enum Foo {
                 case one(Int, b: Double, String)
+            }
+            extension Foo: Buildable {
                 init(with builder: Builder) throws {
                     self = try builder.build()
                 }
@@ -466,8 +468,6 @@ final class AutoBuilderMacroEnumTests: XCTestCase {
                     }
                 }
             }
-            extension Foo: Buildable {
-            }
             """, macros: testMacros)
     }
 
@@ -514,6 +514,8 @@ final class AutoBuilderMacroEnumTests: XCTestCase {
             """
             enum Foo {
                 case one(a: [Int], [Int])
+            }
+            extension Foo: Buildable {
                 init(with builder: Builder) throws {
                     self = try builder.build()
                 }
@@ -615,8 +617,6 @@ final class AutoBuilderMacroEnumTests: XCTestCase {
                     }
                 }
             }
-            extension Foo: Buildable {
-            }
             """, macros: testMacros)
     }
 
@@ -632,6 +632,8 @@ final class AutoBuilderMacroEnumTests: XCTestCase {
             """
             enum Foo {
                 case one(a: [String: Int], [String: Int])
+            }
+            extension Foo: Buildable {
                 init(with builder: Builder) throws {
                     self = try builder.build()
                 }
@@ -733,8 +735,6 @@ final class AutoBuilderMacroEnumTests: XCTestCase {
                     }
                 }
             }
-            extension Foo: Buildable {
-            }
             """, macros: testMacros)
     }
 
@@ -750,6 +750,8 @@ final class AutoBuilderMacroEnumTests: XCTestCase {
             """
             enum Foo {
                 case one(a: Set<Int>, Set<Int>)
+            }
+            extension Foo: Buildable {
                 init(with builder: Builder) throws {
                     self = try builder.build()
                 }
@@ -851,8 +853,6 @@ final class AutoBuilderMacroEnumTests: XCTestCase {
                     }
                 }
             }
-            extension Foo: Buildable {
-            }
             """, macros: testMacros)
     }
 
@@ -905,6 +905,8 @@ final class AutoBuilderMacroEnumTests: XCTestCase {
             """
             enum Foo {
                 case one(a: Int, b: [String])
+            }
+            extension Foo: Buildable {
                 init(with builder: Builder) throws {
                     self = try builder.build()
                 }
@@ -990,8 +992,6 @@ final class AutoBuilderMacroEnumTests: XCTestCase {
                         case one(One)
                     }
                 }
-            }
-            extension Foo: Buildable {
             }
             """, macros: testMacros)
     }
