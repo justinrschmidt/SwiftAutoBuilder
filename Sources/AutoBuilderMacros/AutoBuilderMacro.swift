@@ -30,34 +30,35 @@ public struct AutoBuilderMacro: ExtensionMacro {
         attachedTo declaration: some DeclGroupSyntax,
         providingExtensionsOf type: some TypeSyntaxProtocol,
         conformingTo protocols: [TypeSyntax],
-        in context: some MacroExpansionContext) throws -> [ExtensionDeclSyntax] {
-            let (response, nonFatalDiagnostics) = analyze(declaration: declaration, of: node)
-            nonFatalDiagnostics.forEach(context.diagnose(_:))
-            switch response {
-            case let .struct(structDecl, propertiesToBuild):
-                let isPublic = hasPublic(modifiers: structDecl.modifiers)
-                let decls = try createStructDecls(from: propertiesToBuild, clientType: type.trimmed, isPublic: isPublic)
-                return try [
-                    ExtensionDeclSyntax("extension \(type.trimmed): Buildable") {
-                        for decl in decls {
-                            decl
-                        }
+        in context: some MacroExpansionContext
+    ) throws -> [ExtensionDeclSyntax] {
+        let (response, nonFatalDiagnostics) = analyze(declaration: declaration, of: node)
+        nonFatalDiagnostics.forEach(context.diagnose(_:))
+        switch response {
+        case let .struct(structDecl, propertiesToBuild):
+            let isPublic = hasPublic(modifiers: structDecl.modifiers)
+            let decls = try createStructDecls(from: propertiesToBuild, clientType: type.trimmed, isPublic: isPublic)
+            return try [
+                ExtensionDeclSyntax("extension \(type.trimmed): Buildable") {
+                    for decl in decls {
+                        decl
                     }
-                ]
-            case let .enum(enumDecl, cases):
-                let isPublic = hasPublic(modifiers: enumDecl.modifiers)
-                let decls = try createEnumDecls(from: cases, clientType: type.trimmed, isPublic: isPublic, in: context)
-                return try [
-                    ExtensionDeclSyntax("extension \(type.trimmed): Buildable") {
-                        for decl in decls {
-                            decl
-                        }
+                }
+            ]
+        case let .enum(enumDecl, cases):
+            let isPublic = hasPublic(modifiers: enumDecl.modifiers)
+            let decls = try createEnumDecls(from: cases, clientType: type.trimmed, isPublic: isPublic, in: context)
+            return try [
+                ExtensionDeclSyntax("extension \(type.trimmed): Buildable") {
+                    for decl in decls {
+                        decl
                     }
-                ]
-            case let .error(diagnostics):
-                diagnostics.forEach(context.diagnose(_:))
-                return []
-            }
+                }
+            ]
+        case let .error(diagnostics):
+            diagnostics.forEach(context.diagnose(_:))
+            return []
+        }
     }
 
     private static func analyze(declaration: some DeclGroupSyntax, of node: AttributeSyntax) -> (response: DeclAnalysisResponse, nonErrorDiagnostics: [Diagnostic]) {
@@ -168,48 +169,22 @@ public struct AutoBuilderMacro: ExtensionMacro {
         ]
     }
 
-    private static func createPropertyInitializer(from property: Property) -> SequenceExprSyntax {
-        let builderIdentifier = IdentifierExprSyntax(identifier: TokenSyntax(.identifier("builder"), presence: .present))
-        let propertyMemberExpr = MemberAccessExprSyntax(base: builderIdentifier, name: TokenSyntax(.identifier(property.identifier), presence: .present))
-        let buildMemberExpr = MemberAccessExprSyntax(base: propertyMemberExpr, name: "build")
-        let buildFunctionCall = functionCallExpr(buildMemberExpr)
-        return SequenceExprSyntax {
-            IdentifierExprSyntax(identifier: .identifier(property.identifier))
-            AssignmentExprSyntax()
-            if property.variableType.isCollection {
-                buildFunctionCall
-            } else {
-                TryExprSyntax(expression: buildFunctionCall)
-            }
+    private static func createPropertyInitializer(from property: Property) -> CodeBlockItemSyntax {
+        if property.variableType.isCollection {
+            return "\(raw: property.identifier) = builder.\(raw: property.identifier).build()"
+        } else {
+            return "\(raw: property.identifier) = try builder.\(raw: property.identifier).build()"
         }
     }
 
     private static func createToBuilderFunction(from properties: [Property], isPublic: Bool) throws -> FunctionDeclSyntax {
         let accessModifier = isPublic ? "public " : ""
         return try FunctionDeclSyntax("\(raw: accessModifier)func toBuilder() -> Builder") {
-            VariableDeclSyntax(
-                .let,
-                name: IdentifierPatternSyntax(identifier: .identifier("builder")).cast(PatternSyntax.self),
-                initializer: InitializerClauseSyntax(
-                    value: FunctionCallExprSyntax(
-                        calledExpression: IdentifierExprSyntax(identifier: .identifier("Builder")),
-                        leftParen: .leftParenToken(),
-                        argumentList: TupleExprElementListSyntax([]),
-                        rightParen: .rightParenToken())))
+            "let builder = Builder()"
             for property in properties {
-                FunctionCallExprSyntax(
-                    calledExpression: MemberAccessExprSyntax(
-                        base: IdentifierExprSyntax(identifier: .identifier("builder")),
-                        name: .identifier("set")),
-                    leftParen: .leftParenToken(),
-                    rightParen: .rightParenToken()) {
-                        TupleExprElementSyntax(
-                            label: .identifier(property.identifier),
-                            colon: .colonToken(),
-                            expression: IdentifierExprSyntax(identifier: .identifier(property.identifier)))
-                    }
+                "builder.set(\(raw: property.identifier): \(raw: property.identifier))"
             }
-            ReturnStmtSyntax(expression: IdentifierExprSyntax(identifier: .identifier("builder")))
+            "return builder"
         }
     }
 
@@ -230,44 +205,19 @@ public struct AutoBuilderMacro: ExtensionMacro {
         let accessModifier = isPublic ? "public " : ""
         return [
             try InitializerDeclSyntax("\(raw: accessModifier)init(with builder: Builder) throws", bodyBuilder: {
-                CodeBlockItemSyntax(stringLiteral: "self = try builder.build()")
+                "self = try builder.build()"
             }).cast(DeclSyntax.self),
-            try createEnumToBuilderFunction(from: cases, isPublic: isPublic).cast(DeclSyntax.self),
+            try createEnumToBuilderFunction(isPublic: isPublic).cast(DeclSyntax.self),
             try createEnumBuilderClass(from: cases, clientType: clientType, in: context).cast(DeclSyntax.self)
         ]
     }
 
-    private static func createEnumToBuilderFunction(from cases: [EnumUnionCase], isPublic: Bool) throws -> FunctionDeclSyntax {
+    private static func createEnumToBuilderFunction(isPublic: Bool) throws -> FunctionDeclSyntax {
         let accessModifier = isPublic ? "public " : ""
         return try FunctionDeclSyntax("\(raw: accessModifier)func toBuilder() -> Builder") {
             "let builder = Builder()"
             "builder.set(value: self)"
             "return builder"
-        }
-    }
-
-    private static func createEnumToBuilderCase(for enumCase: EnumUnionCase) -> SwitchCaseSyntax {
-        let caseBuilderIdentifier = TokenSyntax.identifier("\(enumCase.caseIdentifier)Builder")
-        let caseDeclaration: String
-        if enumCase.associatedValues.isEmpty {
-            caseDeclaration = "case .\(enumCase.caseIdentifier):"
-        } else {
-            caseDeclaration = "case let .\(enumCase.caseIdentifier)(\(enumCase.valueIdentifiers.joined(separator: ", "))):"
-        }
-        return SwitchCaseSyntax("\(raw: caseDeclaration)") {
-            if enumCase.associatedValues.isEmpty {
-                CodeBlockItemSyntax(stringLiteral: "_ = builder.\(enumCase.caseIdentifier)")
-            } else {
-                CodeBlockItemSyntax(stringLiteral: "let \(caseBuilderIdentifier) = builder.\(enumCase.caseIdentifier)")
-                for value in enumCase.associatedValues {
-                    switch value.label {
-                    case let .identifierPattern(pattern):
-                        CodeBlockItemSyntax(stringLiteral: "\(caseBuilderIdentifier).set(\(pattern.identifier.text): \(pattern.identifier.text))")
-                    case let .index(index):
-                        CodeBlockItemSyntax(stringLiteral: "\(caseBuilderIdentifier).set(index_\(index): i\(index))")
-                    }
-                }
-            }
         }
     }
 
@@ -283,7 +233,7 @@ public struct AutoBuilderMacro: ExtensionMacro {
                 name: IdentifierPatternSyntax(identifier: .identifier("currentCase")).cast(PatternSyntax.self),
                 type: TypeAnnotationSyntax(type: OptionalTypeSyntax(wrappedType: SimpleTypeIdentifierSyntax(name: .identifier("BuilderCases")))))
             try InitializerDeclSyntax("public required init()") {
-                CodeBlockItemSyntax(stringLiteral: "currentCase = nil")
+                "currentCase = nil"
             }
             for enumCase in cases {
                 let caseIdentifier = enumCase.caseIdentifier
@@ -307,33 +257,23 @@ public struct AutoBuilderMacro: ExtensionMacro {
                     pattern: IdentifierPatternSyntax(identifier: .identifier(propertyName)),
                     typeAnnotation: TypeAnnotationSyntax(type: SimpleTypeIdentifierSyntax(name: .identifier(builderClassName))),
                     accessor: try .accessors(AccessorBlockSyntax(accessors: AccessorListSyntax(itemsBuilder: {
-                        try createCaseBuilderGetter(builderCase: builderCase, builderClassName: builderClassName)
+                        try AccessorDeclSyntax(accessorKind: .keyword(.get)) {
+                            try SwitchExprSyntax("switch currentCase") {
+                                SwitchCaseSyntax("case let .some(.\(raw: builderCase)(builder)):") {
+                                    "return builder"
+                                }
+                                SwitchCaseSyntax("default:") {
+                                    "let builder = \(raw: builderClassName)()"
+                                    "currentCase = .\(raw: builderCase)(builder)"
+                                    "return builder"
+                                }
+                            }
+                        }
                         AccessorDeclSyntax(accessorKind: .keyword(.set)) {
-                            CodeBlockItemSyntax(item: CodeBlockItemSyntax.Item(SequenceExprSyntax(elementsBuilder: {
-                                IdentifierExprSyntax(identifier: .identifier("currentCase"))
-                                AssignmentExprSyntax()
-                                functionCallExpr(
-                                    MemberAccessExprSyntax(name: .identifier(builderCase)),
-                                    [(nil, "newValue")])
-                            })))
+                            "currentCase = .\(raw: builderCase)(newValue)"
                         }
                     }))))
             }))
-    }
-
-    private static func createCaseBuilderGetter(builderCase: String, builderClassName: String) throws -> AccessorDeclSyntax {
-        return try AccessorDeclSyntax(accessorKind: .keyword(.get)) {
-            try SwitchExprSyntax("switch currentCase") {
-                SwitchCaseSyntax("case let .some(.\(raw: builderCase)(builder)):") {
-                    CodeBlockItemSyntax(stringLiteral: "return builder")
-                }
-                SwitchCaseSyntax("default:") {
-                    CodeBlockItemSyntax(stringLiteral: "let builder = \(builderClassName)()")
-                    CodeBlockItemSyntax(stringLiteral: "currentCase = .\(builderCase)(builder)")
-                    CodeBlockItemSyntax(stringLiteral: "return builder")
-                }
-            }
-        }
     }
 
     private static func createEnumSetValueFunction(from cases: [EnumUnionCase], clientType: TypeSyntaxProtocol) throws -> FunctionDeclSyntax {
@@ -346,17 +286,16 @@ public struct AutoBuilderMacro: ExtensionMacro {
                         "case let .\(enumCase.caseIdentifier)(\(enumCase.valueIdentifiers.joined(separator: ", "))):"
                     }
                     SwitchCaseSyntax("\(raw: caseDeclaration)") {
-                        CodeBlockItemSyntax(stringLiteral: "let builder = \(enumCase.capitalizedCaseIdentifier)()")
+                        "let builder = \(raw: enumCase.capitalizedCaseIdentifier)()"
                         for value in enumCase.associatedValues {
                             switch value.label {
                             case let .identifierPattern(pattern):
-                                let identifier = pattern.identifier.text
-                                CodeBlockItemSyntax(stringLiteral: "builder.set(\(identifier): \(identifier))")
+                                "builder.set(\(pattern): \(pattern))"
                             case let .index(index):
-                                CodeBlockItemSyntax(stringLiteral: "builder.set(index_\(index): i\(index))")
+                                "builder.set(index_\(raw: index): i\(raw: index))"
                             }
                         }
-                        CodeBlockItemSyntax(stringLiteral: "currentCase = .\(enumCase.caseIdentifier)(builder)")
+                        "currentCase = .\(enumCase.caseIdentifierPattern)(builder)"
                     }
                 }
             }
@@ -368,11 +307,11 @@ public struct AutoBuilderMacro: ExtensionMacro {
             try SwitchExprSyntax("switch currentCase") {
                 for enumCase in cases {
                     SwitchCaseSyntax("case let .some(.\(raw: enumCase.caseIdentifier)(builder)):") {
-                        CodeBlockItemSyntax(stringLiteral: "return try builder.build()")
+                        "return try builder.build()"
                     }
                 }
                 SwitchCaseSyntax("case .none:") {
-                    CodeBlockItemSyntax(stringLiteral: "throw BuilderError.noEnumCaseSet")
+                    "throw BuilderError.noEnumCaseSet"
                 }
             }
         }
@@ -388,26 +327,26 @@ public struct AutoBuilderMacro: ExtensionMacro {
             for value in enumCase.associatedValues {
                 switch value.label {
                 case let .identifierPattern(pattern):
-                    buildablePropertyVariableDecl(
+                    try buildablePropertyVariableDecl(
                         modifierKeywords: [.public],
                         bindingKeyword: .let,
                         identifier: pattern.trimmedDescription,
-                        type: value.variableType)
+                        variableType: value.variableType)
                 case let .index(index):
-                    buildablePropertyVariableDecl(
+                    try buildablePropertyVariableDecl(
                         modifierKeywords: [.public],
                         bindingKeyword: .let,
                         identifier: "index_\(index)",
-                        type: value.variableType)
+                        variableType: value.variableType)
                 }
             }
             try InitializerDeclSyntax("public required init()", bodyBuilder: {
                 for value in enumCase.associatedValues {
                     switch value.label {
                     case let .identifierPattern(pattern):
-                        createBuildablePropertyInitializer(identifier: pattern.identifier.text, variableType: value.variableType)
+                        try createBuildablePropertyInitializer(identifier: pattern.identifier.text, variableType: value.variableType)
                     case let .index(index):
-                        createBuildablePropertyInitializer(identifier: "index_\(index)", variableType: value.variableType)
+                        try createBuildablePropertyInitializer(identifier: "index_\(index)", variableType: value.variableType)
                     }
                 }
             })
@@ -433,7 +372,7 @@ public struct AutoBuilderMacro: ExtensionMacro {
             }
             try FunctionDeclSyntax("public func build() throws -> \(clientType)") {
                 if enumCase.associatedValues.isEmpty {
-                    CodeBlockItemSyntax(stringLiteral: "return .\(enumCase.caseIdentifier)")
+                    "return .\(enumCase.caseIdentifierPattern)"
                 } else {
                     let args = enumCase.associatedValues.map({ value in
                         switch value.label {
@@ -446,13 +385,20 @@ public struct AutoBuilderMacro: ExtensionMacro {
                     }).joined(separator: ", ")
                     let hasFailableBuilders = enumCase.associatedValues.reduce(false, { $0 || variableTypeBuilderCanFail($1.variableType) })
                     if hasFailableBuilders {
-                        "return try .\(raw: enumCase.caseIdentifier)(\(raw: args))"
+                        "return try .\(enumCase.caseIdentifierPattern)(\(raw: args))"
                     } else {
-                        "return .\(raw: enumCase.caseIdentifier)(\(raw: args))"
+                        "return .\(enumCase.caseIdentifierPattern)(\(raw: args))"
                     }
                 }
             }
         })
+    }
+
+    private static func variableTypeBuilderCanFail(_ variableType: VariableType) -> Bool {
+        return switch variableType {
+        case .array(_), .dictionary(_, _), .set(_): false
+        case .implicit, .explicit(_): true
+        }
     }
 
     private static func createBuilderCasesEnum(from caseIdentifiers: [String]) throws -> EnumDeclSyntax {
@@ -478,11 +424,11 @@ public struct AutoBuilderMacro: ExtensionMacro {
     ) throws -> ClassDeclSyntax {
         return try ClassDeclSyntax("public class \(raw: builderClassName): BuilderProtocol", membersBuilder: {
             for property in properties {
-                createVariableDecl(from: property)
+                try createVariableDecl(from: property)
             }
             try InitializerDeclSyntax("public required init()", bodyBuilder: {
                 for property in properties {
-                    createBuildablePropertyInitializer(identifier: property.identifier, variableType: property.variableType)
+                    try createBuildablePropertyInitializer(identifier: property.identifier, variableType: property.variableType)
                 }
             })
             for property in properties {
@@ -498,26 +444,18 @@ public struct AutoBuilderMacro: ExtensionMacro {
         })
     }
 
-    private static func createVariableDecl(from property: Property) -> VariableDeclSyntax {
-        return buildablePropertyVariableDecl(
+    private static func createVariableDecl(from property: Property) throws -> VariableDeclSyntax {
+        return try buildablePropertyVariableDecl(
             modifierKeywords: [.public],
             bindingKeyword: .let,
             identifier: property.identifier,
-            type: property.variableType)
+            variableType: property.variableType)
     }
 
-    private static func createBuildablePropertyInitializer(identifier: String, variableType: VariableType, name: String? = nil) -> CodeBlockItemSyntax {
-        let typeIdentifier = buildablePropertyTypeIdentifier(for: variableType, includeGenericClause: false)
-        let initExpression = IdentifierExprSyntax(identifier: TokenSyntax(.identifier(typeIdentifier), presence: .present))
-        return CodeBlockItemSyntax(item: CodeBlockItemSyntax.Item(SequenceExprSyntax(elementsBuilder: {
-            IdentifierExprSyntax(identifier: .identifier(identifier))
-            AssignmentExprSyntax()
-            FunctionCallExprSyntax(calledExpression: initExpression, leftParen: .leftParenToken(), rightParen: .rightParenToken()) {
-                if !variableType.isCollection {
-                    TupleExprElementSyntax(label: "name", expression: StringLiteralExprSyntax(content: name ?? identifier))
-                }
-            }
-        })))
+    private static func createBuildablePropertyInitializer(identifier: String, variableType: VariableType) throws -> CodeBlockItemSyntax {
+        let typeIdentifier = try buildablePropertyTypeIdentifier(for: variableType, includeGenericClause: false)
+        let args = variableType.isCollection ? "" : "name: \"\(identifier)\""
+        return "\(raw: identifier) = \(raw: typeIdentifier)(\(raw: args))"
     }
 
     // MARK: - Set Value Functions
@@ -611,24 +549,12 @@ public struct AutoBuilderMacro: ExtensionMacro {
 
     // MARK: - Util
 
-    private static func functionCallExpr(_ calledExpression: ExprSyntaxProtocol, _ arguments: [(label: String?, identifier: String)] = []) -> FunctionCallExprSyntax {
-        FunctionCallExprSyntax(calledExpression: calledExpression, leftParen: .leftParenToken(), rightParen: .rightParenToken()) {
-            for arg in arguments {
-                TupleExprElementSyntax(label: arg.label, expression: IdentifierExprSyntax(identifier: .identifier(arg.identifier)))
-            }
-        }
-    }
-
-    private static func returnSelfStmt() -> ReturnStmtSyntax {
-        return ReturnStmtSyntax(expression: IdentifierExprSyntax(identifier: .keyword(.`self`)))
-    }
-
     private static func buildablePropertyVariableDecl(
         modifierKeywords: [Keyword] = [],
         bindingKeyword: Keyword,
         identifier: String,
-        type: VariableType
-    ) -> VariableDeclSyntax {
+        variableType: VariableType
+    ) throws -> VariableDeclSyntax {
         let modifiers: ModifierListSyntax?
         if modifierKeywords.isEmpty {
             modifiers = nil
@@ -641,54 +567,7 @@ public struct AutoBuilderMacro: ExtensionMacro {
         }
         let binding = TokenSyntax(.keyword(bindingKeyword), presence: .present)
         let identifierPattern = IdentifierPatternSyntax(identifier: .identifier(identifier))
-        let typeIdentifier = buildablePropertyTypeIdentifier(for: type, includeGenericClause: true)
-        let typeAnnotation = TypeAnnotationSyntax(
-            type: SimpleTypeIdentifierSyntax(
-                name: TokenSyntax(.identifier(typeIdentifier), presence: .present)))
-        return VariableDeclSyntax(modifiers: modifiers, bindingKeyword: binding) {
-            PatternBindingListSyntax {
-                PatternBindingSyntax(pattern: identifierPattern, typeAnnotation: typeAnnotation)
-            }
-        }
-    }
-
-    private static func buildablePropertyTypeIdentifier(for type: VariableType, includeGenericClause: Bool) -> String {
-        switch type {
-        case .implicit:
-            return ""
-        case let .array(elementType):
-            let genericClause = includeGenericClause ? "<\(elementType.trimmedDescription)>" : ""
-            return "BuildableArrayProperty\(genericClause)"
-        case let .dictionary(keyType, valueType):
-            let genericClause = includeGenericClause ? "<\(keyType.trimmedDescription), \(valueType.trimmedDescription)>" : ""
-            return "BuildableDictionaryProperty\(genericClause)"
-        case let .set(elementType):
-            let genericClause = includeGenericClause ? "<\(elementType.trimmedDescription)>" : ""
-            return "BuildableSetProperty\(genericClause)"
-        case let .explicit(typeNode):
-            let genericClause = includeGenericClause ? "<\(typeNode.trimmedDescription)>" : ""
-            return "BuildableProperty\(genericClause)"
-        }
-    }
-
-    private static func variableDecl(
-        modifierKeywords: [Keyword] = [],
-        bindingKeyword: Keyword,
-        identifier: String,
-        type: TypeSyntaxProtocol
-    ) -> VariableDeclSyntax {
-        let modifiers: ModifierListSyntax?
-        if modifierKeywords.isEmpty {
-            modifiers = nil
-        } else {
-            modifiers = ModifierListSyntax {
-                for keyword in modifierKeywords {
-                    DeclModifierSyntax(name: .keyword(keyword))
-                }
-            }
-        }
-        let binding = TokenSyntax(.keyword(bindingKeyword), presence: .present)
-        let identifierPattern = IdentifierPatternSyntax(identifier: .identifier(identifier))
+        let type = try buildablePropertyTypeIdentifier(for: variableType, includeGenericClause: true)
         let typeAnnotation = TypeAnnotationSyntax(type: type)
         return VariableDeclSyntax(modifiers: modifiers, bindingKeyword: binding) {
             PatternBindingListSyntax {
@@ -697,12 +576,31 @@ public struct AutoBuilderMacro: ExtensionMacro {
         }
     }
 
-    private static func variableTypeBuilderCanFail(_ variableType: VariableType) -> Bool {
-        return switch variableType {
-        case .array(_), .dictionary(_, _), .set(_): false
-        case .implicit, .explicit(_): true
+    private static func buildablePropertyTypeIdentifier(
+        for type: VariableType,
+        includeGenericClause: Bool
+    ) throws -> SimpleTypeIdentifierSyntax {
+        switch type {
+        case .implicit:
+            throw AutoBuilderMacroError.missingType
+        case let .array(elementType):
+            let genericTypes = includeGenericClause ? [elementType.trimmed] : []
+            return SimpleTypeIdentifierSyntax(name: "BuildableArrayProperty", genericTypes: genericTypes)
+        case let .dictionary(keyType, valueType):
+            let genericTypes = includeGenericClause ? [keyType.trimmed, valueType.trimmed] : []
+            return SimpleTypeIdentifierSyntax(name: "BuildableDictionaryProperty", genericTypes: genericTypes)
+        case let .set(elementType):
+            let genericTypes = includeGenericClause ? [elementType.trimmed] : []
+            return SimpleTypeIdentifierSyntax(name: "BuildableSetProperty", genericTypes: genericTypes)
+        case let .explicit(typeNode):
+            let genericTypes = includeGenericClause ? [typeNode.trimmed] : []
+            return SimpleTypeIdentifierSyntax(name: "BuildableProperty", genericTypes: genericTypes)
         }
     }
+}
+
+enum AutoBuilderMacroError: Error {
+    case missingType
 }
 
 @main
