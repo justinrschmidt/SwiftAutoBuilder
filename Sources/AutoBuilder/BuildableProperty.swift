@@ -92,7 +92,7 @@ extension BuildableProperty where T: Buildable {
     /// with `set(value:)`, that value will be destroyed and replaced by the builder that is assigned to `builder`.
     public var builder: T.Builder {
         get {
-            if let subBuilder = self.subBuilder as? T.Builder {
+            if let subBuilder = self.subBuilder.flatMap({ $0 as? T.Builder }) {
                 return subBuilder
             } else {
                 let subBuilder = value?.toBuilder() ?? T.Builder()
