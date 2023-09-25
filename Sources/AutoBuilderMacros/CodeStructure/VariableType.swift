@@ -16,10 +16,6 @@ enum VariableType: Equatable, CustomStringConvertible {
         }
     }
 
-    var isExplicit: Bool {
-        return !isImplicit
-    }
-
     var isCollection: Bool {
         switch self {
         case .array(_), .dictionary(_, _), .set(_):
@@ -67,11 +63,6 @@ enum VariableType: Equatable, CustomStringConvertible {
         case .set(_): "S:"
         }
         return "\(typePrefix)\(type)"
-    }
-
-    init(explicitString typeString: String, genericTypes: [TypeSyntaxProtocol] = []) {
-        let typeIdentifier = SimpleTypeIdentifierSyntax(name: typeString, genericTypes: genericTypes)
-        self = .explicit(typeNode: typeIdentifier.cast(TypeSyntax.self))
     }
 
     static func ==(lhs: VariableType, rhs: VariableType) -> Bool {

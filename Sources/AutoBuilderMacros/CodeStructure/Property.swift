@@ -12,18 +12,6 @@ struct Property: Equatable, CustomStringConvertible {
         return identifierPattern.identifier.text
     }
 
-    var capitalizedIdentifier: String {
-        let text = identifier
-        guard !text.isEmpty else {
-            return ""
-        }
-        return text.first!.uppercased() + text[text.index(after: text.startIndex)...]
-    }
-
-    var type: String {
-        return variableType.type
-    }
-
     var isInitializedConstant: Bool {
         return bindingKeyword == .let && isInitialized
     }

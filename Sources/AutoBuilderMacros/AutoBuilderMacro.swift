@@ -10,15 +10,6 @@ public struct AutoBuilderMacro: ExtensionMacro {
         case `struct`(structDecl: StructDeclSyntax, propertiesToBuild: [Property])
         case `enum`(enumDecl: EnumDeclSyntax, cases: [EnumUnionCase])
         case error(diagnostics: [Diagnostic])
-
-        var isError: Bool {
-            switch self {
-            case .error(_):
-                return true
-            default:
-                return false
-            }
-        }
     }
 
     // TODO: Look at the types passed into conformingTo once issue #2031 is fixed.

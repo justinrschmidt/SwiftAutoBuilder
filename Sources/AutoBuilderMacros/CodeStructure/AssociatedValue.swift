@@ -44,24 +44,6 @@ struct AssociatedValue: Equatable, CustomStringConvertible {
             }
         }
 
-        var isIndex: Bool {
-            switch self {
-            case .index(_):
-                return true
-            default:
-                return false
-            }
-        }
-
-        func hash(into hasher: inout Hasher) {
-            switch self {
-            case let .identifierPattern(pattern):
-                hasher.combine(pattern.identifier.text)
-            case let .index(index):
-                hasher.combine(index)
-            }
-        }
-
         static func ==(lhs: Label, rhs: Label) -> Bool {
             switch (lhs, rhs) {
             case let (.identifierPattern(left), .identifierPattern(right)):
