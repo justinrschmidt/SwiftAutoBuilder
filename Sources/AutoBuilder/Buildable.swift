@@ -4,7 +4,7 @@
 public protocol Buildable {
 
     /// The builder's type.
-    associatedtype Builder
+    associatedtype Builder: BuilderProtocol where Builder.Client == Self
 
     /// Initialize the type from its builder.
     /// - Parameters:

@@ -82,8 +82,7 @@ public class BuildableProperty<T> {
     }
 }
 
-// If `T` has the `@AutoBuilder` macro attached to it, this where clause will be satisfied.
-extension BuildableProperty where T: Buildable, T.Builder: BuilderProtocol, T.Builder.Client == T {
+extension BuildableProperty where T: Buildable {
     /// The nested sub-builder that can be used for builder chaining when `T` also has the `@AutoBuilder` macro attached to it.
     ///
     /// When `builder` is accessed by `get` and the value of this `BuildableProperty` has already been set
