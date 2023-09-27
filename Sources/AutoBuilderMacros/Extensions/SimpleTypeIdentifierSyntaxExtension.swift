@@ -1,6 +1,6 @@
 import SwiftSyntax
 
-extension SimpleTypeIdentifierSyntax {
+extension IdentifierTypeSyntax {
     init(name: String, genericTypes: [TypeSyntaxProtocol] = []) {
         if genericTypes.isEmpty {
             self.init(name: .identifier(name))
@@ -9,7 +9,7 @@ extension SimpleTypeIdentifierSyntax {
                 name: .identifier(name),
                 genericArgumentClause: GenericArgumentClauseSyntax(arguments: GenericArgumentListSyntax {
                     for type in genericTypes {
-                        GenericArgumentSyntax(argumentType: type)
+                        GenericArgumentSyntax(argument: type)
                     }
                 }))
         }

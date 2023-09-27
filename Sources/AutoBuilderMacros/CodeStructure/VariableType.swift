@@ -45,11 +45,11 @@ enum VariableType: Equatable, CustomStringConvertible {
         case .implicit:
             fatalError("Unable to create a TypeSyntax from an implicit type")
         case let .array(elementType):
-            return ArrayTypeSyntax(elementType: elementType)
+            return ArrayTypeSyntax(element: elementType)
         case let .dictionary(keyType, valueType):
-            return DictionaryTypeSyntax(keyType: keyType, valueType: valueType)
+            return DictionaryTypeSyntax(key: keyType, value: valueType)
         case let .set(elementType):
-            return SimpleTypeIdentifierSyntax(name: "Set", genericTypes: [elementType])
+            return IdentifierTypeSyntax(name: "Set", genericTypes: [elementType])
         case let .explicit(typeNode):
             return typeNode
         }

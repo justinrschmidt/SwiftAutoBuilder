@@ -127,8 +127,8 @@ final class EnumHelperTests: XCTestCase {
         XCTAssertEqual(actualCases, expectedCases, file: file, line: line)
     }
 
-    private static func createMemberList(_ caseSources: [String]) -> MemberDeclListSyntax {
-        return MemberDeclListSyntax {
+    private static func createMemberList(_ caseSources: [String]) -> MemberBlockItemListSyntax {
+        return MemberBlockItemListSyntax {
             for source in caseSources {
                 EnumCaseDeclSyntax(declString: source)
             }

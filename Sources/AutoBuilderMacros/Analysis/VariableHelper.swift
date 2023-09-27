@@ -2,13 +2,13 @@ import SwiftSyntax
 import SwiftSyntaxBuilder
 
 struct VariableHelper {
-    static func getProperties(from members: MemberDeclListSyntax) -> [Property] {
+    static func getProperties(from members: MemberBlockItemListSyntax) -> [Property] {
         let variables: [VariableDeclSyntax] = members.compactMap({ $0.decl.as(VariableDeclSyntax.self) })
         return variables.flatMap(getProperties(from:))
     }
 
     private static func getProperties(from variable: VariableDeclSyntax) -> [Property] {
-        guard let bindingKeyword = Property.BindingKeyword(kind: variable.bindingKeyword.tokenKind) else {
+        guard let bindingKeyword = Property.BindingKeyword(kind: variable.bindingSpecifier.tokenKind) else {
             return []
         }
         let isStored = isStoredProperty(variable)
@@ -59,9 +59,9 @@ struct VariableHelper {
     }
 
     private static func isStatic(_ variable: VariableDeclSyntax) -> Bool {
-        variable.modifiers?.contains(where: { modifier in
+        variable.modifiers.contains(where: { modifier in
             modifier.name.tokenKind == .keyword(.static) || modifier.name.tokenKind == .keyword(.class)
-        }) ?? false
+        })
     }
 
     private static func getProperties(from tuplePattern: TuplePatternSyntax, type: TupleTypeSyntax, isStored: Bool, isIVar: Bool, bindingKeyword: Property.BindingKeyword, isInitialized: Bool) -> [Property] {
@@ -103,21 +103,21 @@ struct VariableHelper {
             return .implicit
         }
         if let arraySyntax = typeSyntax.as(ArrayTypeSyntax.self) {
-            return .array(elementType: arraySyntax.elementType)
+            return .array(elementType: arraySyntax.element)
         } else if let dictionarySyntax = typeSyntax.as(DictionaryTypeSyntax.self) {
-            return .dictionary(keyType: dictionarySyntax.keyType, valueType: dictionarySyntax.valueType)
-        } else if let simpleTypeSyntax = typeSyntax.as(SimpleTypeIdentifierSyntax.self),
+            return .dictionary(keyType: dictionarySyntax.key, valueType: dictionarySyntax.value)
+        } else if let simpleTypeSyntax = typeSyntax.as(IdentifierTypeSyntax.self),
                   let genericClause = simpleTypeSyntax.genericArgumentClause {
             switch simpleTypeSyntax.name.text {
             case "Array":
-                return .array(elementType: genericClause.arguments.first!.argumentType)
+                return .array(elementType: genericClause.arguments.first!.argument)
             case "Dictionary":
                 var arguments = genericClause.arguments.makeIterator()
-                let keyType = arguments.next()!.argumentType
-                let valueType = arguments.next()!.argumentType
+                let keyType = arguments.next()!.argument
+                let valueType = arguments.next()!.argument
                 return .dictionary(keyType: keyType, valueType: valueType)
             case "Set":
-                return .set(elementType: genericClause.arguments.first!.argumentType)
+                return .set(elementType: genericClause.arguments.first!.argument)
             default:
                 return .explicit(typeNode: typeSyntax)
             }
@@ -127,30 +127,26 @@ struct VariableHelper {
     }
 
     static func isStoredProperty(_ variable: VariableDeclSyntax) -> Bool {
-        switch variable.bindingKeyword.tokenKind {
+        switch variable.bindingSpecifier.tokenKind {
         case TokenKind.keyword(.let):
             return true
         case TokenKind.keyword(.var):
-            let bindings = variable.bindings
-            return !hasCodeBlockSyntaxAccessor(bindings) && !hasGetOrSetAccessorInAccessorBlockSyntax(bindings)
+            return !hasGetOrSetAccessor(variable.bindings)
         default:
             return false
         }
     }
 
-    private static func hasCodeBlockSyntaxAccessor(_ bindings: PatternBindingListSyntax) -> Bool {
-        return bindings.contains(where: { $0.accessor?.is(CodeBlockSyntax.self) ?? false })
-    }
-
-    private static func hasGetOrSetAccessorInAccessorBlockSyntax(_ bindings: PatternBindingListSyntax) -> Bool {
-        return bindings.contains(where: { binding in
-            binding.accessor?.as(AccessorBlockSyntax.self).map({ hasGetOrSetAccessor($0.accessors) }) ?? false
+    private static func hasGetOrSetAccessor(_ bindings: PatternBindingListSyntax) -> Bool {
+        return bindings.contains(where: {
+            switch $0.accessorBlock?.accessors {
+            case let .accessors(accessorList):
+                return accessorList.contains(where: { $0.accessorSpecifier.tokenKind == .keyword(.get) || $0.accessorSpecifier.tokenKind == .keyword(.set) })
+            case .getter(_):
+                return true
+            case .none:
+                return false
+            }
         })
-    }
-
-    private static let getSetTokens: Set<TokenKind> = [TokenKind.keyword(.get), TokenKind.keyword(.set)]
-
-    private static func hasGetOrSetAccessor(_ accessors: AccessorListSyntax) -> Bool {
-        return accessors.contains(where: { getSetTokens.contains($0.accessorKind.tokenKind) })
     }
 }

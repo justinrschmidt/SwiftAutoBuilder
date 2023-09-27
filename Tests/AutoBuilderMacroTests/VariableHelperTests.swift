@@ -309,8 +309,8 @@ final class VariableHelperTests: XCTestCase {
         XCTAssertEqual(actualProperties, expectedProperties, file: file, line: line)
     }
 
-    private static func createMemberList(_ variableSources: [String]) -> MemberDeclListSyntax {
-        return MemberDeclListSyntax {
+    private static func createMemberList(_ variableSources: [String]) -> MemberBlockItemListSyntax {
+        return MemberBlockItemListSyntax {
             for source in variableSources {
                 VariableDeclSyntax(declString: source)
             }

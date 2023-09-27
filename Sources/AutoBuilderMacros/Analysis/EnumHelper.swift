@@ -2,7 +2,7 @@ import SwiftSyntax
 import SwiftSyntaxBuilder
 
 struct EnumHelper {
-    static func getCases(from members: MemberDeclListSyntax) -> [EnumUnionCase] {
+    static func getCases(from members: MemberBlockItemListSyntax) -> [EnumUnionCase] {
         return members.compactMap({ $0.decl.as(EnumCaseDeclSyntax.self) }).flatMap(getCases(from:))
     }
 
@@ -11,9 +11,9 @@ struct EnumHelper {
     }
 
     private static func getCase(from element: EnumCaseElementSyntax) -> EnumUnionCase {
-        let values = (element.associatedValue?.parameterList).map(getAssociatedValues(from:)) ?? []
+        let values = (element.parameterClause?.parameters).map(getAssociatedValues(from:)) ?? []
         return EnumUnionCase(
-            caseIdentifierPattern: IdentifierPatternSyntax(identifier: element.identifier),
+            caseIdentifierPattern: IdentifierPatternSyntax(identifier: element.name),
             associatedValues: values)
     }
 
@@ -29,7 +29,7 @@ struct EnumHelper {
             values.append(AssociatedValue(
                 label: label,
                 variableType: VariableHelper.getVariableType(from: element.type),
-                isInitialized: element.defaultArgument != nil,
+                isInitialized: element.defaultValue != nil,
                 firstNameToken: element.firstName))
         }
         return values

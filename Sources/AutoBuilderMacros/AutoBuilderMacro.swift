@@ -73,7 +73,7 @@ public struct AutoBuilderMacro: ExtensionMacro {
             if cases.isEmpty {
                 errorDiagnostics.append(Diagnostic(
                     node: enumDecl.cast(Syntax.self),
-                    message: AutoBuilderDiagnostic.enumWithNoCases(enumName: enumDecl.identifier.trimmedDescription)))
+                    message: AutoBuilderDiagnostic.enumWithNoCases(enumName: enumDecl.name.trimmedDescription)))
             }
             let overloadedCases = getOverloadedCases(cases)
             if !overloadedCases.isEmpty {
@@ -90,7 +90,7 @@ public struct AutoBuilderMacro: ExtensionMacro {
             if !hasAssociatedValues {
                 diagnostics.append(Diagnostic(
                     node: enumDecl.cast(Syntax.self),
-                    message: AutoBuilderDiagnostic.noAssociatedValues(enumName: enumDecl.identifier.trimmedDescription)))
+                    message: AutoBuilderDiagnostic.noAssociatedValues(enumName: enumDecl.name.trimmedDescription)))
             }
             return (.enum(enumDecl: enumDecl, cases: cases), diagnostics)
         } else {
@@ -136,7 +136,7 @@ public struct AutoBuilderMacro: ExtensionMacro {
         return diagnostics
     }
 
-    private static func hasPublic(modifiers: ModifierListSyntax?) -> Bool {
+    private static func hasPublic(modifiers: DeclModifierListSyntax?) -> Bool {
         return modifiers?.contains(where: { modifier in
             modifier.name.tokenKind == .keyword(.public) || modifier.name.tokenKind == .keyword(.open)
         }) ?? false
@@ -219,10 +219,10 @@ public struct AutoBuilderMacro: ExtensionMacro {
     ) throws -> ClassDeclSyntax {
         return try ClassDeclSyntax("public class Builder: BuilderProtocol") {
             VariableDeclSyntax(
-                modifiers: ModifierListSyntax(arrayLiteral: DeclModifierSyntax(name: .keyword(.private))),
+                modifiers: DeclModifierListSyntax(arrayLiteral: DeclModifierSyntax(name: .keyword(.private))),
                 .var,
                 name: IdentifierPatternSyntax(identifier: .identifier("currentCase")).cast(PatternSyntax.self),
-                type: TypeAnnotationSyntax(type: OptionalTypeSyntax(wrappedType: SimpleTypeIdentifierSyntax(name: .identifier("BuilderCases")))))
+                type: TypeAnnotationSyntax(type: OptionalTypeSyntax(wrappedType: IdentifierTypeSyntax(name: .identifier("BuilderCases")))))
             try InitializerDeclSyntax("public required init()") {
                 "currentCase = nil"
             }
@@ -241,14 +241,14 @@ public struct AutoBuilderMacro: ExtensionMacro {
 
     private static func createCaseBuilderComputedProperty(named propertyName: String, builderCase: String, builderClassName: String) throws -> VariableDeclSyntax {
         return VariableDeclSyntax(
-            modifiers: ModifierListSyntax(arrayLiteral: DeclModifierSyntax(name: .keyword(.public))),
-            bindingKeyword: .keyword(.var),
+            modifiers: DeclModifierListSyntax(arrayLiteral: DeclModifierSyntax(name: .keyword(.public))),
+            bindingSpecifier: .keyword(.var),
             bindings: try PatternBindingListSyntax(itemsBuilder: {
                 PatternBindingSyntax(
                     pattern: IdentifierPatternSyntax(identifier: .identifier(propertyName)),
-                    typeAnnotation: TypeAnnotationSyntax(type: SimpleTypeIdentifierSyntax(name: .identifier(builderClassName))),
-                    accessor: try .accessors(AccessorBlockSyntax(accessors: AccessorListSyntax(itemsBuilder: {
-                        try AccessorDeclSyntax(accessorKind: .keyword(.get)) {
+                    typeAnnotation: TypeAnnotationSyntax(type: IdentifierTypeSyntax(name: .identifier(builderClassName))),
+                    accessorBlock: try AccessorBlockSyntax(accessors: .accessors(AccessorDeclListSyntax(itemsBuilder: {
+                        try AccessorDeclSyntax(accessorSpecifier: .keyword(.get)) {
                             try SwitchExprSyntax("switch currentCase") {
                                 SwitchCaseSyntax("case let .some(.\(raw: builderCase)(builder)):") {
                                     "return builder"
@@ -260,7 +260,7 @@ public struct AutoBuilderMacro: ExtensionMacro {
                                 }
                             }
                         }
-                        AccessorDeclSyntax(accessorKind: .keyword(.set)) {
+                        AccessorDeclSyntax(accessorSpecifier: .keyword(.set)) {
                             "currentCase = .\(raw: builderCase)(newValue)"
                         }
                     }))))
@@ -397,9 +397,9 @@ public struct AutoBuilderMacro: ExtensionMacro {
             for caseIdentifier in caseIdentifiers {
                 EnumCaseDeclSyntax {
                     EnumCaseElementSyntax(
-                        identifier: .identifier(caseIdentifier),
-                        associatedValue: EnumCaseParameterClauseSyntax(parameterList: EnumCaseParameterListSyntax(itemsBuilder: {
-                            EnumCaseParameterSyntax(type: SimpleTypeIdentifierSyntax(name: .identifier(caseIdentifier.capitalized)))
+                        name: .identifier(caseIdentifier),
+                        parameterClause: EnumCaseParameterClauseSyntax(parameters: EnumCaseParameterListSyntax(itemsBuilder: {
+                            EnumCaseParameterSyntax(type: IdentifierTypeSyntax(name: .identifier(caseIdentifier.capitalized)))
                         })))
                 }
             }
@@ -546,46 +546,40 @@ public struct AutoBuilderMacro: ExtensionMacro {
         identifier: String,
         variableType: VariableType
     ) throws -> VariableDeclSyntax {
-        let modifiers: ModifierListSyntax?
-        if modifierKeywords.isEmpty {
-            modifiers = nil
-        } else {
-            modifiers = ModifierListSyntax {
-                for keyword in modifierKeywords {
-                    DeclModifierSyntax(name: .keyword(keyword))
-                }
+        let modifiers = DeclModifierListSyntax {
+            for keyword in modifierKeywords {
+                DeclModifierSyntax(name: .keyword(keyword))
             }
         }
-        let binding = TokenSyntax(.keyword(bindingKeyword), presence: .present)
         let identifierPattern = IdentifierPatternSyntax(identifier: .identifier(identifier))
         let type = try buildablePropertyTypeIdentifier(for: variableType, includeGenericClause: true)
         let typeAnnotation = TypeAnnotationSyntax(type: type)
-        return VariableDeclSyntax(modifiers: modifiers, bindingKeyword: binding) {
-            PatternBindingListSyntax {
-                PatternBindingSyntax(pattern: identifierPattern, typeAnnotation: typeAnnotation)
-            }
-        }
+        return VariableDeclSyntax(
+            modifiers: modifiers,
+            bindingKeyword,
+            name: identifierPattern.cast(PatternSyntax.self),
+            type: typeAnnotation)
     }
 
     private static func buildablePropertyTypeIdentifier(
         for type: VariableType,
         includeGenericClause: Bool
-    ) throws -> SimpleTypeIdentifierSyntax {
+    ) throws -> IdentifierTypeSyntax {
         switch type {
         case .implicit:
             throw AutoBuilderMacroError.missingType
         case let .array(elementType):
             let genericTypes = includeGenericClause ? [elementType.trimmed] : []
-            return SimpleTypeIdentifierSyntax(name: "BuildableArrayProperty", genericTypes: genericTypes)
+            return IdentifierTypeSyntax(name: "BuildableArrayProperty", genericTypes: genericTypes)
         case let .dictionary(keyType, valueType):
             let genericTypes = includeGenericClause ? [keyType.trimmed, valueType.trimmed] : []
-            return SimpleTypeIdentifierSyntax(name: "BuildableDictionaryProperty", genericTypes: genericTypes)
+            return IdentifierTypeSyntax(name: "BuildableDictionaryProperty", genericTypes: genericTypes)
         case let .set(elementType):
             let genericTypes = includeGenericClause ? [elementType.trimmed] : []
-            return SimpleTypeIdentifierSyntax(name: "BuildableSetProperty", genericTypes: genericTypes)
+            return IdentifierTypeSyntax(name: "BuildableSetProperty", genericTypes: genericTypes)
         case let .explicit(typeNode):
             let genericTypes = includeGenericClause ? [typeNode.trimmed] : []
-            return SimpleTypeIdentifierSyntax(name: "BuildableProperty", genericTypes: genericTypes)
+            return IdentifierTypeSyntax(name: "BuildableProperty", genericTypes: genericTypes)
         }
     }
 }

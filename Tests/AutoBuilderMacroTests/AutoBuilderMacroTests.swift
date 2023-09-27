@@ -20,6 +20,7 @@ final class AutoBuilderMacroTests: XCTestCase {
             """
             struct Foo {
             }
+
             extension Foo: Buildable {
                 init(with builder: Builder) throws {
                 }
@@ -53,6 +54,7 @@ final class AutoBuilderMacroTests: XCTestCase {
                 let a: Int
                 let b: Double
             }
+
             extension Foo: Buildable {
                 init(with builder: Builder) throws {
                     a = try builder.a.build()
@@ -118,6 +120,7 @@ final class AutoBuilderMacroTests: XCTestCase {
                     }
                 }
             }
+
             extension Foo: Buildable {
                 init(with builder: Builder) throws {
                     a = try builder.a.build()
@@ -160,6 +163,7 @@ final class AutoBuilderMacroTests: XCTestCase {
                 static var a: Double
                 var b: Int
             }
+
             extension Foo: Buildable {
                 init(with builder: Builder) throws {
                     b = try builder.b.build()
@@ -200,6 +204,7 @@ final class AutoBuilderMacroTests: XCTestCase {
             struct Foo<T> {
                 let a: T
             }
+
             extension Foo: Buildable {
                 init(with builder: Builder) throws {
                     a = try builder.a.build()
@@ -284,6 +289,7 @@ final class AutoBuilderMacroTests: XCTestCase {
             struct Foo {
                 let a = 0
             }
+
             extension Foo: Buildable {
                 init(with builder: Builder) throws {
                 }
@@ -314,6 +320,7 @@ final class AutoBuilderMacroTests: XCTestCase {
             struct Foo {
                 var a: [Int]
             }
+
             extension Foo: Buildable {
                 init(with builder: Builder) throws {
                     a = builder.a.build()
@@ -366,8 +373,9 @@ final class AutoBuilderMacroTests: XCTestCase {
             """,
             expandedSource: """
             struct Foo {
-                var a: [String: Double]
+                var a: [String:Double]
             }
+
             extension Foo: Buildable {
                 init(with builder: Builder) throws {
                     a = builder.a.build()
@@ -422,6 +430,7 @@ final class AutoBuilderMacroTests: XCTestCase {
             struct Foo {
                 var a: Set<Int>
             }
+
             extension Foo: Buildable {
                 init(with builder: Builder) throws {
                     a = builder.a.build()
@@ -477,6 +486,7 @@ final class AutoBuilderMacroTests: XCTestCase {
             public struct Foo {
                 let a: Int
             }
+
             extension Foo: Buildable {
                 public init(with builder: Builder) throws {
                     a = try builder.a.build()
