@@ -84,22 +84,6 @@ struct EnumExtensionGenerator: AutoBuilderExtensionGenerator {
         }
     }
 
-    private static func createEnumDecls(
-        from cases: [EnumUnionCase],
-        clientType: TypeSyntaxProtocol,
-        isPublic: Bool,
-        in context: some MacroExpansionContext
-    ) throws -> [DeclSyntax] {
-        let accessModifier = isPublic ? "public " : ""
-        return [
-            try InitializerDeclSyntax("\(raw: accessModifier)init(with builder: Builder) throws", bodyBuilder: {
-                "self = try builder.build()"
-            }).cast(DeclSyntax.self),
-            try createEnumToBuilderFunction(isPublic: isPublic).cast(DeclSyntax.self),
-            try createEnumBuilderClass(from: cases, clientType: clientType, in: context).cast(DeclSyntax.self)
-        ]
-    }
-
     private static func createEnumToBuilderFunction(isPublic: Bool) throws -> FunctionDeclSyntax {
         let accessModifier = isPublic ? "public " : ""
         return try FunctionDeclSyntax("\(raw: accessModifier)func toBuilder() -> Builder") {
