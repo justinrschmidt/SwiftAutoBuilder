@@ -25,21 +25,6 @@ enum VariableType: Equatable, CustomStringConvertible {
         }
     }
 
-    var type: String {
-        switch self {
-        case .implicit:
-            return ""
-        case let .array(elementType):
-            return "[\(elementType.trimmedDescription)]"
-        case let .dictionary(keyType, valueType):
-            return "[\(keyType.trimmedDescription):\(valueType.trimmedDescription)]"
-        case let .set(elementType):
-            return "Set<\(elementType.trimmedDescription)>"
-        case let .explicit(typeNode):
-            return typeNode.trimmedDescription
-        }
-    }
-
     var typeSyntax: TypeSyntaxProtocol {
         switch self {
         case .implicit:
@@ -56,13 +41,18 @@ enum VariableType: Equatable, CustomStringConvertible {
     }
 
     var description: String {
-        let typePrefix = switch self {
-        case .implicit, .explicit(_): ""
-        case .array(_): "A:"
-        case .dictionary(_, _): "D:"
-        case .set(_): "S:"
+        switch self {
+        case .implicit:
+            return ""
+        case let .array(elementType):
+            return "A:[\(elementType.trimmedDescription)]"
+        case let .dictionary(keyType, valueType):
+            return "D:[\(keyType.trimmedDescription):\(valueType.trimmedDescription)]"
+        case let .set(elementType):
+            return "S:Set<\(elementType.trimmedDescription)>"
+        case let .explicit(typeNode):
+            return typeNode.trimmedDescription
         }
-        return "\(typePrefix)\(type)"
     }
 
     static func ==(lhs: VariableType, rhs: VariableType) -> Bool {
