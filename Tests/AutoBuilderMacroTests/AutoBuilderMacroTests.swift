@@ -236,17 +236,17 @@ final class AutoBuilderMacroTests: XCTestCase {
         assertMacroExpansion(
             """
             @AutoBuilder
-            class Foo {
+            protocol Foo {
             }
             """,
             expandedSource:
             """
-            class Foo {
+            protocol Foo {
             }
             """, diagnostics: [
                 DiagnosticSpec(
                     id: MessageID(domain: AutoBuilderDiagnostic.domain, id: "InvalidTypeForAutoBuilder"),
-                    message: "@AutoBuilder can only be applied to structs",
+                    message: "@AutoBuilder can only be applied to structs and enums",
                     line: 1,
                     column: 1,
                     severity: .error)

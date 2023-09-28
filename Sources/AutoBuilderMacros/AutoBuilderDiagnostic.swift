@@ -37,7 +37,7 @@ public enum AutoBuilderDiagnostic: DiagnosticMessage {
         case .invalidEnumAssociatedValueLabel:
             return "@AutoBuilder enum associated value labels must not match \"^index_[0-9]+$\"."
         case .invalidTypeForAutoBuilder:
-            return "@AutoBuilder can only be applied to structs"
+            return "@AutoBuilder can only be applied to structs and enums"
         }
     }
 
