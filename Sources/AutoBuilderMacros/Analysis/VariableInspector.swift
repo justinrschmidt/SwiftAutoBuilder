@@ -1,7 +1,7 @@
 import SwiftSyntax
 import SwiftSyntaxBuilder
 
-struct VariableHelper {
+struct VariableInspector {
     static func getProperties(from members: MemberBlockItemListSyntax) -> [Property] {
         let variables: [VariableDeclSyntax] = members.compactMap({ $0.decl.as(VariableDeclSyntax.self) })
         return variables.flatMap(getProperties(from:))

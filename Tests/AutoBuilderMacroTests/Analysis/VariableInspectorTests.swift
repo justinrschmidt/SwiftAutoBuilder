@@ -8,7 +8,7 @@ enum VariableHelperTestsError: Error {
     case invalidDeclSyntax
 }
 
-final class VariableHelperTests: XCTestCase {
+final class VariableInspectorTests: XCTestCase {
 
     // MARK: Stored Properties Declarations
 
@@ -297,7 +297,7 @@ final class VariableHelperTests: XCTestCase {
         line: UInt = #line
     ) {
         let memberList = Self.createMemberList(variableSources)
-        let actualProperties = VariableHelper.getProperties(from: memberList)
+        let actualProperties = VariableInspector.getProperties(from: memberList)
         let expectedProperties = properties.map({ Property(
             isStoredProperty: $0.0.isStored,
             isIVar: $0.1.isIVar,

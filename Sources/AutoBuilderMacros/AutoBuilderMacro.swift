@@ -54,7 +54,7 @@ public struct AutoBuilderMacro: ExtensionMacro {
 
     private static func analyze(declaration: some DeclGroupSyntax, of node: AttributeSyntax) -> (response: DeclAnalysisResponse, nonErrorDiagnostics: [Diagnostic]) {
         if let structDecl = declaration.as(StructDeclSyntax.self) {
-            let storedProperties = VariableHelper.getProperties(from: structDecl.memberBlock.members)
+            let storedProperties = VariableInspector.getProperties(from: structDecl.memberBlock.members)
             let impliedTypeVariableProperties = storedProperties.filter({ $0.bindingKeyword == .var && $0.variableType.isImplicit })
             let diagnostics = impliedTypeVariableProperties.map({ property in
                 return Diagnostic(
@@ -68,7 +68,7 @@ public struct AutoBuilderMacro: ExtensionMacro {
                 return (.error(diagnostics: diagnostics), [])
             }
         } else if let enumDecl = declaration.as(EnumDeclSyntax.self) {
-            let cases = EnumHelper.getCases(from: enumDecl.memberBlock.members)
+            let cases = EnumInspector.getCases(from: enumDecl.memberBlock.members)
             var errorDiagnostics: [Diagnostic] = []
             if cases.isEmpty {
                 errorDiagnostics.append(Diagnostic(

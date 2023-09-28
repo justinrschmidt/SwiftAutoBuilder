@@ -1,7 +1,7 @@
 import SwiftSyntax
 import SwiftSyntaxBuilder
 
-struct EnumHelper {
+struct EnumInspector {
     static func getCases(from members: MemberBlockItemListSyntax) -> [EnumUnionCase] {
         return members.compactMap({ $0.decl.as(EnumCaseDeclSyntax.self) }).flatMap(getCases(from:))
     }
@@ -28,7 +28,7 @@ struct EnumHelper {
             }
             values.append(AssociatedValue(
                 label: label,
-                variableType: VariableHelper.getVariableType(from: element.type),
+                variableType: VariableInspector.getVariableType(from: element.type),
                 isInitialized: element.defaultValue != nil,
                 firstNameToken: element.firstName))
         }

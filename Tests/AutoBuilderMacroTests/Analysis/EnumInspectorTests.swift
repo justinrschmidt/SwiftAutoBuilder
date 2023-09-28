@@ -4,7 +4,7 @@ import SwiftSyntaxBuilder
 import XCTest
 @testable import AutoBuilderMacros
 
-final class EnumHelperTests: XCTestCase {
+final class EnumInspectorTests: XCTestCase {
     func testGetCases_simple() {
         assertGetCases("case one(a: Int)", [
             ("one", [
@@ -114,7 +114,7 @@ final class EnumHelperTests: XCTestCase {
         line: UInt = #line
     ) {
         let memberList = Self.createMemberList(caseSources)
-        let actualCases = EnumHelper.getCases(from: memberList)
+        let actualCases = EnumInspector.getCases(from: memberList)
         let expectedCases = cases.map({ EnumUnionCase(
             caseIdentifierPattern: $0.caseIdentifier,
             associatedValues: $0.associatedValues.map({ AssociatedValue(
