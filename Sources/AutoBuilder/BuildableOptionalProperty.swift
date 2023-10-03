@@ -3,11 +3,10 @@ public class BuildableOptionalProperty<Wrapped> {
     private var value: Wrapped?
     private var subBuilder: Optional<any BuilderProtocol>
 
-    public init(_ value: Wrapped? = nil, name: String) {
+    public init(name: String) {
         propertyName = name
-        self.value = nil
+        value = nil
         subBuilder = nil
-        set(value: value)
     }
 
     public func set(value: Wrapped?) {

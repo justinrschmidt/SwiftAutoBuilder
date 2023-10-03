@@ -41,18 +41,11 @@ public class BuildableProperty<T> {
 
     /// Initialize the `BuildableProperty`.
     /// - Parameters:
-    ///   - value: Optionally set the value that the client's property should be initialized to.
     ///   - name: The name of the client's property that this `BuildableProperty` is associated with.
-    ///
-    /// If `value` conforms to `Buildable`, `value`'s `toBuilder()` method will be called
-    /// and the resulting builder will be used as this `BuildableProperty`'s sub-builder.
-    public init(_ value: T? = nil, name: String) {
+    public init(name: String) {
         propertyName = name
-        self.value = nil
+        value = nil
         subBuilder = nil
-        if let value = value {
-            set(value: value)
-        }
     }
 
     /// Sets the value that the client's property will be initialized to.
