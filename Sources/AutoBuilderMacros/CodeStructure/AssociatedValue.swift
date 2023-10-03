@@ -6,13 +6,13 @@ struct AssociatedValue: Equatable, CustomStringConvertible {
     let isInitialized: Bool
     let firstNameToken: TokenSyntax?
 
-    var identifier: String {
-        return label.identifier
+    var identifierPattern: IdentifierPatternSyntax {
+        return label.identifierPattern
     }
 
     var description: String {
         let initialized = isInitialized ? "initialized" : "uninitialized"
-        return "(\(identifier), \(variableType), \(initialized))"
+        return "(\(identifierPattern.identifier.text), \(variableType), \(initialized))"
     }
 
     static func ==(lhs: AssociatedValue, rhs: AssociatedValue) -> Bool {
@@ -27,20 +27,12 @@ struct AssociatedValue: Equatable, CustomStringConvertible {
         case identifierPattern(IdentifierPatternSyntax)
         case index(Int)
 
-        var identifier: String {
+        var identifierPattern: IdentifierPatternSyntax {
             switch self {
             case let .identifierPattern(pattern):
-                return pattern.identifier.text
+                return pattern
             case let .index(index):
-                return "i\(index)"
-            }
-        }
-
-        var pattern: IdentifierPatternSyntax? {
-            if case let .identifierPattern(identifierPatternSyntax) = self {
-                return identifierPatternSyntax
-            } else {
-                return nil
+                return IdentifierPatternSyntax(identifier: "i\(raw: index)")
             }
         }
 

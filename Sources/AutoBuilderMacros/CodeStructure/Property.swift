@@ -8,10 +8,6 @@ struct Property: Equatable, CustomStringConvertible {
     let variableType: VariableType
     let isInitialized: Bool
 
-    var identifier: String {
-        return identifierPattern.identifier.text
-    }
-
     var isInitializedConstant: Bool {
         return bindingKeyword == .let && isInitialized
     }
@@ -20,7 +16,7 @@ struct Property: Equatable, CustomStringConvertible {
         let stored = isStoredProperty ? "stored" : "computed"
         let iVar = isIVar ? "iVar" : "static"
         let initialized = isInitialized ? "initialized" : "uninitialized"
-        return "(\(stored), \(iVar), \(identifier), \(variableType), \(initialized))"
+        return "(\(stored), \(iVar), \(identifierPattern.identifier.text), \(variableType), \(initialized))"
     }
 
     init(isStoredProperty: Bool,
@@ -41,7 +37,7 @@ struct Property: Equatable, CustomStringConvertible {
         guard lhs.isStoredProperty == rhs.isStoredProperty else { return false }
         guard lhs.isIVar == rhs.isIVar else { return false }
         guard lhs.bindingKeyword == rhs.bindingKeyword else { return false }
-        guard lhs.identifier == rhs.identifier else { return false }
+        guard lhs.identifierPattern.identifier.text == rhs.identifierPattern.identifier.text else { return false }
         guard lhs.variableType == rhs.variableType else { return false }
         guard lhs.isInitialized == rhs.isInitialized else { return false }
         return true

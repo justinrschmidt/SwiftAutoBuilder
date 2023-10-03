@@ -117,11 +117,18 @@ final class EnumInspectorTests: XCTestCase {
         let actualCases = EnumInspector.getCases(from: memberList)
         let expectedCases = cases.map({ EnumUnionCase(
             caseIdentifierPattern: $0.caseIdentifier,
-            associatedValues: $0.associatedValues.map({ AssociatedValue(
-                label: $0.label,
-                variableType: $0.type.variableType,
-                isInitialized: $0.initialized.isInitialized,
-                firstNameToken: $0.label.pattern?.identifier)
+            associatedValues: $0.associatedValues.map({
+                let firstNameToken: TokenSyntax?
+                if case let .identifierPattern(pattern) = $0.label {
+                    firstNameToken = pattern.identifier
+                } else {
+                    firstNameToken = nil
+                }
+                return AssociatedValue(
+                    label: $0.label,
+                    variableType: $0.type.variableType,
+                    isInitialized: $0.initialized.isInitialized,
+                    firstNameToken: firstNameToken)
             }))
         })
         XCTAssertEqual(actualCases, expectedCases, file: file, line: line)

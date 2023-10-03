@@ -4,7 +4,7 @@ import SwiftDiagnostics
 public enum AutoBuilderDiagnostic: DiagnosticMessage {
     public static let domain = "AutoBuilderMacro"
 
-    case impliedVariableType(identifier: String)
+    case impliedVariableType(identifierPattern: IdentifierPatternSyntax)
     case noAssociatedValues(enumName: String)
     case enumWithNoCases(enumName: String)
     case enumWithOverloadedCases(overloadedCases: [String])
@@ -26,8 +26,8 @@ public enum AutoBuilderDiagnostic: DiagnosticMessage {
 
     public var message: String {
         switch self {
-        case let .impliedVariableType(identifier):
-            return "Type annotation missing for '\(identifier)'. AutoBuilder requires all variable properties to have type annotations."
+        case let .impliedVariableType(identifierPattern):
+            return "Type annotation missing for '\(identifierPattern.identifier.text)'. AutoBuilder requires all variable properties to have type annotations."
         case let .noAssociatedValues(enumName):
             return "\(enumName) does not have any cases with associated values."
         case let .enumWithNoCases(enumName):

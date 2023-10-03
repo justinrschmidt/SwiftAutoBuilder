@@ -1,16 +1,16 @@
 import SwiftSyntax
 
 struct BuildablePropertyGenerator {
-    static func createInitializer(identifier: String, variableType: VariableType) throws -> CodeBlockItemSyntax {
+    static func createInitializer(identifierPattern: IdentifierPatternSyntax, variableType: VariableType) throws -> CodeBlockItemSyntax {
         let typeIdentifier = try createTypeIdentifier(for: variableType, includeGenericClause: false)
-        let args = variableType.isCollection ? "" : "name: \"\(identifier)\""
-        return "\(raw: identifier) = \(raw: typeIdentifier)(\(raw: args))"
+        let args = variableType.isCollection ? "" : "name: \"\(identifierPattern.identifier.text)\""
+        return "\(identifierPattern) = \(typeIdentifier)(\(raw: args))"
     }
 
     static func createVariableDecl(
         modifierKeywords: [Keyword] = [],
         bindingKeyword: Keyword,
-        identifier: String,
+        identifierPattern: IdentifierPatternSyntax,
         variableType: VariableType
     ) throws -> VariableDeclSyntax {
         let modifiers = DeclModifierListSyntax {
@@ -18,7 +18,6 @@ struct BuildablePropertyGenerator {
                 DeclModifierSyntax(name: .keyword(keyword))
             }
         }
-        let identifierPattern = IdentifierPatternSyntax(identifier: .identifier(identifier))
         let type = try createTypeIdentifier(for: variableType, includeGenericClause: true)
         let typeAnnotation = TypeAnnotationSyntax(type: type)
         return VariableDeclSyntax(

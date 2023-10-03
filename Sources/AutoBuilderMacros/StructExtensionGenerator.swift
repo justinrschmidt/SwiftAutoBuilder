@@ -9,7 +9,7 @@ struct StructExtensionGenerator: AutoBuilderExtensionGenerator {
         let diagnostics = impliedTypeVariableProperties.map({ property in
             return Diagnostic(
                 node: property.identifierPattern.cast(Syntax.self),
-                message: AutoBuilderDiagnostic.impliedVariableType(identifier: property.identifier))
+                message: AutoBuilderDiagnostic.impliedVariableType(identifierPattern: property.identifierPattern))
         })
         if diagnostics.isEmpty {
             let propertiesToBuild = storedProperties.filter({ $0.isStoredProperty && $0.isIVar && !$0.isInitializedConstant })
@@ -42,9 +42,9 @@ struct StructExtensionGenerator: AutoBuilderExtensionGenerator {
 
     private static func createPropertyInitializer(from property: Property) -> CodeBlockItemSyntax {
         if property.variableType.isCollection {
-            return "\(raw: property.identifier) = builder.\(raw: property.identifier).build()"
+            return "\(property.identifierPattern) = builder.\(property.identifierPattern).build()"
         } else {
-            return "\(raw: property.identifier) = try builder.\(raw: property.identifier).build()"
+            return "\(property.identifierPattern) = try builder.\(property.identifierPattern).build()"
         }
     }
 
@@ -53,7 +53,7 @@ struct StructExtensionGenerator: AutoBuilderExtensionGenerator {
         return try FunctionDeclSyntax("\(raw: accessModifier)func toBuilder() -> Builder") {
             "let builder = Builder()"
             for property in properties {
-                "builder.set(\(raw: property.identifier): \(raw: property.identifier))"
+                "builder.set(\(property.identifierPattern): \(property.identifierPattern))"
             }
             "return builder"
         }
@@ -69,17 +69,17 @@ struct StructExtensionGenerator: AutoBuilderExtensionGenerator {
                 try BuildablePropertyGenerator.createVariableDecl(
                     modifierKeywords: [.public],
                     bindingKeyword: .let,
-                    identifier: property.identifier,
+                    identifierPattern: property.identifierPattern,
                     variableType: property.variableType)
             }
             try InitializerDeclSyntax("public required init()", bodyBuilder: {
                 for property in properties {
-                    try BuildablePropertyGenerator.createInitializer(identifier: property.identifier, variableType: property.variableType)
+                    try BuildablePropertyGenerator.createInitializer(identifierPattern: property.identifierPattern, variableType: property.variableType)
                 }
             })
             for property in properties {
                 for item in try SetValueFunctionsGenerator.createSetValueFunctions(
-                    identifier: property.identifier,
+                    identifierPattern: property.identifierPattern,
                     variableType: property.variableType,
                     returnType: builderClassName
                 ) {

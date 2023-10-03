@@ -37,13 +37,13 @@ struct EnumExtensionGenerator: AutoBuilderExtensionGenerator {
         var overloadedCases: Set<String> = []
         var overloadedCasesList: [String] = []
         for enumCase in cases {
-            if caseIdentifiers.contains(enumCase.caseIdentifier) {
-                if !overloadedCases.contains(enumCase.caseIdentifier) {
-                    overloadedCases.insert(enumCase.caseIdentifier)
-                    overloadedCasesList.append(enumCase.caseIdentifier)
+            if caseIdentifiers.contains(enumCase.caseIdentifierPattern.identifier.text) {
+                if !overloadedCases.contains(enumCase.caseIdentifierPattern.identifier.text) {
+                    overloadedCases.insert(enumCase.caseIdentifierPattern.identifier.text)
+                    overloadedCasesList.append(enumCase.caseIdentifierPattern.identifier.text)
                 }
             } else {
-                caseIdentifiers.insert(enumCase.caseIdentifier)
+                caseIdentifiers.insert(enumCase.caseIdentifierPattern.identifier.text)
             }
         }
         return Array(overloadedCases)
@@ -102,47 +102,47 @@ struct EnumExtensionGenerator: AutoBuilderExtensionGenerator {
             VariableDeclSyntax(
                 modifiers: DeclModifierListSyntax(arrayLiteral: DeclModifierSyntax(name: .keyword(.private))),
                 .var,
-                name: IdentifierPatternSyntax(identifier: .identifier("currentCase")).cast(PatternSyntax.self),
+                name: IdentifierPatternSyntax(identifier: "currentCase").cast(PatternSyntax.self),
                 type: TypeAnnotationSyntax(type: OptionalTypeSyntax(wrappedType: IdentifierTypeSyntax(name: .identifier("BuilderCases")))))
             try InitializerDeclSyntax("public required init()") {
                 "currentCase = nil"
             }
             for enumCase in cases {
-                let caseIdentifier = enumCase.caseIdentifier
-                try createCaseBuilderComputedProperty(named: caseIdentifier, builderCase: caseIdentifier, builderClassName: caseIdentifier.capitalized)
+                try createCaseBuilderComputedProperty(for: enumCase)
             }
             try createEnumSetValueFunction(from: cases, clientType: clientType)
             try createEnumBuildFunction(from: cases, clientType: clientType)
             for enumCase in cases {
                 try createEnumCaseBuilderClass(from: enumCase, clientType: clientType, in: context)
             }
-            try createBuilderCasesEnum(from: cases.map({ $0.caseIdentifier }))
+            try createBuilderCasesEnum(from: cases)
         }
     }
 
-    private static func createCaseBuilderComputedProperty(named propertyName: String, builderCase: String, builderClassName: String) throws -> VariableDeclSyntax {
+    private static func createCaseBuilderComputedProperty(for enumCase: EnumUnionCase) throws -> VariableDeclSyntax {
+        let builderClassTypeIdentifier = builderClassTypeIdentifier(for: enumCase)
         return VariableDeclSyntax(
             modifiers: DeclModifierListSyntax(arrayLiteral: DeclModifierSyntax(name: .keyword(.public))),
             bindingSpecifier: .keyword(.var),
             bindings: try PatternBindingListSyntax(itemsBuilder: {
                 PatternBindingSyntax(
-                    pattern: IdentifierPatternSyntax(identifier: .identifier(propertyName)),
-                    typeAnnotation: TypeAnnotationSyntax(type: IdentifierTypeSyntax(name: .identifier(builderClassName))),
+                    pattern: enumCase.caseIdentifierPattern,
+                    typeAnnotation: TypeAnnotationSyntax(type: builderClassTypeIdentifier),
                     accessorBlock: try AccessorBlockSyntax(accessors: .accessors(AccessorDeclListSyntax(itemsBuilder: {
                         try AccessorDeclSyntax(accessorSpecifier: .keyword(.get)) {
                             try SwitchExprSyntax("switch currentCase") {
-                                SwitchCaseSyntax("case let .some(.\(raw: builderCase)(builder)):") {
+                                SwitchCaseSyntax("case let .some(.\(enumCase.caseIdentifierPattern)(builder)):") {
                                     "return builder"
                                 }
                                 SwitchCaseSyntax("default:") {
-                                    "let builder = \(raw: builderClassName)()"
-                                    "currentCase = .\(raw: builderCase)(builder)"
+                                    "let builder = \(builderClassTypeIdentifier)()"
+                                    "currentCase = .\(enumCase.caseIdentifierPattern)(builder)"
                                     "return builder"
                                 }
                             }
                         }
                         AccessorDeclSyntax(accessorSpecifier: .keyword(.set)) {
-                            "currentCase = .\(raw: builderCase)(newValue)"
+                            "currentCase = .\(enumCase.caseIdentifierPattern)(newValue)"
                         }
                     }))))
             }))
@@ -153,12 +153,12 @@ struct EnumExtensionGenerator: AutoBuilderExtensionGenerator {
             try SwitchExprSyntax("switch value") {
                 for enumCase in cases {
                     let caseDeclaration = if enumCase.associatedValues.isEmpty {
-                        "case .\(enumCase.caseIdentifier):"
+                        "case .\(enumCase.caseIdentifierPattern.identifier.text):"
                     } else {
-                        "case let .\(enumCase.caseIdentifier)(\(enumCase.valueIdentifiers.joined(separator: ", "))):"
+                        "case let .\(enumCase.caseIdentifierPattern.identifier.text)(\(enumCase.valueIdentifierPatterns.map({ $0.identifier.text }).joined(separator: ", "))):"
                     }
                     SwitchCaseSyntax("\(raw: caseDeclaration)") {
-                        "let builder = \(raw: enumCase.capitalizedCaseIdentifier)()"
+                        "let builder = \(raw: enumCase.caseIdentifierPattern.identifier.text.capitalized)()"
                         for value in enumCase.associatedValues {
                             switch value.label {
                             case let .identifierPattern(pattern):
@@ -178,7 +178,7 @@ struct EnumExtensionGenerator: AutoBuilderExtensionGenerator {
         return try FunctionDeclSyntax("public func build() throws -> \(clientType)") {
             try SwitchExprSyntax("switch currentCase") {
                 for enumCase in cases {
-                    SwitchCaseSyntax("case let .some(.\(raw: enumCase.caseIdentifier)(builder)):") {
+                    SwitchCaseSyntax("case let .some(.\(enumCase.caseIdentifierPattern)(builder)):") {
                         "return try builder.build()"
                     }
                 }
@@ -194,7 +194,7 @@ struct EnumExtensionGenerator: AutoBuilderExtensionGenerator {
         clientType: TypeSyntaxProtocol,
         in context: some MacroExpansionContext
     ) throws -> ClassDeclSyntax {
-        let builderClassName = enumCase.caseIdentifier.capitalized
+        let builderClassName = enumCase.caseIdentifierPattern.identifier.text.capitalized
         return try ClassDeclSyntax("public class \(raw: builderClassName): BuilderProtocol", membersBuilder: {
             for value in enumCase.associatedValues {
                 switch value.label {
@@ -202,13 +202,13 @@ struct EnumExtensionGenerator: AutoBuilderExtensionGenerator {
                     try BuildablePropertyGenerator.createVariableDecl(
                         modifierKeywords: [.public],
                         bindingKeyword: .let,
-                        identifier: pattern.trimmedDescription,
+                        identifierPattern: pattern,
                         variableType: value.variableType)
                 case let .index(index):
                     try BuildablePropertyGenerator.createVariableDecl(
                         modifierKeywords: [.public],
                         bindingKeyword: .let,
-                        identifier: "index_\(index)",
+                        identifierPattern: IdentifierPatternSyntax(identifier: "index_\(raw: index)"),
                         variableType: value.variableType)
                 }
             }
@@ -216,9 +216,9 @@ struct EnumExtensionGenerator: AutoBuilderExtensionGenerator {
                 for value in enumCase.associatedValues {
                     switch value.label {
                     case let .identifierPattern(pattern):
-                        try BuildablePropertyGenerator.createInitializer(identifier: pattern.identifier.text, variableType: value.variableType)
+                        try BuildablePropertyGenerator.createInitializer(identifierPattern: pattern, variableType: value.variableType)
                     case let .index(index):
-                        try BuildablePropertyGenerator.createInitializer(identifier: "index_\(index)", variableType: value.variableType)
+                        try BuildablePropertyGenerator.createInitializer(identifierPattern: IdentifierPatternSyntax(identifier: "index_\(raw: index)"), variableType: value.variableType)
                     }
                 }
             })
@@ -226,7 +226,7 @@ struct EnumExtensionGenerator: AutoBuilderExtensionGenerator {
                 switch value.label {
                 case let .identifierPattern(pattern):
                     for item in try SetValueFunctionsGenerator.createSetValueFunctions(
-                        identifier: pattern.identifier.text,
+                        identifierPattern: pattern,
                         variableType: value.variableType,
                         returnType: builderClassName
                     ) {
@@ -234,7 +234,7 @@ struct EnumExtensionGenerator: AutoBuilderExtensionGenerator {
                     }
                 case let .index(index):
                     for item in try SetValueFunctionsGenerator.createSetValueFunctions(
-                        identifier: "index_\(index)",
+                        identifierPattern: IdentifierPatternSyntax(identifier: "index_\(raw: index)"),
                         variableType: value.variableType,
                         returnType: builderClassName
                     ) {
@@ -273,17 +273,21 @@ struct EnumExtensionGenerator: AutoBuilderExtensionGenerator {
         }
     }
 
-    private static func createBuilderCasesEnum(from caseIdentifiers: [String]) throws -> EnumDeclSyntax {
+    private static func createBuilderCasesEnum(from cases: [EnumUnionCase]) throws -> EnumDeclSyntax {
         return try EnumDeclSyntax("private enum BuilderCases") {
-            for caseIdentifier in caseIdentifiers {
+            for enumCase in cases {
                 EnumCaseDeclSyntax {
                     EnumCaseElementSyntax(
-                        name: .identifier(caseIdentifier),
+                        name: enumCase.caseIdentifierPattern.identifier,
                         parameterClause: EnumCaseParameterClauseSyntax(parameters: EnumCaseParameterListSyntax(itemsBuilder: {
-                            EnumCaseParameterSyntax(type: IdentifierTypeSyntax(name: .identifier(caseIdentifier.capitalized)))
+                            EnumCaseParameterSyntax(type: builderClassTypeIdentifier(for: enumCase))
                         })))
                 }
             }
         }
+    }
+
+    private static func builderClassTypeIdentifier(for enumCase: EnumUnionCase) -> IdentifierTypeSyntax {
+        return IdentifierTypeSyntax(name: enumCase.caseIdentifierPattern.identifier.text.capitalized)
     }
 }
