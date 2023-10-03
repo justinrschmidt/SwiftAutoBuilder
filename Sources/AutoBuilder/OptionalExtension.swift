@@ -8,7 +8,9 @@ extension Optional: Buildable {
     }
 
     public func toBuilder() -> Builder {
-        return Builder()
+        let builder = Builder()
+        builder.set(value: self)
+        return builder
     }
 
     public class Builder: BuilderProtocol {
