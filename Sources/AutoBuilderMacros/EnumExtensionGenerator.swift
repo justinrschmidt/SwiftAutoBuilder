@@ -120,7 +120,7 @@ struct EnumExtensionGenerator: AutoBuilderExtensionGenerator {
     }
 
     private static func createCaseBuilderComputedProperty(for enumCase: EnumUnionCase) throws -> VariableDeclSyntax {
-        let builderClassTypeIdentifier = builderClassTypeIdentifier(for: enumCase)
+        let builderClassTypeIdentifier = createBuilderClassTypeIdentifier(for: enumCase)
         return VariableDeclSyntax(
             modifiers: DeclModifierListSyntax(arrayLiteral: DeclModifierSyntax(name: .keyword(.public))),
             bindingSpecifier: .keyword(.var),
@@ -194,8 +194,8 @@ struct EnumExtensionGenerator: AutoBuilderExtensionGenerator {
         clientType: TypeSyntaxProtocol,
         in context: some MacroExpansionContext
     ) throws -> ClassDeclSyntax {
-        let builderClassName = enumCase.caseIdentifierPattern.identifier.text.capitalized
-        return try ClassDeclSyntax("public class \(raw: builderClassName): BuilderProtocol", membersBuilder: {
+        let builderClassTypeIdentifier = createBuilderClassTypeIdentifier(for: enumCase)
+        return try ClassDeclSyntax("public class \(builderClassTypeIdentifier): BuilderProtocol", membersBuilder: {
             for value in enumCase.associatedValues {
                 switch value.label {
                 case let .identifierPattern(pattern):
@@ -228,7 +228,7 @@ struct EnumExtensionGenerator: AutoBuilderExtensionGenerator {
                     for item in try SetValueFunctionsGenerator.createSetValueFunctions(
                         identifierPattern: pattern,
                         variableType: value.variableType,
-                        returnType: builderClassName
+                        returnType: builderClassTypeIdentifier
                     ) {
                         item
                     }
@@ -236,7 +236,7 @@ struct EnumExtensionGenerator: AutoBuilderExtensionGenerator {
                     for item in try SetValueFunctionsGenerator.createSetValueFunctions(
                         identifierPattern: IdentifierPatternSyntax(identifier: "index_\(raw: index)"),
                         variableType: value.variableType,
-                        returnType: builderClassName
+                        returnType: builderClassTypeIdentifier
                     ) {
                         item
                     }
@@ -280,14 +280,14 @@ struct EnumExtensionGenerator: AutoBuilderExtensionGenerator {
                     EnumCaseElementSyntax(
                         name: enumCase.caseIdentifierPattern.identifier,
                         parameterClause: EnumCaseParameterClauseSyntax(parameters: EnumCaseParameterListSyntax(itemsBuilder: {
-                            EnumCaseParameterSyntax(type: builderClassTypeIdentifier(for: enumCase))
+                            EnumCaseParameterSyntax(type: createBuilderClassTypeIdentifier(for: enumCase))
                         })))
                 }
             }
         }
     }
 
-    private static func builderClassTypeIdentifier(for enumCase: EnumUnionCase) -> IdentifierTypeSyntax {
+    private static func createBuilderClassTypeIdentifier(for enumCase: EnumUnionCase) -> IdentifierTypeSyntax {
         return IdentifierTypeSyntax(name: enumCase.caseIdentifierPattern.identifier.text.capitalized)
     }
 }

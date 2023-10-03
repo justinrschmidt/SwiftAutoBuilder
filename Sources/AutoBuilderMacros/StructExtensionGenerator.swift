@@ -61,10 +61,10 @@ struct StructExtensionGenerator: AutoBuilderExtensionGenerator {
 
     private static func createBuilderClass(
         from properties: [Property],
-        named builderClassName: String = "Builder",
         clientType: TypeSyntaxProtocol
     ) throws -> ClassDeclSyntax {
-        return try ClassDeclSyntax("public class \(raw: builderClassName): BuilderProtocol", membersBuilder: {
+        let builderClassTypeIdentifier = IdentifierTypeSyntax(name: "Builder")
+        return try ClassDeclSyntax("public class \(builderClassTypeIdentifier): BuilderProtocol", membersBuilder: {
             for property in properties {
                 try BuildablePropertyGenerator.createVariableDecl(
                     modifierKeywords: [.public],
@@ -81,7 +81,7 @@ struct StructExtensionGenerator: AutoBuilderExtensionGenerator {
                 for item in try SetValueFunctionsGenerator.createSetValueFunctions(
                     identifierPattern: property.identifierPattern,
                     variableType: property.variableType,
-                    returnType: builderClassName
+                    returnType: builderClassTypeIdentifier
                 ) {
                     item
                 }

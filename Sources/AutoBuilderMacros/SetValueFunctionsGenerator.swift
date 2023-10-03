@@ -1,7 +1,7 @@
 import SwiftSyntax
 
 struct SetValueFunctionsGenerator {
-    static func createSetValueFunctions(identifierPattern: IdentifierPatternSyntax, variableType: VariableType, returnType: String) throws -> [DeclSyntaxProtocol] {
+    static func createSetValueFunctions(identifierPattern: IdentifierPatternSyntax, variableType: VariableType, returnType: TypeSyntaxProtocol) throws -> [DeclSyntaxProtocol] {
         let type = variableType.typeSyntax
         switch variableType {
         case let .array(elementType):
@@ -32,57 +32,57 @@ struct SetValueFunctionsGenerator {
         }
     }
 
-    private static func createSetValueFunction(identifierPattern: IdentifierPatternSyntax,  type: TypeSyntaxProtocol, returnType: String) throws -> FunctionDeclSyntax {
-        return try FunctionDeclSyntax("@discardableResult\npublic func set(\(identifierPattern): \(type)) -> \(raw: returnType)") {
+    private static func createSetValueFunction(identifierPattern: IdentifierPatternSyntax,  type: TypeSyntaxProtocol, returnType: TypeSyntaxProtocol) throws -> FunctionDeclSyntax {
+        return try FunctionDeclSyntax("@discardableResult\npublic func set(\(identifierPattern): \(type)) -> \(returnType)") {
             "self.\(identifierPattern).set(value: \(identifierPattern))"
             "return self"
         }
     }
 
-    private static func createAppendElementFunction(identifierPattern: IdentifierPatternSyntax, elementType: TypeSyntax, returnType: String) throws -> FunctionDeclSyntax {
-        return try FunctionDeclSyntax("@discardableResult\npublic func appendTo(\(identifierPattern) element: \(elementType.trimmed)) -> \(raw: returnType)") {
+    private static func createAppendElementFunction(identifierPattern: IdentifierPatternSyntax, elementType: TypeSyntax, returnType: TypeSyntaxProtocol) throws -> FunctionDeclSyntax {
+        return try FunctionDeclSyntax("@discardableResult\npublic func appendTo(\(identifierPattern) element: \(elementType.trimmed)) -> \(returnType)") {
             "self.\(identifierPattern).append(element: element)"
             "return self"
         }
     }
 
-    private static func createAppendCollectionFunction(identifierPattern: IdentifierPatternSyntax, elementType: TypeSyntax, returnType: String) throws -> FunctionDeclSyntax {
-        return try FunctionDeclSyntax("@discardableResult\npublic func appendTo<C>(\(identifierPattern) collection: C) -> \(raw: returnType) where C: Collection, C.Element == \(elementType.trimmed)") {
+    private static func createAppendCollectionFunction(identifierPattern: IdentifierPatternSyntax, elementType: TypeSyntax, returnType: TypeSyntaxProtocol) throws -> FunctionDeclSyntax {
+        return try FunctionDeclSyntax("@discardableResult\npublic func appendTo<C>(\(identifierPattern) collection: C) -> \(returnType) where C: Collection, C.Element == \(elementType.trimmed)") {
             "self.\(identifierPattern).append(contentsOf: collection)"
             "return self"
         }
     }
 
-    private static func createInsertDictionaryFunction(identifierPattern: IdentifierPatternSyntax, keyType: TypeSyntax, valueType: TypeSyntax, returnType: String) throws -> FunctionDeclSyntax {
-        return try FunctionDeclSyntax("@discardableResult\npublic func insertInto(\(identifierPattern) value: \(valueType.trimmed), forKey key: \(keyType.trimmed)) -> \(raw: returnType)") {
+    private static func createInsertDictionaryFunction(identifierPattern: IdentifierPatternSyntax, keyType: TypeSyntax, valueType: TypeSyntax, returnType: TypeSyntaxProtocol) throws -> FunctionDeclSyntax {
+        return try FunctionDeclSyntax("@discardableResult\npublic func insertInto(\(identifierPattern) value: \(valueType.trimmed), forKey key: \(keyType.trimmed)) -> \(returnType)") {
             "\(identifierPattern).insert(key: key, value: value)"
             "return self"
         }
     }
 
-    private static func createMergeDictionaryFunction(identifierPattern: IdentifierPatternSyntax, keyType: TypeSyntax, valueType: TypeSyntax, returnType: String) throws -> FunctionDeclSyntax {
-        return try FunctionDeclSyntax("@discardableResult\npublic func mergeInto\(raw: identifierPattern.identifier.text.capitalized)(other: [\(keyType.trimmed): \(valueType.trimmed)], uniquingKeysWith combine: (\(valueType.trimmed), \(valueType.trimmed)) throws -> \(valueType.trimmed)) rethrows -> \(raw: returnType)") {
+    private static func createMergeDictionaryFunction(identifierPattern: IdentifierPatternSyntax, keyType: TypeSyntax, valueType: TypeSyntax, returnType: TypeSyntaxProtocol) throws -> FunctionDeclSyntax {
+        return try FunctionDeclSyntax("@discardableResult\npublic func mergeInto\(raw: identifierPattern.identifier.text.capitalized)(other: [\(keyType.trimmed): \(valueType.trimmed)], uniquingKeysWith combine: (\(valueType.trimmed), \(valueType.trimmed)) throws -> \(valueType.trimmed)) rethrows -> \(returnType)") {
             "try \(identifierPattern).merge(other: other, uniquingKeysWith: combine)"
             "return self"
         }
     }
 
-    private static func createInsertSetFunction(identifierPattern: IdentifierPatternSyntax, elementType: TypeSyntax, returnType: String) throws -> FunctionDeclSyntax {
-        return try FunctionDeclSyntax("@discardableResult\npublic func insertInto(\(identifierPattern) element: \(elementType.trimmed)) -> \(raw: returnType)") {
+    private static func createInsertSetFunction(identifierPattern: IdentifierPatternSyntax, elementType: TypeSyntax, returnType: TypeSyntaxProtocol) throws -> FunctionDeclSyntax {
+        return try FunctionDeclSyntax("@discardableResult\npublic func insertInto(\(identifierPattern) element: \(elementType.trimmed)) -> \(returnType)") {
             "\(identifierPattern).insert(element: element)"
             "return self"
         }
     }
 
-    private static func createFormUnionSetFunction(identifierPattern: IdentifierPatternSyntax, elementType: TypeSyntax, returnType: String) throws -> FunctionDeclSyntax {
-        return try FunctionDeclSyntax("@discardableResult\npublic func formUnionWith\(raw: identifierPattern.identifier.text.capitalized)(other: Set<\(elementType.trimmed)>) -> \(raw: returnType)") {
+    private static func createFormUnionSetFunction(identifierPattern: IdentifierPatternSyntax, elementType: TypeSyntax, returnType: TypeSyntaxProtocol) throws -> FunctionDeclSyntax {
+        return try FunctionDeclSyntax("@discardableResult\npublic func formUnionWith\(raw: identifierPattern.identifier.text.capitalized)(other: Set<\(elementType.trimmed)>) -> \(returnType)") {
             "\(identifierPattern).formUnion(other: other)"
             "return self"
         }
     }
 
-    private static func createRemoveAllFunction(identifierPattern: IdentifierPatternSyntax, returnType: String) throws -> FunctionDeclSyntax {
-        return try FunctionDeclSyntax("@discardableResult\npublic func removeAllFrom\(raw: identifierPattern.identifier.text.capitalized)() -> \(raw: returnType)") {
+    private static func createRemoveAllFunction(identifierPattern: IdentifierPatternSyntax, returnType: TypeSyntaxProtocol) throws -> FunctionDeclSyntax {
+        return try FunctionDeclSyntax("@discardableResult\npublic func removeAllFrom\(raw: identifierPattern.identifier.text.capitalized)() -> \(returnType)") {
             "\(identifierPattern).removeAll()"
             "return self"
         }
