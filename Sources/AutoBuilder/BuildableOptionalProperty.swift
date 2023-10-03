@@ -31,9 +31,9 @@ extension BuildableOptionalProperty where Wrapped: Buildable {
             if let subBuilder = self.subBuilder.flatMap({ $0 as? Wrapped.Builder }) {
                 return subBuilder
             } else {
-                let subBuilder = value?.toBuilder() ?? Wrapped.Builder()
-                value = nil
+                let subBuilder = Wrapped.Builder()
                 self.subBuilder = subBuilder
+                value = nil
                 return subBuilder
             }
         }

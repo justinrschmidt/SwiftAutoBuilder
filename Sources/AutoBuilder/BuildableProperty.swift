@@ -2,9 +2,9 @@
 /// are initialized to the values stored in the builder's `BuildableProperty`s. `T` is the type of the
 /// property in the client type.
 ///
-/// When `T` also has the `@AutoBuilder` macro attached to it, `BuildableProperty` can store
-/// either an instance of type `T`, or an instance of the builder for `T` (ie: `T.Builder`). This enables
-/// builder chaining syntax. ex:
+/// When `T` conforms to `Buildable` (any type with `@AutoBuilder` attached to it conforms to
+/// `Buildable`), `BuildableProperty` can store either an instance of type `T`, or an instance
+/// of the builder for `T` (ie: `T.Builder`). This enables builder chaining syntax. ex:
 ///
 ///     @AutoBuilder
 ///     struct A {
@@ -43,10 +43,16 @@ public class BuildableProperty<T> {
     /// - Parameters:
     ///   - value: Optionally set the value that the client's property should be initialized to.
     ///   - name: The name of the client's property that this `BuildableProperty` is associated with.
+    ///
+    /// If `value` conforms to `Buildable`, `value`'s `toBuilder()` method will be called
+    /// and the resulting builder will be used as this `BuildableProperty`'s sub-builder.
     public init(_ value: T? = nil, name: String) {
         propertyName = name
-        self.value = value
+        self.value = nil
         subBuilder = nil
+        if let value = value {
+            set(value: value)
+        }
     }
 
     /// Sets the value that the client's property will be initialized to.
@@ -56,9 +62,17 @@ public class BuildableProperty<T> {
     /// If values have been set on this `BuildableProperty`'s sub-builder via builder chaining,
     /// the sub-builder will be destroyed and those previously set values will be replaced by the
     /// value passed into this method.
+    ///
+    /// If `value` conforms to `Buildable`, `value`'s `toBuilder()` method will be called
+    /// and the resulting builder will be used as this `BuildableProperty`'s sub-builder.
     public func set(value: T) {
-        subBuilder = nil
-        self.value = value
+        if let buildableValue = value as? any Buildable {
+            subBuilder = buildableValue.toBuilder() as any BuilderProtocol
+            self.value = nil
+        } else {
+            subBuilder = nil
+            self.value = value
+        }
     }
 
     /// Returns the value that the client's property should be initialized to.
@@ -83,7 +97,7 @@ public class BuildableProperty<T> {
 }
 
 extension BuildableProperty where T: Buildable {
-    /// The nested sub-builder that can be used for builder chaining when `T` also has the `@AutoBuilder` macro attached to it.
+    /// The nested sub-builder that can be used for builder chaining when `T` conforms to `Buildable`.
     ///
     /// When `builder` is accessed by `get` and the value of this `BuildableProperty` has already been set
     /// with `set(value:)`, that value's `toBuilder()` method will be called and that builder will be returned.
@@ -95,9 +109,9 @@ extension BuildableProperty where T: Buildable {
             if let subBuilder = self.subBuilder.flatMap({ $0 as? T.Builder }) {
                 return subBuilder
             } else {
-                let subBuilder = value?.toBuilder() ?? T.Builder()
-                value = nil
+                let subBuilder = T.Builder()
                 self.subBuilder = subBuilder
+                value = nil
                 return subBuilder
             }
         }
