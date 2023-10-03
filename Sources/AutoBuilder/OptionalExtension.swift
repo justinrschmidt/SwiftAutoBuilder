@@ -1,10 +1,6 @@
 extension Optional: Buildable {
     public init(with builder: Builder) throws {
-        if let value = try builder.build() {
-            self.init(value)
-        } else {
-            self.init(nilLiteral: ())
-        }
+        self = try builder.build()
     }
 
     public func toBuilder() -> Builder {
