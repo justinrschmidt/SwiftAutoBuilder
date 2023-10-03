@@ -8,7 +8,7 @@ let testMacros: [String: Macro.Type] = [
     "AutoBuilder": AutoBuilderMacro.self,
 ]
 
-final class AutoBuilderMacroTests: XCTestCase {
+final class AutoBuilderMacroStructTests: XCTestCase {
     func testEmptyStruct() {
         assertMacroExpansion(
             """
