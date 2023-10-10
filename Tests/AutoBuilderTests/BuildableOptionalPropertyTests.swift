@@ -46,6 +46,14 @@ class BuildableOptionalPropertyTests: XCTestCase {
         XCTAssertEqual(baz.a, .some(.none))
     }
 
+    func testWrappedBuildable() throws {
+        let aBuilder = A.Builder()
+            .set(b: B(i: 1))
+        aBuilder.b.builder.wrappedValue.builder.set(i: 2)
+        let a = try aBuilder.build()
+        XCTAssertEqual(a.b?.i, 2)
+    }
+
     @Buildable
     struct Foo {
         var a: Int?
@@ -71,4 +79,14 @@ class BuildableOptionalPropertyTests: XCTestCase {
             self.a = a
         }
     }
+}
+
+@Buildable
+struct A {
+    var b: B?
+}
+
+@Buildable
+struct B {
+    var i: Int
 }
