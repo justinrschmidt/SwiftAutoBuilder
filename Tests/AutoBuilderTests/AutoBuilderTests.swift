@@ -58,6 +58,18 @@ final class AutoBuilderTests: XCTestCase {
         XCTAssertEqual(foo.a, 12)
         XCTAssertEqual(foo.b, 1)
     }
+
+    func testPropertyNotSet() throws {
+        let builder = Foo.Builder()
+        XCTAssertThrowsError(try builder.build()) { error in
+            switch error {
+            case let BuilderError.missingValue(propertyName):
+                XCTAssertEqual(propertyName, "a")
+            default:
+                XCTFail()
+            }
+        }
+    }
 }
 
 @Buildable
