@@ -160,6 +160,14 @@ final class VariableInspectorTests: XCTestCase {
         ])
     }
 
+    func testGetProperties_nestedTupleImpliedType() {
+        assertGetStoredProperties("var (a, (b, c)) = (1, (2, 3.4))", [
+            (.stored, .iVar, .var, "a", .implicit, .initialized),
+            (.stored, .iVar, .var, "b", .implicit, .initialized),
+            (.stored, .iVar, .var, "c", .implicit, .initialized)
+        ])
+    }
+
     func testGetProperties_genericType() {
         assertGetStoredProperties("var a: Foo<Int>", [
             (.stored, .iVar, .var, "a", .explicit(typeNode: "Foo<Int>"), .uninitialized)
