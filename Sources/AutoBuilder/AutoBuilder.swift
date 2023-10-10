@@ -1,14 +1,10 @@
 /// A macro that generates a builder class that implements the builder design pattern for the attached type.
 /// The attached type is referred to as the builder's "client".
 ///
-/// # Attached Conformance Macro
-/// The `@attached(conformance)` macro adds conformance to the `Buildable` protocol.
-/// The methods declared in `Buildable` are implemented by the `@attached(member)` macro.
-///
-/// # Attached Member Macro
-/// The `@attached(member)` macro adds methods to the attached type to provide conformance
-/// to `Buildable`. It also creates a nested class named `Builder` which implements the
-/// `BuilderProtocol` protocol and is the builder for the attached type.
+/// # Attached Extension Macro
+/// The `@attached(extension)` macro adds an extension to the attached type to provide
+/// conformance to `Buildable`. It also creates a nested class named `Builder` which
+/// implements the `BuilderProtocol` protocol and is the builder for the attached type.
 ///
 /// # Builder Class
 /// The nested `Builder` class has a `BuildableProperty` (or one of its variants) for each of
