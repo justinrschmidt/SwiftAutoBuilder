@@ -27,17 +27,17 @@ public enum AutoBuilderDiagnostic: DiagnosticMessage {
     public var message: String {
         switch self {
         case let .impliedVariableType(identifierPattern):
-            return "Type annotation missing for '\(identifierPattern.identifier.text)'. AutoBuilder requires all variable properties to have type annotations."
+            return "Type annotation missing for '\(identifierPattern.identifier.text)'. @Buildable requires all variable properties to have type annotations."
         case let .noAssociatedValues(enumName):
             return "\(enumName) does not have any cases with associated values."
         case let .enumWithNoCases(enumName):
             return "\(enumName) (aka: Never) does not have any cases and cannot be instantiated."
         case let .enumWithOverloadedCases(overloadedCases):
-            return "@AutoBuilder does not support overloaded cases (\(overloadedCases.joined(separator: ", "))) due to ambiguity caused by SE-0155 not being fully implemented."
+            return "@Buildable does not support overloaded cases (\(overloadedCases.joined(separator: ", "))) due to ambiguity caused by SE-0155 not being fully implemented."
         case .invalidEnumAssociatedValueLabel:
-            return "@AutoBuilder enum associated value labels must not match \"^index_[0-9]+$\"."
+            return "@Buildable enum associated value labels must not match \"^index_[0-9]+$\"."
         case .invalidTypeForAutoBuilder:
-            return "@AutoBuilder can only be applied to structs and enums"
+            return "@Buildable can only be applied to structs and enums"
         }
     }
 

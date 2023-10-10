@@ -14,7 +14,7 @@
 /// The nested `Builder` class has a `BuildableProperty` (or one of its variants) for each of
 /// the client's stored instance properties, except for constants that are initialized in their declaration.
 /// The builder also provides convience methods when working with types that also make use of
-/// `@AutoBuilder` and also when working with `Array`s, `Dictionary`s, and `Set`s.
+/// `@Buildable` and also when working with `Array`s, `Dictionary`s, and `Set`s.
 /// The `Builder` class provides a `build()` method that creates an instance of the client from
 /// the values set in the builder. If any property does not have a value set, the `build()` method
 /// throws an error containing the name of the property that was not set.
@@ -33,7 +33,7 @@
 /// The set methods return the builder that they were called on, which allows the user to chain
 /// calls to set methods. For example, the following struct:
 ///
-///     @AutoBuilder
+///     @Buildable
 ///     struct Foo {
 ///         var a: Int
 ///         var b: Int
@@ -49,16 +49,16 @@
 ///     print("\(foo.a), \(foo.b)")
 ///
 /// ## Nested Builder Values
-/// When the value of a client's property also has the `@AutoBuilder` attached to it, it allows the
+/// When the value of a client's property also has the `@Buildable` attached to it, it allows the
 /// user to access the property on the builder as a nested sub-builder. For example, the following
 /// structs:
 ///
-///     @AutoBuilder
+///     @Buildable
 ///     struct Foo {
 ///         var a: Int
 ///         var b: Int
 ///     }
-///     @AutoBuilder
+///     @Buildable
 ///     struct Bar {
 ///         var foo: Foo
 ///     }
@@ -111,14 +111,14 @@
 /// * SeeAlso: `BuildableSetProperty`
 ///
 /// ## Creating Builders From Existing Values
-/// Any type with `@AutoBuilder` attached to it is also given a `toBuilder()`
+/// Any type with `@Buildable` attached to it is also given a `toBuilder()`
 /// method. This method creates an instance of that type's `Builder` class with
 /// all of the builder's properties initialized to the values of the properties of the
 /// value `toBuilder()` was called on.
 ///
 /// For example:
 ///
-///     @AutoBuilder
+///     @Buildable
 ///     struct Foo {
 ///         var a: Int
 ///         var b: Int
@@ -137,4 +137,4 @@
 import AutoBuilderMacros
 
 @attached(extension, conformances: Buildable, names: named(Builder), named(init(with:)), named(toBuilder))
-public macro AutoBuilder() = #externalMacro(module: "AutoBuilderMacros", type: "AutoBuilderMacro")
+public macro Buildable() = #externalMacro(module: "AutoBuilderMacros", type: "AutoBuilderMacro")

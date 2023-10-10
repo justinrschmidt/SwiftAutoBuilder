@@ -6,13 +6,13 @@ import AutoBuilderMacros
 
 final class AutoBuilderMacroEnumTests: XCTestCase {
     let testMacros: [String:Macro.Type] = [
-        "AutoBuilder":AutoBuilderMacro.self
+        "Buildable":AutoBuilderMacro.self
     ]
 
         func testEnumWithNoCases() {
             assertMacroExpansion(
                 """
-                @AutoBuilder
+                @Buildable
                 enum Foo {
                 }
                 """,
@@ -33,7 +33,7 @@ final class AutoBuilderMacroEnumTests: XCTestCase {
     func testEnumWithCases() {
         assertMacroExpansion(
             """
-            @AutoBuilder
+            @Buildable
             enum Foo {
                 case one(a: Int)
                 case two(b: Double, c: String)
@@ -160,7 +160,7 @@ final class AutoBuilderMacroEnumTests: XCTestCase {
     func testEnumWithNoAssociatedValues() {
         assertMacroExpansion(
             """
-            @AutoBuilder
+            @Buildable
             enum Foo {
                 case one
                 case two
@@ -270,7 +270,7 @@ final class AutoBuilderMacroEnumTests: XCTestCase {
     func testEnumWithCasesWithAndWithoutAssociatedValues() {
         assertMacroExpansion(
         """
-        @AutoBuilder
+        @Buildable
         enum Foo {
             case one(a: Int)
             case two
@@ -381,7 +381,7 @@ final class AutoBuilderMacroEnumTests: XCTestCase {
     func testEnumCaseWithMissingLabels() {
         assertMacroExpansion(
             """
-            @AutoBuilder
+            @Buildable
             enum Foo {
                 case one(Int, b: Double, String)
             }
@@ -478,7 +478,7 @@ final class AutoBuilderMacroEnumTests: XCTestCase {
     func testEnumWithOverloadedCase() {
         assertMacroExpansion(
             """
-            @AutoBuilder
+            @Buildable
             enum Foo {
                 case one(Int)
                 case one(Int, Int)
@@ -499,7 +499,7 @@ final class AutoBuilderMacroEnumTests: XCTestCase {
             """, diagnostics: [
                 DiagnosticSpec(
                     id: MessageID(domain: AutoBuilderDiagnostic.domain, id: "EnumWithOverloadedCases"),
-                    message: "@AutoBuilder does not support overloaded cases (one) due to ambiguity caused by SE-0155 not being fully implemented.",
+                    message: "@Buildable does not support overloaded cases (one) due to ambiguity caused by SE-0155 not being fully implemented.",
                     line: 1,
                     column: 1,
                     severity: .error)
@@ -509,7 +509,7 @@ final class AutoBuilderMacroEnumTests: XCTestCase {
     func testEnumWithArrayAssociatedValue() {
         assertMacroExpansion(
             """
-            @AutoBuilder
+            @Buildable
             enum Foo {
                 case one(a: [Int], [Int])
             }
@@ -628,7 +628,7 @@ final class AutoBuilderMacroEnumTests: XCTestCase {
     func testEnumWithDictionaryAssociatedValue() {
         assertMacroExpansion(
             """
-            @AutoBuilder
+            @Buildable
             enum Foo {
                 case one(a: [String:Int], [String:Int])
             }
@@ -747,7 +747,7 @@ final class AutoBuilderMacroEnumTests: XCTestCase {
     func testEnumWithSetAssociatedValue() {
         assertMacroExpansion(
             """
-            @AutoBuilder
+            @Buildable
             enum Foo {
                 case one(a: Set<Int>, Set<Int>)
             }
@@ -866,7 +866,7 @@ final class AutoBuilderMacroEnumTests: XCTestCase {
     func testEnumWithInvalidAssociatedValueLabels() {
         assertMacroExpansion(
             """
-            @AutoBuilder
+            @Buildable
             enum Foo {
                 case one(_index_0: Int, index_0_: Int, index_123: Int)
                 case two(index_0: Int, index_1: Int)
@@ -881,19 +881,19 @@ final class AutoBuilderMacroEnumTests: XCTestCase {
             """, diagnostics: [
                 DiagnosticSpec(
                     id: MessageID(domain: AutoBuilderDiagnostic.domain, id: "InvalidEnumAssociatedValueLabel"),
-                    message: "@AutoBuilder enum associated value labels must not match \"^index_[0-9]+$\".",
+                    message: "@Buildable enum associated value labels must not match \"^index_[0-9]+$\".",
                     line: 3,
                     column: 44,
                     severity: .error),
                 DiagnosticSpec(
                     id: MessageID(domain: AutoBuilderDiagnostic.domain, id: "InvalidEnumAssociatedValueLabel"),
-                    message: "@AutoBuilder enum associated value labels must not match \"^index_[0-9]+$\".",
+                    message: "@Buildable enum associated value labels must not match \"^index_[0-9]+$\".",
                     line: 4,
                     column: 14,
                     severity: .error),
                 DiagnosticSpec(
                     id: MessageID(domain: AutoBuilderDiagnostic.domain, id: "InvalidEnumAssociatedValueLabel"),
-                    message: "@AutoBuilder enum associated value labels must not match \"^index_[0-9]+$\".",
+                    message: "@Buildable enum associated value labels must not match \"^index_[0-9]+$\".",
                     line: 4,
                     column: 28,
                     severity: .error)
@@ -903,7 +903,7 @@ final class AutoBuilderMacroEnumTests: XCTestCase {
     func testEnumWithMixedAssociatedValueCollectionTypes() {
         assertMacroExpansion(
             """
-            @AutoBuilder
+            @Buildable
             enum Foo {
                 case one(a: Int, b: [String])
             }

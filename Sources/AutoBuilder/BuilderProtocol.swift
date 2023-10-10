@@ -1,8 +1,8 @@
 /// A class that can initialize it's `Client` type.
 ///
-/// All types that have the `@AutoBuilder` macro attached to them are given
+/// All types that have the `@Buildable` macro attached to them are given
 /// a nested `Builder` class that conforms to `BuilderProtocol`. The
-/// type that has the `@AutoBuilder` macro attached to it is referred to as
+/// type that has the `@Buildable` macro attached to it is referred to as
 /// the builder's "client".
 public protocol BuilderProtocol: AnyObject {
 

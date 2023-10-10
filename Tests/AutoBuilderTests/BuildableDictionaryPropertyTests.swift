@@ -95,7 +95,7 @@ class BuildableDictionaryPropertyTests: XCTestCase {
         XCTAssertEqual(bar2.b, [:])
     }
 
-    @AutoBuilder
+    @Buildable
     struct Foo {
         var a: [String:Int]
 
@@ -104,7 +104,7 @@ class BuildableDictionaryPropertyTests: XCTestCase {
         }
     }
 
-    @AutoBuilder
+    @Buildable
     enum Bar {
         var a: [String:Int] {
             return switch self {

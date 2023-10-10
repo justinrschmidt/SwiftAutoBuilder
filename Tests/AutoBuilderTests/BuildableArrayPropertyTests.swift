@@ -96,7 +96,7 @@ class BuildableArrayPropertyTests: XCTestCase {
         XCTAssertEqual(bar2.b, [])
     }
 
-    @AutoBuilder
+    @Buildable
     struct Foo {
         var a: [Int]
 
@@ -105,7 +105,7 @@ class BuildableArrayPropertyTests: XCTestCase {
         }
     }
 
-    @AutoBuilder
+    @Buildable
     enum Bar {
         var a: [Int] {
             return switch self {

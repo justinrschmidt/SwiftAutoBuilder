@@ -1,11 +1,11 @@
 import AutoBuilder
 
-@AutoBuilder
+@Buildable
 struct Foo {
 	let a: Int
 }
 
-@AutoBuilder
+@Buildable
 enum Bar {
     case one(a: Int)
     case two(b: Double, c: String)

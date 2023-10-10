@@ -5,14 +5,14 @@ import XCTest
 import AutoBuilderMacros
 
 let testMacros: [String: Macro.Type] = [
-    "AutoBuilder": AutoBuilderMacro.self,
+    "Buildable": AutoBuilderMacro.self,
 ]
 
 final class AutoBuilderMacroStructTests: XCTestCase {
     func testEmptyStruct() {
         assertMacroExpansion(
             """
-            @AutoBuilder
+            @Buildable
             struct Foo {
             }
             """,
@@ -42,7 +42,7 @@ final class AutoBuilderMacroStructTests: XCTestCase {
     func testStructWithStoredProperties() {
         assertMacroExpansion(
             """
-            @AutoBuilder
+            @Buildable
             struct Foo {
                 let a: Int
                 let b: Double
@@ -94,7 +94,7 @@ final class AutoBuilderMacroStructTests: XCTestCase {
     func testStructWithComputedProperties() {
         assertMacroExpansion(
             """
-            @AutoBuilder
+            @Buildable
             struct Foo {
                 let a: Int
                 var b: Int {
@@ -151,7 +151,7 @@ final class AutoBuilderMacroStructTests: XCTestCase {
     func testStructWithStaticProperties() {
         assertMacroExpansion(
             """
-            @AutoBuilder
+            @Buildable
             struct Foo {
                 static var a: Double
                 var b: Int
@@ -194,7 +194,7 @@ final class AutoBuilderMacroStructTests: XCTestCase {
     func testGenericStructWithStoredProperties() {
         assertMacroExpansion(
             """
-            @AutoBuilder
+            @Buildable
             struct Foo<T> {
                 let a: T
             }
@@ -235,7 +235,7 @@ final class AutoBuilderMacroStructTests: XCTestCase {
     func testInvalidType() {
         assertMacroExpansion(
             """
-            @AutoBuilder
+            @Buildable
             protocol Foo {
             }
             """,
@@ -246,7 +246,7 @@ final class AutoBuilderMacroStructTests: XCTestCase {
             """, diagnostics: [
                 DiagnosticSpec(
                     id: MessageID(domain: AutoBuilderDiagnostic.domain, id: "InvalidTypeForAutoBuilder"),
-                    message: "@AutoBuilder can only be applied to structs and enums",
+                    message: "@Buildable can only be applied to structs and enums",
                     line: 1,
                     column: 1,
                     severity: .error)
@@ -256,7 +256,7 @@ final class AutoBuilderMacroStructTests: XCTestCase {
     func testStructWithImplicitlyTypedVariable() {
         assertMacroExpansion(
             """
-            @AutoBuilder
+            @Buildable
             struct Foo {
                 var bar = 0
             }
@@ -269,7 +269,7 @@ final class AutoBuilderMacroStructTests: XCTestCase {
             diagnostics: [
                 DiagnosticSpec(
                     id: MessageID(domain: AutoBuilderDiagnostic.domain, id: "ImpliedVariableType"),
-                    message: "Type annotation missing for 'bar'. AutoBuilder requires all variable properties to have type annotations.",
+                    message: "Type annotation missing for 'bar'. @Buildable requires all variable properties to have type annotations.",
                     line: 3,
                     column: 9,
                     severity: .error)
@@ -280,7 +280,7 @@ final class AutoBuilderMacroStructTests: XCTestCase {
     func testStructWithImplicitlyTypedConstant() {
         assertMacroExpansion(
             """
-            @AutoBuilder
+            @Buildable
             struct Foo {
                 let a = 0
             }
@@ -311,7 +311,7 @@ final class AutoBuilderMacroStructTests: XCTestCase {
     func testStructWithArrayProperty() {
         assertMacroExpansion(
             """
-            @AutoBuilder
+            @Buildable
             struct Foo {
                 var a: [Int]
             }
@@ -366,7 +366,7 @@ final class AutoBuilderMacroStructTests: XCTestCase {
     func testStructWithDictionaryProperty() {
         assertMacroExpansion(
             """
-            @AutoBuilder
+            @Buildable
             struct Foo {
                 var a: [String:Double]
             }
@@ -421,7 +421,7 @@ final class AutoBuilderMacroStructTests: XCTestCase {
     func testStructWithSetProperty() {
         assertMacroExpansion(
             """
-            @AutoBuilder
+            @Buildable
             struct Foo {
                 var a: Set<Int>
             }
@@ -476,7 +476,7 @@ final class AutoBuilderMacroStructTests: XCTestCase {
     func testPublicStructWithStoredProperty() {
         assertMacroExpansion(
             """
-            @AutoBuilder
+            @Buildable
             public struct Foo {
                 let a: Int
             }

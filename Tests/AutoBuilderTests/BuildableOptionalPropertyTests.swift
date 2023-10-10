@@ -46,7 +46,7 @@ class BuildableOptionalPropertyTests: XCTestCase {
         XCTAssertEqual(baz.a, .some(.none))
     }
 
-    @AutoBuilder
+    @Buildable
     struct Foo {
         var a: Int?
         var b: String?
@@ -57,13 +57,13 @@ class BuildableOptionalPropertyTests: XCTestCase {
         }
     }
 
-    @AutoBuilder
+    @Buildable
     enum Bar {
         case one(a: Int?, b: String?)
         case two(Int?, String?)
     }
 
-    @AutoBuilder
+    @Buildable
     struct Baz {
         var a: Int??
 

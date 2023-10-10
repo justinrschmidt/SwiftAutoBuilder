@@ -98,7 +98,7 @@ class BuildableSetPropertyTests: XCTestCase {
         XCTAssertEqual(bar2.b, [])
     }
 
-    @AutoBuilder
+    @Buildable
     struct Foo {
         var a: Set<Int>
 
@@ -107,7 +107,7 @@ class BuildableSetPropertyTests: XCTestCase {
         }
     }
 
-    @AutoBuilder
+    @Buildable
     enum Bar {
         var a: Set<Int> {
             return switch self {

@@ -4,7 +4,7 @@ Swift Auto Builder is a macro that generates builder classes that implement the 
 For example, the following `struct`:
 
 ```swift
-@AutoBuilder
+@Buildable
 struct Foo {
   var a: Int
   var b: Int
@@ -23,16 +23,16 @@ let foo = try Foo.Builder()
 print("\(foo.a), \(foo.b)")
 ```
 
-If your type's properties are also using `@AutoBuilder`, then you can chain those "nested" builders together:
+If your type's properties are also using `@Buildable`, then you can chain those "nested" builders together:
 
 ```swift
-@AutoBuilder
+@Buildable
 struct Foo {
   var a: Int
   var b: Int
 }
 
-@AutoBuilder
+@Buildable
 struct Bar {
   var foo: Foo
 }
@@ -47,10 +47,10 @@ let bar = try barBuilder.build()
 print("\(bar.foo.a), \(bar.foo.b)")
 ```
 
-`@AutoBuilder` also generates helper functions in the builder class that allow you to add elements to `Array`s, `Dictionary`s, and `Set`s:
+`@Buildable` also generates helper functions in the builder class that allow you to add elements to `Array`s, `Dictionary`s, and `Set`s:
 
 ```swift
-@AutoBuilder
+@Buildable
 struct Foo {
   var a: [Int]
   var b: [String:Int]

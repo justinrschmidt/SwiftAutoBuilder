@@ -2,16 +2,16 @@
 /// are initialized to the values stored in the builder's `BuildableProperty`s. `T` is the type of the
 /// property in the client type.
 ///
-/// When `T` conforms to `Buildable` (any type with `@AutoBuilder` attached to it conforms to
+/// When `T` conforms to `Buildable` (any type with `@Buildable` attached to it conforms to
 /// `Buildable`), `BuildableProperty` can store either an instance of type `T`, or an instance
 /// of the builder for `T` (ie: `T.Builder`). This enables builder chaining syntax. ex:
 ///
-///     @AutoBuilder
+///     @Buildable
 ///     struct A {
 ///         var value: Int
 ///     }
 ///
-///     @AutoBuilder
+///     @Buildable
 ///     struct B {
 ///         var a: A
 ///     }

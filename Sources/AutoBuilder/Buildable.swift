@@ -1,6 +1,6 @@
 /// A type that can be initialized from a builder and can be converted into a builder.
 ///
-/// All types that have the `@AutoBuilder` macro attached to them conform to `Buildable`.
+/// All types that have the `@Buildable` macro attached to them conform to `Buildable`.
 public protocol Buildable {
 
     /// The builder's type.

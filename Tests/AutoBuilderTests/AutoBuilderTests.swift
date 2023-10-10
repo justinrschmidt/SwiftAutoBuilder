@@ -60,23 +60,23 @@ final class AutoBuilderTests: XCTestCase {
     }
 }
 
-@AutoBuilder
+@Buildable
 private struct Foo {
     let a: Int
 }
 
-@AutoBuilder
+@Buildable
 private struct Bar {
     let foo: Foo
 }
 
-@AutoBuilder
+@Buildable
 private struct Foo2 {
     let a: Int
     let b: Int
 }
 
-@AutoBuilder
+@Buildable
 private struct Bar2 {
     let foo: Foo2
 }
@@ -90,7 +90,7 @@ private struct TwelveOrLess {
     }
 }
 
-@AutoBuilder
+@Buildable
 private struct FooWithPropertyWrapper {
     @TwelveOrLess var a: Int
     @TwelveOrLess var b: Int
