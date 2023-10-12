@@ -554,4 +554,55 @@ final class AutoBuilderMacroStructTests: XCTestCase {
             }
             """, macros: testMacros)
     }
+
+    func testNestedStructs() {
+        assertMacroExpansion(
+            """
+            struct RootStruct {
+                @Buildable
+                struct A {
+                    let b: RootStruct.B
+                }
+                struct B {
+                    let i: Int
+                }
+            }
+            """,
+            expandedSource:
+            """
+            struct RootStruct {
+                struct A {
+                    let b: RootStruct.B
+                }
+                struct B {
+                    let i: Int
+                }
+            }
+
+            extension A: Buildable {
+                init(with builder: Builder) throws {
+                    b = try builder.b.build()
+                }
+                func toBuilder() -> Builder {
+                    let builder = Builder()
+                    builder.set(b: b)
+                    return builder
+                }
+                public class Builder: BuilderProtocol {
+                    public let b: BuildableProperty<RootStruct.B>
+                    public required init() {
+                        b = BuildableProperty(name: "b")
+                    }
+                    @discardableResult
+                    public func set(b: RootStruct.B) -> Builder {
+                        self.b.set(value: b)
+                        return self
+                    }
+                    public func build() throws -> A {
+                        return try A(with: self)
+                    }
+                }
+            }
+            """, macros: testMacros)
+    }
 }

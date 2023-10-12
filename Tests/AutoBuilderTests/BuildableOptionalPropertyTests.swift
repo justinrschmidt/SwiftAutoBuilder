@@ -79,14 +79,14 @@ class BuildableOptionalPropertyTests: XCTestCase {
             self.a = a
         }
     }
-}
 
-@Buildable
-struct A {
-    var b: B?
-}
+    @Buildable
+    struct A {
+        var b: BuildableOptionalPropertyTests.B?
+    }
 
-@Buildable
-struct B {
-    var i: Int
+    @Buildable
+    struct B {
+        var i: Int
+    }
 }

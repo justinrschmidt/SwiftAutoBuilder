@@ -1165,4 +1165,95 @@ final class AutoBuilderMacroEnumTests: XCTestCase {
             }
             """, macros: testMacros)
     }
+
+    func testNestedEnums() {
+        assertMacroExpansion(
+            """
+            enum RootEnum {
+                @Buildable
+                enum A {
+                    case one(b: RootEnum.B)
+                }
+                enum B {
+                    case two(i: Int)
+                }
+            }
+            """,
+            expandedSource:
+            """
+            enum RootEnum {
+                enum A {
+                    case one(b: RootEnum.B)
+                }
+                enum B {
+                    case two(i: Int)
+                }
+            }
+
+            extension A: Buildable {
+                init(with builder: Builder) throws {
+                    self = try builder.build()
+                }
+                func toBuilder() -> Builder {
+                    let builder = Builder()
+                    builder.set(value: self)
+                    return builder
+                }
+                public class Builder: BuilderProtocol {
+                    private var currentCase: BuilderCases?
+                    public required init() {
+                        currentCase = nil
+                    }
+                    public var one: One {
+                        get {
+                            switch currentCase {
+                            case let .some(.one(builder)):
+                                return builder
+                            default:
+                                let builder = One()
+                                currentCase = .one(builder)
+                                return builder
+                            }
+                        }
+                        set {
+                            currentCase = .one(newValue)
+                        }
+                    }
+                    public func set(value: A) {
+                        switch value {
+                        case let .one(b):
+                            let builder = One()
+                            builder.set(b: b)
+                            currentCase = .one(builder)
+                        }
+                    }
+                    public func build() throws -> A {
+                        switch currentCase {
+                        case let .some(.one(builder)):
+                            return try builder.build()
+                        case .none:
+                            throw BuilderError.noEnumCaseSet
+                        }
+                    }
+                    public class One: BuilderProtocol {
+                        public let b: BuildableProperty<RootEnum.B>
+                        public required init() {
+                            b = BuildableProperty(name: "b")
+                        }
+                        @discardableResult
+                        public func set(b: RootEnum.B) -> One {
+                            self.b.set(value: b)
+                            return self
+                        }
+                        public func build() throws -> A {
+                            return try .one(b: b.build())
+                        }
+                    }
+                    private enum BuilderCases {
+                        case one(One)
+                    }
+                }
+            }
+            """, macros: testMacros)
+    }
 }
