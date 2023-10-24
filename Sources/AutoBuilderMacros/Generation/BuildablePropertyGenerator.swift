@@ -43,6 +43,9 @@ struct BuildablePropertyGenerator {
         case let .set(elementType):
             let genericTypes = includeGenericClause ? [elementType.trimmed] : []
             return IdentifierTypeSyntax(name: "BuildableSetProperty", genericTypes: genericTypes)
+        case let .optional(wrappedType):
+            let genericTypes = includeGenericClause ? [wrappedType.trimmed] : []
+            return IdentifierTypeSyntax(name: "BuildableOptionalProperty", genericTypes: genericTypes)
         case let .explicit(typeNode):
             let genericTypes = includeGenericClause ? [typeNode.trimmed] : []
             return IdentifierTypeSyntax(name: "BuildableProperty", genericTypes: genericTypes)

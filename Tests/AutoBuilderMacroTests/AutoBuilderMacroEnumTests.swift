@@ -863,6 +863,95 @@ final class AutoBuilderMacroEnumTests: XCTestCase {
             """, macros: testMacros)
     }
 
+    func testEnumWithOptionalAssociatedValue() {
+        assertMacroExpansion(
+            """
+            @Buildable
+            enum Foo {
+                case one(a: Int?, Int?)
+            }
+            """,
+            expandedSource:
+            """
+            enum Foo {
+                case one(a: Int?, Int?)
+            }
+
+            extension Foo: Buildable {
+                init(with builder: Builder) throws {
+                    self = try builder.build()
+                }
+                func toBuilder() -> Builder {
+                    let builder = Builder()
+                    builder.set(value: self)
+                    return builder
+                }
+                public class Builder: BuilderProtocol {
+                    private var currentCase: BuilderCases?
+                    public required init() {
+                        currentCase = nil
+                    }
+                    public var one: One {
+                        get {
+                            switch currentCase {
+                            case let .some(.one(builder)):
+                                return builder
+                            default:
+                                let builder = One()
+                                currentCase = .one(builder)
+                                return builder
+                            }
+                        }
+                        set {
+                            currentCase = .one(newValue)
+                        }
+                    }
+                    public func set(value: Foo) {
+                        switch value {
+                        case let .one(a, i1):
+                            let builder = One()
+                            builder.set(a: a)
+                            builder.set(index_1: i1)
+                            currentCase = .one(builder)
+                        }
+                    }
+                    public func build() throws -> Foo {
+                        switch currentCase {
+                        case let .some(.one(builder)):
+                            return try builder.build()
+                        case .none:
+                            throw BuilderError.noEnumCaseSet
+                        }
+                    }
+                    public class One: BuilderProtocol {
+                        public let a: BuildableOptionalProperty<Int>
+                        public let index_1: BuildableOptionalProperty<Int>
+                        public required init() {
+                            a = BuildableOptionalProperty(name: "a")
+                            index_1 = BuildableOptionalProperty(name: "index_1")
+                        }
+                        @discardableResult
+                        public func set(a: Int?) -> One {
+                            self.a.set(value: a)
+                            return self
+                        }
+                        @discardableResult
+                        public func set(index_1: Int?) -> One {
+                            self.index_1.set(value: index_1)
+                            return self
+                        }
+                        public func build() throws -> Foo {
+                            return try .one(a: a.build(), index_1.build())
+                        }
+                    }
+                    private enum BuilderCases {
+                        case one(One)
+                    }
+                }
+            }
+            """, macros: testMacros)
+    }
+
     func testEnumWithInvalidAssociatedValueLabels() {
         assertMacroExpansion(
             """

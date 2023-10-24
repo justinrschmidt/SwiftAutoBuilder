@@ -269,7 +269,7 @@ struct EnumExtensionGenerator: AutoBuilderExtensionGenerator {
     private static func variableTypeBuilderCanFail(_ variableType: VariableType) -> Bool {
         return switch variableType {
         case .array(_), .dictionary(_, _), .set(_): false
-        case .implicit, .explicit(_): true
+        case .implicit, .optional(_), .explicit(_): true
         }
     }
 

@@ -25,6 +25,10 @@ struct SetValueFunctionsGenerator {
                 try createFormUnionSetFunction(identifierPattern: identifierPattern, elementType: elementType, returnType: returnType),
                 try createRemoveAllFunction(identifierPattern: identifierPattern, returnType: returnType)
             ]
+        case let .optional(wrappedType):
+            return [
+                try createSetValueFunction(identifierPattern: identifierPattern, type: OptionalTypeSyntax(wrappedType: wrappedType), returnType: returnType)
+            ]
         case .implicit, .explicit(_):
             return [
                 try createSetValueFunction(identifierPattern: identifierPattern, type: type, returnType: returnType)

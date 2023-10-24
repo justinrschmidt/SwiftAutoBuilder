@@ -204,6 +204,18 @@ final class VariableInspectorTests: XCTestCase {
         ])
     }
 
+    func testGetProperties_optionalLiteralType() {
+        assertGetStoredProperties("var a: Int?", [
+            (.stored, .iVar, .var, "a", .optional(wrappedType: "Int"), .uninitialized)
+        ])
+    }
+
+    func testGetProperties_optionalGenericType() {
+        assertGetStoredProperties("var a: Optional<Int>", [
+            (.stored, .iVar, .var, "a", .optional(wrappedType: "Int"), .uninitialized)
+        ])
+    }
+
     // MARK: Computed Properties Declarations
 
     func testGetProperties_codeBlock() {

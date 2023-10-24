@@ -41,7 +41,7 @@ class BuildableOptionalPropertyTests: XCTestCase {
 
     func testNestedOptional() throws {
         let builder = Baz.Builder()
-        builder.a.builder.wrappedValue.builder.set(value: nil)
+        builder.a.builder.wrappedValue.set(value: nil)
         let baz = try builder.build()
         XCTAssertEqual(baz.a, .some(.none))
     }
@@ -49,7 +49,7 @@ class BuildableOptionalPropertyTests: XCTestCase {
     func testWrappedBuildable() throws {
         let aBuilder = A.Builder()
             .set(b: B(i: 1))
-        aBuilder.b.builder.wrappedValue.builder.set(i: 2)
+        aBuilder.b.builder.set(i: 2)
         let a = try aBuilder.build()
         XCTAssertEqual(a.b?.i, 2)
     }

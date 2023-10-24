@@ -106,6 +106,8 @@ struct VariableInspector {
             return .array(elementType: arraySyntax.element)
         } else if let dictionarySyntax = typeSyntax.as(DictionaryTypeSyntax.self) {
             return .dictionary(keyType: dictionarySyntax.key, valueType: dictionarySyntax.value)
+        } else if let optionalSyntax = typeSyntax.as(OptionalTypeSyntax.self) {
+            return .optional(wrappedType: optionalSyntax.wrappedType)
         } else if let simpleTypeSyntax = typeSyntax.as(IdentifierTypeSyntax.self),
                   let genericClause = simpleTypeSyntax.genericArgumentClause {
             switch simpleTypeSyntax.name.text {
@@ -118,6 +120,8 @@ struct VariableInspector {
                 return .dictionary(keyType: keyType, valueType: valueType)
             case "Set":
                 return .set(elementType: genericClause.arguments.first!.argument)
+            case "Optional":
+                return .optional(wrappedType: genericClause.arguments.first!.argument)
             default:
                 return .explicit(typeNode: typeSyntax)
             }

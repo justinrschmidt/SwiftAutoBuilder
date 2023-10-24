@@ -5,6 +5,7 @@ enum VariableType: Equatable, CustomStringConvertible {
     case array(elementType: TypeSyntax)
     case dictionary(keyType: TypeSyntax, valueType: TypeSyntax)
     case set(elementType: TypeSyntax)
+    case optional(wrappedType: TypeSyntax)
     case explicit(typeNode: TypeSyntax)
 
     var isImplicit: Bool {
@@ -35,6 +36,8 @@ enum VariableType: Equatable, CustomStringConvertible {
             return DictionaryTypeSyntax(key: keyType, value: valueType)
         case let .set(elementType):
             return IdentifierTypeSyntax(name: "Set", genericTypes: [elementType])
+        case let .optional(wrappedType):
+            return OptionalTypeSyntax(wrappedType: wrappedType)
         case let .explicit(typeNode):
             return typeNode
         }
@@ -50,6 +53,8 @@ enum VariableType: Equatable, CustomStringConvertible {
             return "D:[\(keyType.trimmedDescription):\(valueType.trimmedDescription)]"
         case let .set(elementType):
             return "S:Set<\(elementType.trimmedDescription)>"
+        case let .optional(wrappedType):
+            return "O:\(wrappedType.trimmedDescription)?"
         case let .explicit(typeNode):
             return typeNode.trimmedDescription
         }
@@ -65,6 +70,8 @@ enum VariableType: Equatable, CustomStringConvertible {
             return typesAreEqual(lhsKey, rhsKey) && typesAreEqual(lhsValue, rhsValue)
         case let (.set(lhsType), .set(rhsType)):
             return typesAreEqual(lhsType, rhsType)
+        case let (.optional(lhsWrappedType), .optional(rhsWrappedType)):
+            return typesAreEqual(lhsWrappedType, rhsWrappedType)
         case let (.explicit(lhsType), .explicit(rhsType)):
             return typesAreEqual(lhsType, rhsType)
         default:
