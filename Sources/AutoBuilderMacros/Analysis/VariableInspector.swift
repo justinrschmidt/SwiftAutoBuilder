@@ -130,7 +130,7 @@ struct VariableInspector {
         }
     }
 
-    static func isStoredProperty(_ variable: VariableDeclSyntax) -> Bool {
+    private static func isStoredProperty(_ variable: VariableDeclSyntax) -> Bool {
         switch variable.bindingSpecifier.tokenKind {
         case TokenKind.keyword(.let):
             return true
