@@ -3,8 +3,9 @@
 /// property in the client type.
 ///
 /// When `T` conforms to `Buildable` (any type with `@Buildable` attached to it conforms to
-/// `Buildable`), `BuildableProperty` can store either an instance of type `T`, or an instance
-/// of the builder for `T` (ie: `T.Builder`). This enables builder chaining syntax. ex:
+/// `Buildable`), `BuildableProperty` will store an instance of `T.Builder` as its
+/// sub-builder.
+/// This enables builder chaining syntax. ex:
 ///
 ///     @Buildable
 ///     struct A {
@@ -25,6 +26,7 @@
 /// - SeeAlso:
 ///   - `BuildableArrayProperty`
 ///   - `BuildableDictionaryProperty`
+///   - `BuildableOptionalProperty`
 ///   - `BuildableSetProperty`
 public class BuildableProperty<T> {
 
@@ -33,10 +35,14 @@ public class BuildableProperty<T> {
     private let propertyName: String
 
     /// The value that the client's property will be initialized to when this builder builds.
+    ///
+    /// `value` is only used when `T` does not conform to `Buildable`.
     private var value: T?
 
     /// The builder of type `T.Builder`. The client's property will be initialized to the value
     /// created by building `subBuilder`.
+    ///
+    /// `subBuilder` is only used when `T` conforms to `Buildable`.
     private var subBuilder: Optional<any BuilderProtocol>
 
     /// Initialize the `BuildableProperty`.
@@ -51,10 +57,6 @@ public class BuildableProperty<T> {
     /// Sets the value that the client's property will be initialized to.
     /// - Parameters:
     ///   - value: The value that the client's property will be initialized to.
-    ///
-    /// If values have been set on this `BuildableProperty`'s sub-builder via builder chaining,
-    /// the sub-builder will be destroyed and those previously set values will be replaced by the
-    /// value passed into this method.
     ///
     /// If `value` conforms to `Buildable`, `value`'s `toBuilder()` method will be called
     /// and the resulting builder will be used as this `BuildableProperty`'s sub-builder.
@@ -74,10 +76,8 @@ public class BuildableProperty<T> {
     /// value has not been set and no sub-builder is being used, OR if a sub-builder is being
     /// used and any value is not set in the sub-builder.
     ///
-    /// If the value of this `BuildableProperty` was set via a call to `set(value:)`,
-    /// then the value passed into that method will be returned. If values were set in the
-    /// sub-builder via builder chaining, then the value returned from the sub-builder's
-    /// `build()` method will be returned.
+    /// If `T` conforms to `Buildable`, then the value returned by this method will be the
+    /// result of calling the sub-builder's `build()` method.
     public func build() throws -> T {
         if let value = value {
             return value
@@ -92,11 +92,10 @@ public class BuildableProperty<T> {
 extension BuildableProperty where T: Buildable {
     /// The nested sub-builder that can be used for builder chaining when `T` conforms to `Buildable`.
     ///
-    /// When `builder` is accessed by `get` and the value of this `BuildableProperty` has already been set
-    /// with `set(value:)`, that value's `toBuilder()` method will be called and that builder will be returned.
+    /// Calling `get` will return the existing sub-builder. If no sub-builder already exists, then a new sub-builder
+    /// will be created for this `BuildableProperty` and the new sub-builder will be returned.
     ///
-    /// When `builder` is accessed by `set` and the value of this `BuildableProperty` has already been set
-    /// with `set(value:)`, that value will be destroyed and replaced by the builder that is assigned to `builder`.
+    /// Calling `set` will replace the existing sub-builder with the value assigned to this property.
     public var builder: T.Builder {
         get {
             if let subBuilder = self.subBuilder.flatMap({ $0 as? T.Builder }) {

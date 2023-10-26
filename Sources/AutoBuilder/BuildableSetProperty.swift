@@ -6,6 +6,7 @@
 ///   - `BuildableProperty`
 ///   - `BuildableArrayProperty`
 ///   - `BuildableDictionaryProperty`
+///   - `BuildableOptionalProperty`
 public class BuildableSetProperty<Element> where Element: Hashable {
 
     /// The set that the client's property will be initialized to when the builder builds.

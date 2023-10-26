@@ -5,6 +5,7 @@
 /// - SeeAlso:
 ///   - `BuildableProperty`
 ///   - `BuildableArrayProperty`
+///   - `BuildableOptionalProperty`
 ///   - `BuildableSetProperty`
 public class BuildableDictionaryProperty<Key, Value> where Key: Hashable {
 
