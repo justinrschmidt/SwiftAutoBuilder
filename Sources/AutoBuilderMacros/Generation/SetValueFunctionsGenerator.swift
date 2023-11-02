@@ -1,5 +1,12 @@
 import SwiftSyntax
 
+/// Generates function declarations for the various set value functions for builder classes.
+///
+/// Every property in the builder's client needs to have a set value function in the builder class.
+/// Arrays, dictionaries, and sets have additional methods that make them easier to work with.
+/// These functions are collectively known as the "set value functions".
+/// `SetValueFuctionsGenerator` contains the methods that generate all of those
+/// set value functions.
 struct SetValueFunctionsGenerator {
     static func createSetValueFunctions(identifierPattern: IdentifierPatternSyntax, variableType: VariableType, returnType: TypeSyntaxProtocol) throws -> [DeclSyntaxProtocol] {
         let type = variableType.typeSyntax

@@ -1,5 +1,6 @@
 import SwiftSyntax
 
+/// Generates buildable property declarations and initialization statements used by the builder classes.
 struct BuildablePropertyGenerator {
     static func createInitializer(identifierPattern: IdentifierPatternSyntax, variableType: VariableType) throws -> CodeBlockItemSyntax {
         let typeIdentifier = try createTypeIdentifier(for: variableType, includeGenericClause: false)

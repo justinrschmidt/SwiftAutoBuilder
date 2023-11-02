@@ -2,6 +2,7 @@ import SwiftDiagnostics
 import SwiftSyntax
 import SwiftSyntaxMacros
 
+/// Handles analysis and builder class generation for struct declarations.
 struct StructExtensionGenerator: AutoBuilderExtensionGenerator {
     static func analyze(decl: StructDeclSyntax) -> AnalysisResult<[Property]> {
         let storedProperties = VariableInspector.getProperties(from: decl.memberBlock.members)

@@ -3,6 +3,7 @@ import SwiftDiagnostics
 import SwiftSyntax
 import SwiftSyntaxMacros
 
+/// Handles analysis and builder class generation for enum declarations.
 struct EnumExtensionGenerator: AutoBuilderExtensionGenerator {
     static func analyze(decl: EnumDeclSyntax) -> AnalysisResult<[EnumUnionCase]> {
         let cases = EnumInspector.getCases(from: decl.memberBlock.members)
