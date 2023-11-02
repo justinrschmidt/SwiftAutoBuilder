@@ -1,6 +1,8 @@
 /// A macro that generates a builder class that implements the builder design pattern for the attached type.
 /// The attached type is referred to as the builder's "client".
 ///
+/// AutoBuilder supports structs and enums.
+///
 /// # Attached Extension Macro
 /// The `@attached(extension)` macro adds an extension to the attached type to provide
 /// conformance to `Buildable`. It also creates a nested class named `Builder` which
@@ -14,6 +16,9 @@
 /// The `Builder` class provides a `build()` method that creates an instance of the client from
 /// the values set in the builder. If any property does not have a value set, the `build()` method
 /// throws an error containing the name of the property that was not set.
+///
+/// For enums, a builder class is generated for each case as well as a builder for the entire enum
+/// as a whole.
 ///
 /// ## Simple Values
 /// The `Builder` class provides methods that allow you to set values for each of the client's

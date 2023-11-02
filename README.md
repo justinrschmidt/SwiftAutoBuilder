@@ -1,6 +1,8 @@
 # Swift Auto Builder
 Swift Auto Builder is a macro that generates builder classes that implement the Builder design pattern for your types.
 
+The macro currently supports structs and enums. Support for classes is planned.
+
 For example, the following `struct`:
 
 ```swift
