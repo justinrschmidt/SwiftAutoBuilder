@@ -1,12 +1,16 @@
+import AutoBuilderMacros
+
 /// A macro that generates a builder class that implements the builder design pattern for the attached type.
 /// The attached type is referred to as the builder's "client".
 ///
 /// AutoBuilder supports structs and enums.
 ///
+///
 /// # Attached Extension Macro
 /// The `@attached(extension)` macro adds an extension to the attached type to provide
 /// conformance to `Buildable`. It also creates a nested class named `Builder` which
 /// implements the `BuilderProtocol` protocol and is the builder for the attached type.
+///
 ///
 /// # Builder Class
 /// The nested `Builder` class has a `BuildableProperty` (or one of its variants) for each of
@@ -19,6 +23,7 @@
 ///
 /// For enums, a builder class is generated for each case as well as a builder for the entire enum
 /// as a whole.
+///
 ///
 /// ## Simple Values
 /// The `Builder` class provides methods that allow you to set values for each of the client's
@@ -49,6 +54,7 @@
 ///     // prints "1, 2"
 ///     print("\(foo.a), \(foo.b)")
 ///
+///
 /// ## Nested Builder Values
 /// When the value of a client's property also has the `@Buildable` attached to it, it allows the
 /// user to access the property on the builder as a nested sub-builder. For example, the following
@@ -74,6 +80,7 @@
 ///     // prints "1, 2"
 ///     print("\(bar.foo.a), \(bar.foo.b)")
 ///
+///
 /// ## Array Values
 /// When the value of a client's property is an `Array`, the `Builder` class adds the following
 /// methods:
@@ -85,6 +92,7 @@
 /// Removes all elements from the array in the builder.
 ///
 /// * SeeAlso: `BuildableArrayProperty`
+///
 ///
 /// ## Dictionary Values
 /// When the value of a client's property is a `Dictionary`, the `Builder` class adds the
@@ -99,6 +107,7 @@
 ///
 /// * SeeAlso: `BuildableDictionaryProperty`
 ///
+///
 /// ## Set Values
 /// When the value of a client's property is a `Set`, the `Builder` class add the following
 /// methods:
@@ -110,6 +119,7 @@
 /// Removes all elements from the set in the builder.
 ///
 /// * SeeAlso: `BuildableSetProperty`
+///
 ///
 /// ## Creating Builders From Existing Values
 /// Any type with `@Buildable` attached to it is also given a `toBuilder()`
@@ -135,7 +145,29 @@
 ///     // prints "1, 3"
 ///     print("\(foo2.a), \(foo2.b)")
 ///
-import AutoBuilderMacros
-
+///
+/// # Enums
+/// For enums, AutoBuilder generates a builder class for each case as well as for the entire
+/// enum as a whole. Calling `build()` on a builder for a case or for the builder for the
+/// entire enum will return an instance of the enum. The builder for the entire enum has
+/// properties that hold the builders for each case. By assigning to a property or accessing
+/// one of the properties will set the case that the builder will build and will destroy the
+/// builder for any other case.
+///
+/// For example:
+///
+///     @Buildable
+///     enum Foo {
+///         case one(a: Int)
+///         case two(b: String)
+///     }
+///
+///     let fooBuilder = Foo.Builder()
+///     fooBuilder.one.set(a: 1)
+///     fooBuilder.two.set(b: "2")
+///     let foo = try! fooBuilder.build()
+///     // prints "two(b: "2")"
+///     print(foo)
+///
 @attached(extension, conformances: Buildable, names: named(Builder), named(init(with:)), named(toBuilder))
 public macro Buildable() = #externalMacro(module: "AutoBuilderMacros", type: "AutoBuilderMacro")
