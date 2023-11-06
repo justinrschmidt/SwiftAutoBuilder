@@ -11,7 +11,7 @@
 public class BuildableDictionaryProperty<Key, Value> where Key: Hashable {
 
     /// The dictionary that the client's property will be initialized to when the builder builds.
-    private var dictionary: [Key:Value]
+    private var dictionary: [Key: Value]
 
     /// Initialize the `BuildableDictionaryProperty`.
     public init() {
@@ -21,7 +21,7 @@ public class BuildableDictionaryProperty<Key, Value> where Key: Hashable {
     /// Sets the dictionary that the client's property will be initialized to.
     /// - Parameters:
     ///   - value: The dictionary that the client's property will be initialized to.
-    public func set(value: [Key:Value]) {
+    public func set(value: [Key: Value]) {
         dictionary = value
     }
 
@@ -38,7 +38,7 @@ public class BuildableDictionaryProperty<Key, Value> where Key: Hashable {
     ///   - other: The other dictionary that will be merged into this `BuildableDictionaryProperty`'s dictionary.
     ///   - combine: A closure that takes the current and new values for duplicate keys; the closure returns the value
     ///   that will be used in the merged dictionary.
-    public func merge(other: [Key:Value], uniquingKeysWith combine: (Value, Value) throws -> Value) rethrows {
+    public func merge(other: [Key: Value], uniquingKeysWith combine: (Value, Value) throws -> Value) rethrows {
         try dictionary.merge(other, uniquingKeysWith: combine)
     }
 
@@ -49,7 +49,7 @@ public class BuildableDictionaryProperty<Key, Value> where Key: Hashable {
 
     /// Returns the dictionary that the client's property should be initialized to.
     /// - Returns: The dictionary that the client's property should be initialized to.
-    public func build() -> [Key:Value] {
+    public func build() -> [Key: Value] {
         return dictionary
     }
 }

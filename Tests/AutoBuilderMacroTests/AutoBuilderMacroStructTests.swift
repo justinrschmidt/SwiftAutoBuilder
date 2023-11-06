@@ -5,7 +5,7 @@ import XCTest
 import AutoBuilderMacros
 
 let testMacros: [String: Macro.Type] = [
-    "Buildable": AutoBuilderMacro.self,
+    "Buildable": AutoBuilderMacro.self
 ]
 
 final class AutoBuilderMacroStructTests: XCTestCase {
@@ -16,8 +16,7 @@ final class AutoBuilderMacroStructTests: XCTestCase {
             struct Foo {
             }
             """,
-            expandedSource:
-            """
+            expandedSource: """
             struct Foo {
             }
 
@@ -36,7 +35,8 @@ final class AutoBuilderMacroStructTests: XCTestCase {
                     }
                 }
             }
-            """, macros: testMacros)
+            """,
+            macros: testMacros)
     }
 
     func testStructWithStoredProperties() {
@@ -48,8 +48,7 @@ final class AutoBuilderMacroStructTests: XCTestCase {
                 let b: Double
             }
             """,
-            expandedSource:
-            """
+            expandedSource: """
             struct Foo {
                 let a: Int
                 let b: Double
@@ -88,7 +87,8 @@ final class AutoBuilderMacroStructTests: XCTestCase {
                     }
                 }
             }
-            """, macros: testMacros)
+            """,
+            macros: testMacros)
     }
 
     func testStructWithComputedProperties() {
@@ -107,8 +107,7 @@ final class AutoBuilderMacroStructTests: XCTestCase {
                 }
             }
             """,
-            expandedSource:
-            """
+            expandedSource: """
             struct Foo {
                 let a: Int
                 var b: Int {
@@ -145,7 +144,8 @@ final class AutoBuilderMacroStructTests: XCTestCase {
                     }
                 }
             }
-            """, macros: testMacros)
+            """,
+            macros: testMacros)
     }
 
     func testStructWithStaticProperties() {
@@ -157,8 +157,7 @@ final class AutoBuilderMacroStructTests: XCTestCase {
                 var b: Int
             }
             """,
-            expandedSource:
-            """
+            expandedSource: """
             struct Foo {
                 static var a: Double
                 var b: Int
@@ -188,7 +187,8 @@ final class AutoBuilderMacroStructTests: XCTestCase {
                     }
                 }
             }
-            """, macros: testMacros)
+            """,
+            macros: testMacros)
     }
 
     func testGenericStructWithStoredProperties() {
@@ -199,8 +199,7 @@ final class AutoBuilderMacroStructTests: XCTestCase {
                 let a: T
             }
             """,
-            expandedSource:
-            """
+            expandedSource: """
             struct Foo<T> {
                 let a: T
             }
@@ -229,7 +228,8 @@ final class AutoBuilderMacroStructTests: XCTestCase {
                     }
                 }
             }
-            """, macros: testMacros)
+            """,
+            macros: testMacros)
     }
 
     func testInvalidType() {
@@ -239,18 +239,19 @@ final class AutoBuilderMacroStructTests: XCTestCase {
             protocol Foo {
             }
             """,
-            expandedSource:
-            """
+            expandedSource: """
             protocol Foo {
             }
-            """, diagnostics: [
+            """,
+            diagnostics: [
                 DiagnosticSpec(
                     id: MessageID(domain: AutoBuilderDiagnostic.domain, id: "InvalidTypeForAutoBuilder"),
                     message: "@Buildable can only be applied to structs and enums",
                     line: 1,
                     column: 1,
                     severity: .error)
-            ], macros: testMacros)
+            ],
+            macros: testMacros)
     }
 
     func testStructWithImplicitlyTypedVariable() {
@@ -305,7 +306,8 @@ final class AutoBuilderMacroStructTests: XCTestCase {
                     }
                 }
             }
-            """, macros: testMacros)
+            """,
+            macros: testMacros)
     }
 
     func testStructWithArrayProperty() {
@@ -360,7 +362,8 @@ final class AutoBuilderMacroStructTests: XCTestCase {
                     }
                 }
             }
-            """, macros: testMacros)
+            """,
+            macros: testMacros)
     }
 
     func testStructWithDictionaryProperty() {
@@ -415,7 +418,8 @@ final class AutoBuilderMacroStructTests: XCTestCase {
                     }
                 }
             }
-            """, macros: testMacros)
+            """,
+            macros: testMacros)
     }
 
     func testStructWithSetProperty() {
@@ -470,7 +474,8 @@ final class AutoBuilderMacroStructTests: XCTestCase {
                     }
                 }
             }
-            """, macros: testMacros)
+            """,
+            macros: testMacros)
     }
 
     func testStructWithOptionalProperty() {
@@ -510,7 +515,8 @@ final class AutoBuilderMacroStructTests: XCTestCase {
                     }
                 }
             }
-            """, macros: testMacros)
+            """,
+            macros: testMacros)
     }
 
     func testPublicStructWithStoredProperty() {
@@ -521,8 +527,7 @@ final class AutoBuilderMacroStructTests: XCTestCase {
                 let a: Int
             }
             """,
-            expandedSource:
-            """
+            expandedSource: """
             public struct Foo {
                 let a: Int
             }
@@ -551,7 +556,8 @@ final class AutoBuilderMacroStructTests: XCTestCase {
                     }
                 }
             }
-            """, macros: testMacros)
+            """,
+            macros: testMacros)
     }
 
     func testOpenStructWithStoredProperty() {
@@ -562,8 +568,7 @@ final class AutoBuilderMacroStructTests: XCTestCase {
                 let a: Int
             }
             """,
-            expandedSource:
-            """
+            expandedSource: """
             open struct Foo {
                 let a: Int
             }
@@ -592,7 +597,8 @@ final class AutoBuilderMacroStructTests: XCTestCase {
                     }
                 }
             }
-            """, macros: testMacros)
+            """,
+            macros: testMacros)
     }
 
     func testNestedStructs() {
@@ -608,8 +614,7 @@ final class AutoBuilderMacroStructTests: XCTestCase {
                 }
             }
             """,
-            expandedSource:
-            """
+            expandedSource: """
             struct RootStruct {
                 struct A {
                     let b: RootStruct.B
@@ -643,6 +648,7 @@ final class AutoBuilderMacroStructTests: XCTestCase {
                     }
                 }
             }
-            """, macros: testMacros)
+            """,
+            macros: testMacros)
     }
 }

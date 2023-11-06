@@ -15,7 +15,7 @@ struct AssociatedValue: Equatable, CustomStringConvertible {
         return "(\(identifierPattern.identifier.text), \(variableType), \(initialized))"
     }
 
-    static func ==(lhs: AssociatedValue, rhs: AssociatedValue) -> Bool {
+    static func == (lhs: AssociatedValue, rhs: AssociatedValue) -> Bool {
         guard lhs.label == rhs.label else { return false }
         guard lhs.variableType == rhs.variableType else { return false }
         guard lhs.isInitialized == rhs.isInitialized else { return false }
@@ -36,7 +36,7 @@ struct AssociatedValue: Equatable, CustomStringConvertible {
             }
         }
 
-        static func ==(lhs: Label, rhs: Label) -> Bool {
+        static func == (lhs: Label, rhs: Label) -> Bool {
             switch (lhs, rhs) {
             case let (.identifierPattern(left), .identifierPattern(right)):
                 return left.identifier.text == right.identifier.text

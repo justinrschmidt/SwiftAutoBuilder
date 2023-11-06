@@ -42,7 +42,7 @@ public class BuildableProperty<T> {
     /// `subBuilder`.
     ///
     /// `subBuilder` is only used when `T` conforms to `Buildable`.
-    private var subBuilder: Optional<any BuilderProtocol>
+    private var subBuilder: (any BuilderProtocol)?
 
     /// Initialize the `BuildableProperty`.
     /// - Parameters:

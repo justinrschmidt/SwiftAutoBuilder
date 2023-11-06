@@ -6,14 +6,16 @@ import SwiftSyntaxMacros
 struct StructExtensionGenerator: AutoBuilderExtensionGenerator {
     static func analyze(decl: StructDeclSyntax) -> AnalysisResult<[Property]> {
         let storedProperties = VariableInspector.getProperties(from: decl.memberBlock.members)
-        let impliedTypeVariableProperties = storedProperties.filter({ $0.bindingKeyword == .var && $0.variableType.isImplicit })
+        let impliedTypeVariableProperties = storedProperties
+            .filter({ $0.bindingKeyword == .var && $0.variableType.isImplicit })
         let diagnostics = impliedTypeVariableProperties.map({ property in
             return Diagnostic(
                 node: property.identifierPattern.cast(Syntax.self),
                 message: AutoBuilderDiagnostic.impliedVariableType(identifierPattern: property.identifierPattern))
         })
         if diagnostics.isEmpty {
-            let propertiesToBuild = storedProperties.filter({ $0.isStoredProperty && $0.isIVar && !$0.isInitializedConstant })
+            let propertiesToBuild = storedProperties
+                .filter({ $0.isStoredProperty && $0.isIVar && !$0.isInitializedConstant })
             return .success(analysisOutput: propertiesToBuild, nonFatalDiagnostics: [])
         } else {
             return .error(diagnostics: diagnostics)
@@ -49,7 +51,10 @@ struct StructExtensionGenerator: AutoBuilderExtensionGenerator {
         }
     }
 
-    private static func createToBuilderFunction(from properties: [Property], isPublic: Bool) throws -> FunctionDeclSyntax {
+    private static func createToBuilderFunction(
+        from properties: [Property],
+        isPublic: Bool
+    ) throws -> FunctionDeclSyntax {
         let accessModifier = isPublic ? "public " : ""
         return try FunctionDeclSyntax("\(raw: accessModifier)func toBuilder() -> Builder") {
             "let builder = Builder()"
@@ -75,7 +80,9 @@ struct StructExtensionGenerator: AutoBuilderExtensionGenerator {
             }
             try InitializerDeclSyntax("public required init()", bodyBuilder: {
                 for property in properties {
-                    try BuildablePropertyGenerator.createInitializer(identifierPattern: property.identifierPattern, variableType: property.variableType)
+                    try BuildablePropertyGenerator.createInitializer(
+                        identifierPattern: property.identifierPattern,
+                        variableType: property.variableType)
                 }
             })
             for property in properties {

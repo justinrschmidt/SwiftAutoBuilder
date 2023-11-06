@@ -40,13 +40,13 @@ public enum AutoBuilderDiagnostic: DiagnosticMessage {
 
     public var severity: DiagnosticSeverity {
         switch self {
-        case .impliedVariableType(_),
-                .invalidTypeForAutoBuilder,
-                .enumWithNoCases(_),
-                .enumWithOverloadedCases(_),
-                .invalidEnumAssociatedValueLabel:
+        case .impliedVariableType,
+             .invalidTypeForAutoBuilder,
+             .enumWithNoCases,
+             .enumWithOverloadedCases,
+             .invalidEnumAssociatedValueLabel:
             return .error
-        case .noAssociatedValues(_):
+        case .noAssociatedValues:
             return .warning
         }
     }
@@ -70,13 +70,13 @@ public enum AutoBuilderDiagnostic: DiagnosticMessage {
 
     public var diagnosticID: MessageID {
         switch self {
-        case .impliedVariableType(_):
+        case .impliedVariableType:
             return MessageID(domain: Self.domain, id: "ImpliedVariableType")
-        case .noAssociatedValues(_):
+        case .noAssociatedValues:
             return MessageID(domain: Self.domain, id: "NoAssociatedValues")
-        case .enumWithNoCases(_):
+        case .enumWithNoCases:
             return MessageID(domain: Self.domain, id: "EnumWithNoCases")
-        case .enumWithOverloadedCases(_):
+        case .enumWithOverloadedCases:
             return MessageID(domain: Self.domain, id: "EnumWithOverloadedCases")
         case .invalidEnumAssociatedValueLabel:
             return MessageID(domain: Self.domain, id: "InvalidEnumAssociatedValueLabel")

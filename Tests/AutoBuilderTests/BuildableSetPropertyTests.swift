@@ -101,10 +101,6 @@ class BuildableSetPropertyTests: XCTestCase {
     @Buildable
     struct Foo {
         var a: Set<Int>
-
-        init(a: Set<Int>) {
-            self.a = a
-        }
     }
 
     @Buildable

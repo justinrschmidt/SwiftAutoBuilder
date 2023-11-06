@@ -33,7 +33,7 @@ struct Property: Equatable, CustomStringConvertible {
         self.isInitialized = isInitialized
     }
 
-    static func ==(lhs: Property, rhs: Property) -> Bool {
+    static func == (lhs: Property, rhs: Property) -> Bool {
         guard lhs.isStoredProperty == rhs.isStoredProperty else { return false }
         guard lhs.isIVar == rhs.isIVar else { return false }
         guard lhs.bindingKeyword == rhs.bindingKeyword else { return false }

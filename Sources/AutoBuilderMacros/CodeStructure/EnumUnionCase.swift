@@ -12,8 +12,10 @@ struct EnumUnionCase: Equatable, CustomStringConvertible {
         return "(\(caseIdentifierPattern.identifier.text), \(associatedValues)"
     }
 
-    static func ==(lhs: EnumUnionCase, rhs: EnumUnionCase) -> Bool {
-        guard lhs.caseIdentifierPattern.identifier.text == rhs.caseIdentifierPattern.identifier.text else { return false }
+    static func == (lhs: EnumUnionCase, rhs: EnumUnionCase) -> Bool {
+        guard lhs.caseIdentifierPattern.identifier.text == rhs.caseIdentifierPattern.identifier.text else {
+            return false
+        }
         guard lhs.associatedValues == rhs.associatedValues else { return false }
         return true
     }

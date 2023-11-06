@@ -29,10 +29,10 @@ struct EnumInspector {
                 label = .index(index)
             }
             values.append(AssociatedValue(
-                label: label,
-                variableType: VariableInspector.getVariableType(from: element.type),
-                isInitialized: element.defaultValue != nil,
-                firstNameToken: element.firstName))
+                            label: label,
+                            variableType: VariableInspector.getVariableType(from: element.type),
+                            isInitialized: element.defaultValue != nil,
+                            firstNameToken: element.firstName))
         }
         return values
     }

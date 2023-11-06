@@ -19,7 +19,7 @@ enum VariableType: Equatable, CustomStringConvertible {
 
     var isCollection: Bool {
         switch self {
-        case .array(_), .dictionary(_, _), .set(_):
+        case .array, .dictionary, .set:
             return true
         default:
             return false
@@ -60,7 +60,7 @@ enum VariableType: Equatable, CustomStringConvertible {
         }
     }
 
-    static func ==(lhs: VariableType, rhs: VariableType) -> Bool {
+    static func == (lhs: VariableType, rhs: VariableType) -> Bool {
         switch (lhs, rhs) {
         case (.implicit, .implicit):
             return true

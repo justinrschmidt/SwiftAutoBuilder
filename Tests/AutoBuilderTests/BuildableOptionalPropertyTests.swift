@@ -58,11 +58,6 @@ class BuildableOptionalPropertyTests: XCTestCase {
     struct Foo {
         var a: Int?
         var b: String?
-
-        init(a: Int?, b: String?) {
-            self.a = a
-            self.b = b
-        }
     }
 
     @Buildable
@@ -74,10 +69,6 @@ class BuildableOptionalPropertyTests: XCTestCase {
     @Buildable
     struct Baz {
         var a: Int??
-
-        init(a: Int??) {
-            self.a = a
-        }
     }
 
     @Buildable

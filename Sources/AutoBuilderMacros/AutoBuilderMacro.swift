@@ -67,7 +67,12 @@ public struct AutoBuilderMacro: ExtensionMacro {
         case let .success(analysisOutput, nonFatalDiagnostics):
             nonFatalDiagnostics.forEach(context.diagnose(_:))
             let isPublic = hasPublic(modifiers: decl.modifiers)
-            return try [generator.generateExtension(from: analysisOutput, clientType: clientType.trimmed, isPublic: isPublic, in: context)]
+            return try [
+                generator.generateExtension(
+                    from: analysisOutput,
+                    clientType: clientType.trimmed,
+                    isPublic: isPublic, in: context)
+            ]
         case let .error(diagnostics):
             diagnostics.forEach(context.diagnose(_:))
             return []
@@ -88,6 +93,6 @@ enum AutoBuilderMacroError: Error {
 @main
 struct AutoBuilderPlugin: CompilerPlugin {
     let providingMacros: [Macro.Type] = [
-        AutoBuilderMacro.self,
+        AutoBuilderMacro.self
     ]
 }

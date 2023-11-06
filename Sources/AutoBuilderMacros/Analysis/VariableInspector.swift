@@ -29,12 +29,12 @@ struct VariableInspector {
                     typeNode = type
                 }
                 properties.append(Property(
-                    isStoredProperty: isStored,
-                    isIVar: isIVar,
-                    bindingKeyword: bindingKeyword,
-                    identifierPattern: identifierPattern,
-                    type: getVariableType(from: typeNode),
-                    isInitialized: patternBinding.initializer != nil))
+                                    isStoredProperty: isStored,
+                                    isIVar: isIVar,
+                                    bindingKeyword: bindingKeyword,
+                                    identifierPattern: identifierPattern,
+                                    type: getVariableType(from: typeNode),
+                                    isInitialized: patternBinding.initializer != nil))
             }
             if let tuplePattern = patternBinding.pattern.as(TuplePatternSyntax.self) {
                 typeNode = nil
@@ -50,12 +50,12 @@ struct VariableInspector {
                 } else {
                     for identifierPattern in getTupleIdentifiers(from: tuplePattern).reversed() {
                         properties.append(Property(
-                            isStoredProperty: isStored,
-                            isIVar: isIVar,
-                            bindingKeyword: bindingKeyword,
-                            identifierPattern: identifierPattern,
-                            type: .implicit,
-                            isInitialized: patternBinding.initializer != nil))
+                                            isStoredProperty: isStored,
+                                            isIVar: isIVar,
+                                            bindingKeyword: bindingKeyword,
+                                            identifierPattern: identifierPattern,
+                                            type: .implicit,
+                                            isInitialized: patternBinding.initializer != nil))
                     }
                 }
             }
@@ -69,7 +69,14 @@ struct VariableInspector {
         })
     }
 
-    private static func getProperties(from tuplePattern: TuplePatternSyntax, type: TupleTypeSyntax, isStored: Bool, isIVar: Bool, bindingKeyword: Property.BindingKeyword, isInitialized: Bool) -> [Property] {
+    private static func getProperties(
+        from tuplePattern: TuplePatternSyntax,
+        type: TupleTypeSyntax,
+        isStored: Bool,
+        isIVar: Bool,
+        bindingKeyword: Property.BindingKeyword,
+        isInitialized: Bool
+    ) -> [Property] {
         var properties: [Property] = []
         var patternIterator = tuplePattern.elements.makeIterator()
         var typeIterator = type.elements.makeIterator()
@@ -77,15 +84,21 @@ struct VariableInspector {
               let typeElement = typeIterator.next() {
             if let identifierPattern = patternElement.pattern.as(IdentifierPatternSyntax.self) {
                 properties.append(Property(
-                    isStoredProperty: isStored,
-                    isIVar: isIVar,
-                    bindingKeyword: bindingKeyword,
-                    identifierPattern: identifierPattern,
-                    type: getVariableType(from: typeElement.type),
-                    isInitialized: isInitialized))
+                                    isStoredProperty: isStored,
+                                    isIVar: isIVar,
+                                    bindingKeyword: bindingKeyword,
+                                    identifierPattern: identifierPattern,
+                                    type: getVariableType(from: typeElement.type),
+                                    isInitialized: isInitialized))
             } else if let subTuplePattern = patternElement.pattern.as(TuplePatternSyntax.self),
                       let subTupleType = typeElement.type.as(TupleTypeSyntax.self) {
-                properties += getProperties(from: subTuplePattern, type: subTupleType, isStored: isStored, isIVar: isIVar, bindingKeyword: bindingKeyword, isInitialized: isInitialized)
+                properties += getProperties(
+                    from: subTuplePattern,
+                    type: subTupleType,
+                    isStored: isStored,
+                    isIVar: isIVar,
+                    bindingKeyword: bindingKeyword,
+                    isInitialized: isInitialized)
             }
         }
         return properties
@@ -150,8 +163,11 @@ struct VariableInspector {
         return bindings.contains(where: {
             switch $0.accessorBlock?.accessors {
             case let .accessors(accessorList):
-                return accessorList.contains(where: { $0.accessorSpecifier.tokenKind == .keyword(.get) || $0.accessorSpecifier.tokenKind == .keyword(.set) })
-            case .getter(_):
+                return accessorList.contains(where: { accessor in
+                    let tokenKind = accessor.accessorSpecifier.tokenKind
+                    return tokenKind == .keyword(.get) || tokenKind == .keyword(.set)
+                })
+            case .getter:
                 return true
             case .none:
                 return false

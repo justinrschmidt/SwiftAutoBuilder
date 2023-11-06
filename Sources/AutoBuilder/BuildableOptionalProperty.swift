@@ -24,7 +24,7 @@ public class BuildableOptionalProperty<Wrapped> {
     /// building `subBuilder`.
     ///
     /// `subBuilder` is only used when `Wrapped` conforms to `Buildable`.
-    private var subBuilder: Optional<any BuilderProtocol>
+    private var subBuilder: (any BuilderProtocol)?
 
     /// Initialize the `BuildableOptionalProperty`.
     /// - Parameters:

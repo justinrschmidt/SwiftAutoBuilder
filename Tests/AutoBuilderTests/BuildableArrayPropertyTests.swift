@@ -99,10 +99,6 @@ class BuildableArrayPropertyTests: XCTestCase {
     @Buildable
     struct Foo {
         var a: [Int]
-
-        init(a: [Int]) {
-            self.a = a
-        }
     }
 
     @Buildable

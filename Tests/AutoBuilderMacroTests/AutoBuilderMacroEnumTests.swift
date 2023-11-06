@@ -5,31 +5,32 @@ import XCTest
 import AutoBuilderMacros
 
 final class AutoBuilderMacroEnumTests: XCTestCase {
-    let testMacros: [String:Macro.Type] = [
-        "Buildable":AutoBuilderMacro.self
+    let testMacros: [String: Macro.Type] = [
+        "Buildable": AutoBuilderMacro.self
     ]
 
-        func testEnumWithNoCases() {
-            assertMacroExpansion(
-                """
-                @Buildable
-                enum Foo {
-                }
-                """,
-                expandedSource:
-                """
-                enum Foo {
-                }
-                """, diagnostics: [
-                    DiagnosticSpec(
-                        id: MessageID(domain: AutoBuilderDiagnostic.domain, id: "EnumWithNoCases"),
-                        message: "Foo (aka: Never) does not have any cases and cannot be instantiated.",
-                        line: 1,
-                        column: 1,
-                        severity: .error)
-                ], macros: testMacros)
-        }
-    
+    func testEnumWithNoCases() {
+        assertMacroExpansion(
+            """
+            @Buildable
+            enum Foo {
+            }
+            """,
+            expandedSource: """
+            enum Foo {
+            }
+            """,
+            diagnostics: [
+                DiagnosticSpec(
+                    id: MessageID(domain: AutoBuilderDiagnostic.domain, id: "EnumWithNoCases"),
+                    message: "Foo (aka: Never) does not have any cases and cannot be instantiated.",
+                    line: 1,
+                    column: 1,
+                    severity: .error)
+            ],
+            macros: testMacros)
+    }
+
     func testEnumWithCases() {
         assertMacroExpansion(
             """
@@ -39,8 +40,7 @@ final class AutoBuilderMacroEnumTests: XCTestCase {
                 case two(b: Double, c: String)
             }
             """,
-            expandedSource:
-            """
+            expandedSource: """
             enum Foo {
                 case one(a: Int)
                 case two(b: Double, c: String)
@@ -154,9 +154,10 @@ final class AutoBuilderMacroEnumTests: XCTestCase {
                     }
                 }
             }
-            """, macros: testMacros)
+            """,
+            macros: testMacros)
     }
-    
+
     func testEnumWithNoAssociatedValues() {
         assertMacroExpansion(
             """
@@ -166,8 +167,7 @@ final class AutoBuilderMacroEnumTests: XCTestCase {
                 case two
             }
             """,
-            expandedSource:
-            """
+            expandedSource: """
             enum Foo {
                 case one
                 case two
@@ -257,125 +257,127 @@ final class AutoBuilderMacroEnumTests: XCTestCase {
                     }
                 }
             }
-            """, diagnostics: [
+            """,
+            diagnostics: [
                 DiagnosticSpec(
                     id: MessageID(domain: AutoBuilderDiagnostic.domain, id: "NoAssociatedValues"),
                     message: "Foo does not have any cases with associated values.",
                     line: 1,
                     column: 1,
                     severity: .warning)
-            ], macros: testMacros)
+            ],
+            macros: testMacros)
     }
 
     func testEnumWithCasesWithAndWithoutAssociatedValues() {
         assertMacroExpansion(
-        """
-        @Buildable
-        enum Foo {
-            case one(a: Int)
-            case two
-        }
-        """,
-        expandedSource:
-        """
-        enum Foo {
-            case one(a: Int)
-            case two
-        }
+            """
+            @Buildable
+            enum Foo {
+                case one(a: Int)
+                case two
+            }
+            """,
+            expandedSource: """
+            enum Foo {
+                case one(a: Int)
+                case two
+            }
 
-        extension Foo: Buildable {
-            init(with builder: Builder) throws {
-                self = try builder.build()
-            }
-            func toBuilder() -> Builder {
-                let builder = Builder()
-                builder.set(value: self)
-                return builder
-            }
-            public class Builder: BuilderProtocol {
-                private var currentCase: BuilderCases?
-                public required init() {
-                    currentCase = nil
+            extension Foo: Buildable {
+                init(with builder: Builder) throws {
+                    self = try builder.build()
                 }
-                public var one: One {
-                    get {
-                        switch currentCase {
-                        case let .some(.one(builder)):
-                            return builder
-                        default:
-                            let builder = One()
-                            currentCase = .one(builder)
-                            return builder
+                func toBuilder() -> Builder {
+                    let builder = Builder()
+                    builder.set(value: self)
+                    return builder
+                }
+                public class Builder: BuilderProtocol {
+                    private var currentCase: BuilderCases?
+                    public required init() {
+                        currentCase = nil
+                    }
+                    public var one: One {
+                        get {
+                            switch currentCase {
+                            case let .some(.one(builder)):
+                                return builder
+                            default:
+                                let builder = One()
+                                currentCase = .one(builder)
+                                return builder
+                            }
+                        }
+                        set {
+                            currentCase = .one(newValue)
                         }
                     }
-                    set {
-                        currentCase = .one(newValue)
+                    public var two: Two {
+                        get {
+                            switch currentCase {
+                            case let .some(.two(builder)):
+                                return builder
+                            default:
+                                let builder = Two()
+                                currentCase = .two(builder)
+                                return builder
+                            }
+                        }
+                        set {
+                            currentCase = .two(newValue)
+                        }
                     }
-                }
-                public var two: Two {
-                    get {
-                        switch currentCase {
-                        case let .some(.two(builder)):
-                            return builder
-                        default:
+                    public func set(value: Foo) {
+                        switch value {
+                        case let .one(a):
+                            let builder = One()
+                            builder.set(a: a)
+                            currentCase = .one(builder)
+                        case .two:
                             let builder = Two()
                             currentCase = .two(builder)
-                            return builder
                         }
                     }
-                    set {
-                        currentCase = .two(newValue)
-                    }
-                }
-                public func set(value: Foo) {
-                    switch value {
-                    case let .one(a):
-                        let builder = One()
-                        builder.set(a: a)
-                        currentCase = .one(builder)
-                    case .two:
-                        let builder = Two()
-                        currentCase = .two(builder)
-                    }
-                }
-                public func build() throws -> Foo {
-                    switch currentCase {
-                    case let .some(.one(builder)):
-                        return try builder.build()
-                    case let .some(.two(builder)):
-                        return try builder.build()
-                    case .none:
-                        throw BuilderError.noEnumCaseSet
-                    }
-                }
-                public class One: BuilderProtocol {
-                    public let a: BuildableProperty<Int>
-                    public required init() {
-                        a = BuildableProperty(name: "a")
-                    }
-                    @discardableResult
-                    public func set(a: Int) -> One {
-                        self.a.set(value: a)
-                        return self
-                    }
                     public func build() throws -> Foo {
-                        return try .one(a: a.build())
+                        switch currentCase {
+                        case let .some(.one(builder)):
+                            return try builder.build()
+                        case let .some(.two(builder)):
+                            return try builder.build()
+                        case .none:
+                            throw BuilderError.noEnumCaseSet
+                        }
                     }
-                }
-                public class Two: BuilderProtocol {
-                    public required init() {
+                    public class One: BuilderProtocol {
+                        public let a: BuildableProperty<Int>
+                        public required init() {
+                            a = BuildableProperty(name: "a")
+                        }
+                        @discardableResult
+                        public func set(a: Int) -> One {
+                            self.a.set(value: a)
+                            return self
+                        }
+                        public func build() throws -> Foo {
+                            return try .one(a: a.build())
+                        }
                     }
-                    public func build() throws -> Foo {
-                        return .two
+                    public class Two: BuilderProtocol {
+                        public required init() {
+                        }
+                        public func build() throws -> Foo {
+                            return .two
+                        }
                     }
-                }
-                private enum BuilderCases {
-                    case one(One)
-                    case two(Two)
+                    private enum BuilderCases {
+                        case one(One)
+                        case two(Two)
+                    }
                 }
             }
-        }
-        """, macros: testMacros)
+            """,
+            macros: testMacros)
     }
 
     func testEnumCaseWithMissingLabels() {
@@ -386,8 +388,7 @@ final class AutoBuilderMacroEnumTests: XCTestCase {
                 case one(Int, b: Double, String)
             }
             """,
-            expandedSource:
-            """
+            expandedSource: """
             enum Foo {
                 case one(Int, b: Double, String)
             }
@@ -472,7 +473,8 @@ final class AutoBuilderMacroEnumTests: XCTestCase {
                     }
                 }
             }
-            """, macros: testMacros)
+            """,
+            macros: testMacros)
     }
 
     func testEnumWithOverloadedCase() {
@@ -487,8 +489,7 @@ final class AutoBuilderMacroEnumTests: XCTestCase {
                 case one(b: Double, Int)
             }
             """,
-            expandedSource:
-            """
+            expandedSource: """
             enum Foo {
                 case one(Int)
                 case one(Int, Int)
@@ -496,14 +497,16 @@ final class AutoBuilderMacroEnumTests: XCTestCase {
                 case one(a: Int, Int)
                 case one(b: Double, Int)
             }
-            """, diagnostics: [
+            """,
+            diagnostics: [
                 DiagnosticSpec(
                     id: MessageID(domain: AutoBuilderDiagnostic.domain, id: "EnumWithOverloadedCases"),
                     message: "@Buildable does not support overloaded cases (one) due to ambiguity caused by SE-0155 not being fully implemented.",
                     line: 1,
                     column: 1,
                     severity: .error)
-            ], macros: testMacros)
+            ],
+            macros: testMacros)
     }
 
     func testEnumWithArrayAssociatedValue() {
@@ -514,8 +517,7 @@ final class AutoBuilderMacroEnumTests: XCTestCase {
                 case one(a: [Int], [Int])
             }
             """,
-            expandedSource:
-            """
+            expandedSource: """
             enum Foo {
                 case one(a: [Int], [Int])
             }
@@ -622,7 +624,8 @@ final class AutoBuilderMacroEnumTests: XCTestCase {
                     }
                 }
             }
-            """, macros: testMacros)
+            """,
+            macros: testMacros)
     }
 
     func testEnumWithDictionaryAssociatedValue() {
@@ -633,8 +636,7 @@ final class AutoBuilderMacroEnumTests: XCTestCase {
                 case one(a: [String:Int], [String:Int])
             }
             """,
-            expandedSource:
-            """
+            expandedSource: """
             enum Foo {
                 case one(a: [String:Int], [String:Int])
             }
@@ -741,7 +743,8 @@ final class AutoBuilderMacroEnumTests: XCTestCase {
                     }
                 }
             }
-            """, macros: testMacros)
+            """,
+            macros: testMacros)
     }
 
     func testEnumWithSetAssociatedValue() {
@@ -752,8 +755,7 @@ final class AutoBuilderMacroEnumTests: XCTestCase {
                 case one(a: Set<Int>, Set<Int>)
             }
             """,
-            expandedSource:
-            """
+            expandedSource: """
             enum Foo {
                 case one(a: Set<Int>, Set<Int>)
             }
@@ -860,7 +862,8 @@ final class AutoBuilderMacroEnumTests: XCTestCase {
                     }
                 }
             }
-            """, macros: testMacros)
+            """,
+            macros: testMacros)
     }
 
     func testEnumWithOptionalAssociatedValue() {
@@ -871,8 +874,7 @@ final class AutoBuilderMacroEnumTests: XCTestCase {
                 case one(a: Int?, Int?)
             }
             """,
-            expandedSource:
-            """
+            expandedSource: """
             enum Foo {
                 case one(a: Int?, Int?)
             }
@@ -949,7 +951,8 @@ final class AutoBuilderMacroEnumTests: XCTestCase {
                     }
                 }
             }
-            """, macros: testMacros)
+            """,
+            macros: testMacros)
     }
 
     func testEnumWithInvalidAssociatedValueLabels() {
@@ -961,13 +964,13 @@ final class AutoBuilderMacroEnumTests: XCTestCase {
                 case two(index_0: Int, index_1: Int)
             }
             """,
-            expandedSource:
-            """
+            expandedSource: """
             enum Foo {
                 case one(_index_0: Int, index_0_: Int, index_123: Int)
                 case two(index_0: Int, index_1: Int)
             }
-            """, diagnostics: [
+            """,
+            diagnostics: [
                 DiagnosticSpec(
                     id: MessageID(domain: AutoBuilderDiagnostic.domain, id: "InvalidEnumAssociatedValueLabel"),
                     message: "@Buildable enum associated value labels must not match \"^index_[0-9]+$\".",
@@ -986,7 +989,8 @@ final class AutoBuilderMacroEnumTests: XCTestCase {
                     line: 4,
                     column: 28,
                     severity: .error)
-            ], macros: testMacros)
+            ],
+            macros: testMacros)
     }
 
     func testEnumWithMixedAssociatedValueCollectionTypes() {
@@ -997,8 +1001,7 @@ final class AutoBuilderMacroEnumTests: XCTestCase {
                 case one(a: Int, b: [String])
             }
             """,
-            expandedSource:
-            """
+            expandedSource: """
             enum Foo {
                 case one(a: Int, b: [String])
             }
@@ -1090,7 +1093,8 @@ final class AutoBuilderMacroEnumTests: XCTestCase {
                     }
                 }
             }
-            """, macros: testMacros)
+            """,
+            macros: testMacros)
     }
 
     func testPublicEnum() {
@@ -1101,8 +1105,7 @@ final class AutoBuilderMacroEnumTests: XCTestCase {
                 case one(a: Int)
             }
             """,
-            expandedSource:
-            """
+            expandedSource: """
             public enum Foo {
                 case one(a: Int)
             }
@@ -1171,7 +1174,8 @@ final class AutoBuilderMacroEnumTests: XCTestCase {
                     }
                 }
             }
-            """, macros: testMacros)
+            """,
+            macros: testMacros)
     }
 
     func testOpenEnum() {
@@ -1182,8 +1186,7 @@ final class AutoBuilderMacroEnumTests: XCTestCase {
                 case one(a: Int)
             }
             """,
-            expandedSource:
-            """
+            expandedSource: """
             open enum Foo {
                 case one(a: Int)
             }
@@ -1252,7 +1255,8 @@ final class AutoBuilderMacroEnumTests: XCTestCase {
                     }
                 }
             }
-            """, macros: testMacros)
+            """,
+            macros: testMacros)
     }
 
     func testNestedEnums() {
@@ -1268,8 +1272,7 @@ final class AutoBuilderMacroEnumTests: XCTestCase {
                 }
             }
             """,
-            expandedSource:
-            """
+            expandedSource: """
             enum RootEnum {
                 enum A {
                     case one(b: RootEnum.B)
@@ -1343,6 +1346,7 @@ final class AutoBuilderMacroEnumTests: XCTestCase {
                     }
                 }
             }
-            """, macros: testMacros)
+            """,
+            macros: testMacros)
     }
 }
