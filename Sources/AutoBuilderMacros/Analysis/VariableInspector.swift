@@ -1,8 +1,8 @@
 import SwiftSyntax
 import SwiftSyntaxBuilder
 
-/// Contains methods relating to analyzing property declarations and extracting the information
-/// about those declarations that is needed in the generation phase.
+/// Contains methods relating to analyzing property declarations and extracting the information about those declarations
+/// that is needed in the generation phase.
 struct VariableInspector {
     static func getProperties(from members: MemberBlockItemListSyntax) -> [Property] {
         let variables: [VariableDeclSyntax] = members.compactMap({ $0.decl.as(VariableDeclSyntax.self) })
@@ -17,8 +17,8 @@ struct VariableInspector {
         let isIVar = !isStatic(variable)
         var typeNode: TypeSyntax?
         var properties: [Property] = []
-        // The bindings need to be traversed in reverse order, because if there are multiple
-        // variables declared in a list, earlier bindings may not have the type information.
+        // The bindings need to be traversed in reverse order, because if there are multiple variables declared in a
+        // list, earlier bindings may not have the type information.
         // ex: var a, b, c: Int
         for patternBinding in variable.bindings.reversed() {
             if let identifierPattern = patternBinding.pattern.as(IdentifierPatternSyntax.self) {

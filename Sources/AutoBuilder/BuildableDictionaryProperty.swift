@@ -1,6 +1,7 @@
 /// A variant of `BuildableProperty` that is used when the client's property is a `Dictionary`.
 ///
-/// This class's `Key` and `Value` types are the same types as the client property's `Dictionary.Key` and `Dictionary.Value` types.
+/// This class's `Key` and `Value` types are the same types as the client property's `Dictionary.Key` and
+/// `Dictionary.Value` types.
 ///
 /// - SeeAlso:
 ///   - `BuildableProperty`

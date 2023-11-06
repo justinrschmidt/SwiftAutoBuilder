@@ -1,8 +1,8 @@
 import SwiftSyntax
 import SwiftSyntaxBuilder
 
-/// Contains methods relating to analyzing enum case declarations and extracting the information
-/// about those declarations that is needed in the generation phase.
+/// Contains methods relating to analyzing enum case declarations and extracting the information about those
+/// declarations that is needed in the generation phase.
 struct EnumInspector {
     static func getCases(from members: MemberBlockItemListSyntax) -> [EnumUnionCase] {
         return members.compactMap({ $0.decl.as(EnumCaseDeclSyntax.self) }).flatMap(getCases(from:))

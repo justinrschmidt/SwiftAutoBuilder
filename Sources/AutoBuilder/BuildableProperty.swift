@@ -1,11 +1,10 @@
-/// Used to store the value of a property in a builder. When the builder builds, the properties in the client type
-/// are initialized to the values stored in the builder's `BuildableProperty`s. `T` is the type of the
-/// property in the client type.
+/// Used to store the value of a property in a builder. When the builder builds, the properties in the client type are
+/// initialized to the values stored in the builder's `BuildableProperty`s. `T` is the type of the property in the
+/// client type.
 ///
-/// When `T` conforms to `Buildable` (any type with `@Buildable` attached to it conforms to
-/// `Buildable`), `BuildableProperty` will store an instance of `T.Builder` as its
-/// sub-builder.
-/// This enables builder chaining syntax. ex:
+/// When `T` conforms to `Buildable` (any type with `@Buildable` attached to it conforms to `Buildable`),
+/// `BuildableProperty` will store an instance of `T.Builder` as its sub-builder. This enables builder chaining syntax.
+/// ex:
 ///
 ///     @Buildable
 ///     struct A {
@@ -30,8 +29,8 @@
 ///   - `BuildableSetProperty`
 public class BuildableProperty<T> {
 
-    /// The name of the property in the client type that this `BuildableProperty` is associated with.
-    /// The property name is used to provide more meaningful errors.
+    /// The name of the property in the client type that this `BuildableProperty` is associated with. The property name
+    /// is used to provide more meaningful errors.
     private let propertyName: String
 
     /// The value that the client's property will be initialized to when this builder builds.
@@ -39,8 +38,8 @@ public class BuildableProperty<T> {
     /// `value` is only used when `T` does not conform to `Buildable`.
     private var value: T?
 
-    /// The builder of type `T.Builder`. The client's property will be initialized to the value
-    /// created by building `subBuilder`.
+    /// The builder of type `T.Builder`. The client's property will be initialized to the value created by building
+    /// `subBuilder`.
     ///
     /// `subBuilder` is only used when `T` conforms to `Buildable`.
     private var subBuilder: Optional<any BuilderProtocol>
@@ -58,8 +57,8 @@ public class BuildableProperty<T> {
     /// - Parameters:
     ///   - value: The value that the client's property will be initialized to.
     ///
-    /// If `value` conforms to `Buildable`, `value`'s `toBuilder()` method will be called
-    /// and the resulting builder will be used as this `BuildableProperty`'s sub-builder.
+    /// If `value` conforms to `Buildable`, `value`'s `toBuilder()` method will be called and the resulting builder will
+    /// be used as this `BuildableProperty`'s sub-builder.
     public func set(value: T) {
         if let buildableValue = value as? any Buildable {
             subBuilder = buildableValue.toBuilder() as any BuilderProtocol
@@ -72,12 +71,11 @@ public class BuildableProperty<T> {
 
     /// Returns the value that the client's property should be initialized to.
     /// - Returns: The value that the client's property should be initialized to.
-    /// - Throws: `BuilderError.missingValue` if this `BuildableProperty`'s
-    /// value has not been set and no sub-builder is being used, OR if a sub-builder is being
-    /// used and any value is not set in the sub-builder.
+    /// - Throws: `BuilderError.missingValue` if this `BuildableProperty`'s value has not been set and no sub-builder is
+    /// being used, OR if a sub-builder is being used and any value is not set in the sub-builder.
     ///
-    /// If `T` conforms to `Buildable`, then the value returned by this method will be the
-    /// result of calling the sub-builder's `build()` method.
+    /// If `T` conforms to `Buildable`, then the value returned by this method will be the result of calling the
+    /// sub-builder's `build()` method.
     public func build() throws -> T {
         if let value = value {
             return value

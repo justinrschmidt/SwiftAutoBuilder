@@ -49,7 +49,8 @@ let bar = try barBuilder.build()
 print("\(bar.foo.a), \(bar.foo.b)")
 ```
 
-`@Buildable` also generates helper functions in the builder class that allow you to add elements to `Array`s, `Dictionary`s, and `Set`s:
+`@Buildable` also generates helper functions in the builder class that allow you to add elements to `Array`s,
+`Dictionary`s, and `Set`s:
 
 ```swift
 @Buildable

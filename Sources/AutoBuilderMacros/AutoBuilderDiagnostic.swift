@@ -23,22 +23,19 @@ public enum AutoBuilderDiagnostic: DiagnosticMessage {
 
     /// Diagnosed when an enum has one or more overloaded cases.
     ///
-    /// Enums with overloaded cases are not supported because there is no way to match
-    /// between the different overloaded cases. This issue is the result of SE-0155 not
-    /// being fully implemented.
+    /// Enums with overloaded cases are not supported because there is no way to match between the different overloaded
+    /// cases. This issue is the result of SE-0155 not being fully implemented.
     /// https://github.com/apple/swift-evolution/blob/main/proposals/0155-normalize-enum-case-representation.md#revision-history
     ///
     /// - Parameters:
     ///   - overloadedCases: The list of cases that are overloaded.
     case enumWithOverloadedCases(overloadedCases: [String])
 
-    /// Diagnosed when the label for an enum case's associated value is invalid.
-    /// AutoBuilder reserves labels that match `\^index_[0-9]+$\` for
-    /// associated values that have no label and must be identified by their index.
+    /// Diagnosed when the label for an enum case's associated value is invalid. AutoBuilder reserves labels that match
+    /// `\^index_[0-9]+$\` for associated values that have no label and must be identified by their index.
     case invalidEnumAssociatedValueLabel
 
-    /// Diagnosed when `@Buildable` is attached to a type that AutoBuilder
-    /// does not support.
+    /// Diagnosed when `@Buildable` is attached to a type that AutoBuilder does not support.
     case invalidTypeForAutoBuilder
 
     public var severity: DiagnosticSeverity {
