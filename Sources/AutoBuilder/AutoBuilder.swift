@@ -1,5 +1,3 @@
-import AutoBuilderMacros
-
 /// A macro that generates a builder class that implements the builder design pattern for the attached type. The
 /// attached type is referred to as the builder's "client".
 ///
