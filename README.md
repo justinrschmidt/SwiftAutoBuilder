@@ -3,7 +3,23 @@ Swift Auto Builder is a macro that generates builder classes that implement the 
 
 The macro currently supports structs and enums. Support for classes is planned.
 
-For example, the following `struct`:
+## How to Add Swift Auto Builder as a Dependency
+
+### Xcode Project
+
+Go to File -> "Add Package Dependencies...". In the search box on the top right where it says "Search or Enter Package URL"
+and enter `https://github.com/justinrschmidt/SwiftAutoBuilder`. Select the "swiftautobuilder" package from the list and click "Add Package".
+Import Auto Builder by adding `import AutoBuilder`.
+
+### Swift Package Manager
+
+In your package, add `.package(url: "https://github.com/justinrschmidt/SwiftAutoBuilder", from: "0.1.1-beta-2")` to your
+package's `dependencies` array. Then add `.product(name: "AutoBuilder", package: "SwiftAutoBuilder")` to the `dependencies`
+array of any target that uses Auto Builder. Import Auto Builder by adding `import AutoBuilder`.
+
+## How to Use Auto Builder
+
+As an example, the following `struct`:
 
 ```swift
 @Buildable
