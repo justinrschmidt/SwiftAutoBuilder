@@ -24,7 +24,8 @@ public struct AutoBuilderMacro: ExtensionMacro {
     /// The list of `AutoBuilderExtensionGenerator`s that can generate a builder class from a declaration.
     private static let generators: [any AutoBuilderExtensionGenerator.Type] = [
         EnumExtensionGenerator.self,
-        StructExtensionGenerator.self
+        StructExtensionGenerator.self,
+        ClassExtensionGenerator.self,
     ]
 
     // TODO: Look at the types passed into conformingTo once issue #2031 is fixed.

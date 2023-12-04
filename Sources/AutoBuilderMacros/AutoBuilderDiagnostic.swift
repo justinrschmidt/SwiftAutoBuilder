@@ -36,6 +36,7 @@ public enum AutoBuilderDiagnostic: DiagnosticMessage {
     case invalidEnumAssociatedValueLabel
 
     /// Diagnosed when `@Buildable` is attached to a type that AutoBuilder does not support.
+    /// Supported types are defined in `AutoBuilderMacro.generators`.
     case invalidTypeForAutoBuilder
 
     public var severity: DiagnosticSeverity {
@@ -64,7 +65,7 @@ public enum AutoBuilderDiagnostic: DiagnosticMessage {
         case .invalidEnumAssociatedValueLabel:
             return "@Buildable enum associated value labels must not match \"^index_[0-9]+$\"."
         case .invalidTypeForAutoBuilder:
-            return "@Buildable can only be applied to structs and enums"
+            return "@Buildable can only be applied to structs, enums, and classes"
         }
     }
 

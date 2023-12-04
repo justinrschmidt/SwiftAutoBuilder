@@ -4,20 +4,20 @@ import SwiftDiagnostics
 import XCTest
 import AutoBuilderMacros
 
-let testMacros: [String: Macro.Type] = [
-    "Buildable": AutoBuilderMacro.self
-]
+final class AutoBuilderMacroClassTests: XCTestCase {
+    let testMacros: [String: Macro.Type] = [
+        "Buildable": AutoBuilderMacro.self
+    ]
 
-final class AutoBuilderMacroStructTests: XCTestCase {
-    func testEmptyStruct() {
+    func testEmptyClass() {
         assertMacroExpansion(
             """
             @Buildable
-            struct Foo {
+            class Foo {
             }
             """,
             expandedSource: """
-            struct Foo {
+            class Foo {
             }
 
             extension Foo: Buildable {
@@ -39,17 +39,17 @@ final class AutoBuilderMacroStructTests: XCTestCase {
             macros: testMacros)
     }
 
-    func testStructWithStoredProperties() {
+    func testClassWithStoredProperties() {
         assertMacroExpansion(
             """
             @Buildable
-            struct Foo {
+            class Foo {
                 let a: Int
                 let b: Double
             }
             """,
             expandedSource: """
-            struct Foo {
+            class Foo {
                 let a: Int
                 let b: Double
             }
@@ -91,11 +91,11 @@ final class AutoBuilderMacroStructTests: XCTestCase {
             macros: testMacros)
     }
 
-    func testStructWithComputedProperties() {
+    func testClassWithComputedProperties() {
         assertMacroExpansion(
             """
             @Buildable
-            struct Foo {
+            class Foo {
                 let a: Int
                 var b: Int {
                     get {
@@ -108,7 +108,7 @@ final class AutoBuilderMacroStructTests: XCTestCase {
             }
             """,
             expandedSource: """
-            struct Foo {
+            class Foo {
                 let a: Int
                 var b: Int {
                     get {
@@ -148,17 +148,17 @@ final class AutoBuilderMacroStructTests: XCTestCase {
             macros: testMacros)
     }
 
-    func testStructWithStaticProperties() {
+    func testClassWithStaticProperties() {
         assertMacroExpansion(
             """
             @Buildable
-            struct Foo {
+            class Foo {
                 static var a: Double
                 var b: Int
             }
             """,
             expandedSource: """
-            struct Foo {
+            class Foo {
                 static var a: Double
                 var b: Int
             }
@@ -191,16 +191,16 @@ final class AutoBuilderMacroStructTests: XCTestCase {
             macros: testMacros)
     }
 
-    func testGenericStructWithStoredProperties() {
+    func testGenericClassWithStoredProperties() {
         assertMacroExpansion(
             """
             @Buildable
-            struct Foo<T> {
+            class Foo<T> {
                 let a: T
             }
             """,
             expandedSource: """
-            struct Foo<T> {
+            class Foo<T> {
                 let a: T
             }
 
@@ -232,38 +232,16 @@ final class AutoBuilderMacroStructTests: XCTestCase {
             macros: testMacros)
     }
 
-    func testInvalidType() {
+    func testClassWithImplicitlyTypedVariable() {
         assertMacroExpansion(
             """
             @Buildable
-            protocol Foo {
-            }
-            """,
-            expandedSource: """
-            protocol Foo {
-            }
-            """,
-            diagnostics: [
-                DiagnosticSpec(
-                    id: MessageID(domain: AutoBuilderDiagnostic.domain, id: "InvalidTypeForAutoBuilder"),
-                    message: "@Buildable can only be applied to structs, enums, and classes",
-                    line: 1,
-                    column: 1,
-                    severity: .error)
-            ],
-            macros: testMacros)
-    }
-
-    func testStructWithImplicitlyTypedVariable() {
-        assertMacroExpansion(
-            """
-            @Buildable
-            struct Foo {
+            class Foo {
                 var bar = 0
             }
             """,
             expandedSource: """
-            struct Foo {
+            class Foo {
                 var bar = 0
             }
             """,
@@ -278,16 +256,16 @@ final class AutoBuilderMacroStructTests: XCTestCase {
             macros: testMacros)
     }
 
-    func testStructWithImplicitlyTypedConstant() {
+    func testClassWithImplicitlyTypedConstant() {
         assertMacroExpansion(
             """
             @Buildable
-            struct Foo {
+            class Foo {
                 let a = 0
             }
             """,
             expandedSource: """
-            struct Foo {
+            class Foo {
                 let a = 0
             }
 
@@ -310,16 +288,16 @@ final class AutoBuilderMacroStructTests: XCTestCase {
             macros: testMacros)
     }
 
-    func testStructWithArrayProperty() {
+    func testClassWithArrayProperty() {
         assertMacroExpansion(
             """
             @Buildable
-            struct Foo {
+            class Foo {
                 var a: [Int]
             }
             """,
             expandedSource: """
-            struct Foo {
+            class Foo {
                 var a: [Int]
             }
 
@@ -366,16 +344,16 @@ final class AutoBuilderMacroStructTests: XCTestCase {
             macros: testMacros)
     }
 
-    func testStructWithDictionaryProperty() {
+    func testClassWithDictionaryProperty() {
         assertMacroExpansion(
             """
             @Buildable
-            struct Foo {
+            class Foo {
                 var a: [String:Double]
             }
             """,
             expandedSource: """
-            struct Foo {
+            class Foo {
                 var a: [String:Double]
             }
 
@@ -422,16 +400,16 @@ final class AutoBuilderMacroStructTests: XCTestCase {
             macros: testMacros)
     }
 
-    func testStructWithSetProperty() {
+    func testClassWithSetProperty() {
         assertMacroExpansion(
             """
             @Buildable
-            struct Foo {
+            class Foo {
                 var a: Set<Int>
             }
             """,
             expandedSource: """
-            struct Foo {
+            class Foo {
                 var a: Set<Int>
             }
 
@@ -478,16 +456,16 @@ final class AutoBuilderMacroStructTests: XCTestCase {
             macros: testMacros)
     }
 
-    func testStructWithOptionalProperty() {
+    func testClassWithOptionalProperty() {
         assertMacroExpansion(
             """
             @Buildable
-            struct Foo {
+            class Foo {
                 var a: Int?
             }
             """,
             expandedSource: """
-            struct Foo {
+            class Foo {
                 var a: Int?
             }
 
@@ -519,16 +497,16 @@ final class AutoBuilderMacroStructTests: XCTestCase {
             macros: testMacros)
     }
 
-    func testPublicStructWithStoredProperty() {
+    func testPublicClassWithStoredProperty() {
         assertMacroExpansion(
             """
             @Buildable
-            public struct Foo {
+            public class Foo {
                 let a: Int
             }
             """,
             expandedSource: """
-            public struct Foo {
+            public class Foo {
                 let a: Int
             }
 
@@ -560,16 +538,16 @@ final class AutoBuilderMacroStructTests: XCTestCase {
             macros: testMacros)
     }
 
-    func testOpenStructWithStoredProperty() {
+    func testOpenClassWithStoredProperty() {
         assertMacroExpansion(
             """
             @Buildable
-            open struct Foo {
+            open class Foo {
                 let a: Int
             }
             """,
             expandedSource: """
-            open struct Foo {
+            open class Foo {
                 let a: Int
             }
 
@@ -601,25 +579,25 @@ final class AutoBuilderMacroStructTests: XCTestCase {
             macros: testMacros)
     }
 
-    func testNestedStructs() {
+    func testNestedClasses() {
         assertMacroExpansion(
             """
-            struct RootStruct {
+            class RootClass {
                 @Buildable
-                struct A {
-                    let b: RootStruct.B
+                class A {
+                    let b: RootClass.B
                 }
-                struct B {
+                class B {
                     let i: Int
                 }
             }
             """,
             expandedSource: """
-            struct RootStruct {
-                struct A {
-                    let b: RootStruct.B
+            class RootClass {
+                class A {
+                    let b: RootClass.B
                 }
-                struct B {
+                class B {
                     let i: Int
                 }
             }
@@ -634,12 +612,12 @@ final class AutoBuilderMacroStructTests: XCTestCase {
                     return builder
                 }
                 public class Builder: BuilderProtocol {
-                    public let b: BuildableProperty<RootStruct.B>
+                    public let b: BuildableProperty<RootClass.B>
                     public required init() {
                         b = BuildableProperty(name: "b")
                     }
                     @discardableResult
-                    public func set(b: RootStruct.B) -> Builder {
+                    public func set(b: RootClass.B) -> Builder {
                         self.b.set(value: b)
                         return self
                     }
