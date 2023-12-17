@@ -13,11 +13,11 @@ final class AutoBuilderMacroClassTests: XCTestCase {
         assertMacroExpansion(
             """
             @Buildable
-            class Foo {
+            final class Foo {
             }
             """,
             expandedSource: """
-            class Foo {
+            final class Foo {
             }
 
             extension Foo: Buildable {
@@ -43,13 +43,13 @@ final class AutoBuilderMacroClassTests: XCTestCase {
         assertMacroExpansion(
             """
             @Buildable
-            class Foo {
+            final class Foo {
                 let a: Int
                 let b: Double
             }
             """,
             expandedSource: """
-            class Foo {
+            final class Foo {
                 let a: Int
                 let b: Double
             }
@@ -95,7 +95,7 @@ final class AutoBuilderMacroClassTests: XCTestCase {
         assertMacroExpansion(
             """
             @Buildable
-            class Foo {
+            final class Foo {
                 let a: Int
                 var b: Int {
                     get {
@@ -108,7 +108,7 @@ final class AutoBuilderMacroClassTests: XCTestCase {
             }
             """,
             expandedSource: """
-            class Foo {
+            final class Foo {
                 let a: Int
                 var b: Int {
                     get {
@@ -152,13 +152,13 @@ final class AutoBuilderMacroClassTests: XCTestCase {
         assertMacroExpansion(
             """
             @Buildable
-            class Foo {
+            final class Foo {
                 static var a: Double
                 var b: Int
             }
             """,
             expandedSource: """
-            class Foo {
+            final class Foo {
                 static var a: Double
                 var b: Int
             }
@@ -195,12 +195,12 @@ final class AutoBuilderMacroClassTests: XCTestCase {
         assertMacroExpansion(
             """
             @Buildable
-            class Foo<T> {
+            final class Foo<T> {
                 let a: T
             }
             """,
             expandedSource: """
-            class Foo<T> {
+            final class Foo<T> {
                 let a: T
             }
 
@@ -236,12 +236,12 @@ final class AutoBuilderMacroClassTests: XCTestCase {
         assertMacroExpansion(
             """
             @Buildable
-            class Foo {
+            final class Foo {
                 var bar = 0
             }
             """,
             expandedSource: """
-            class Foo {
+            final class Foo {
                 var bar = 0
             }
             """,
@@ -260,12 +260,12 @@ final class AutoBuilderMacroClassTests: XCTestCase {
         assertMacroExpansion(
             """
             @Buildable
-            class Foo {
+            final class Foo {
                 let a = 0
             }
             """,
             expandedSource: """
-            class Foo {
+            final class Foo {
                 let a = 0
             }
 
@@ -292,12 +292,12 @@ final class AutoBuilderMacroClassTests: XCTestCase {
         assertMacroExpansion(
             """
             @Buildable
-            class Foo {
+            final class Foo {
                 var a: [Int]
             }
             """,
             expandedSource: """
-            class Foo {
+            final class Foo {
                 var a: [Int]
             }
 
@@ -348,12 +348,12 @@ final class AutoBuilderMacroClassTests: XCTestCase {
         assertMacroExpansion(
             """
             @Buildable
-            class Foo {
+            final class Foo {
                 var a: [String:Double]
             }
             """,
             expandedSource: """
-            class Foo {
+            final class Foo {
                 var a: [String:Double]
             }
 
@@ -404,12 +404,12 @@ final class AutoBuilderMacroClassTests: XCTestCase {
         assertMacroExpansion(
             """
             @Buildable
-            class Foo {
+            final class Foo {
                 var a: Set<Int>
             }
             """,
             expandedSource: """
-            class Foo {
+            final class Foo {
                 var a: Set<Int>
             }
 
@@ -460,12 +460,12 @@ final class AutoBuilderMacroClassTests: XCTestCase {
         assertMacroExpansion(
             """
             @Buildable
-            class Foo {
+            final class Foo {
                 var a: Int?
             }
             """,
             expandedSource: """
-            class Foo {
+            final class Foo {
                 var a: Int?
             }
 
@@ -501,12 +501,12 @@ final class AutoBuilderMacroClassTests: XCTestCase {
         assertMacroExpansion(
             """
             @Buildable
-            public class Foo {
+            public final class Foo {
                 let a: Int
             }
             """,
             expandedSource: """
-            public class Foo {
+            public final class Foo {
                 let a: Int
             }
 
@@ -542,12 +542,12 @@ final class AutoBuilderMacroClassTests: XCTestCase {
         assertMacroExpansion(
             """
             @Buildable
-            open class Foo {
+            open final class Foo {
                 let a: Int
             }
             """,
             expandedSource: """
-            open class Foo {
+            open final class Foo {
                 let a: Int
             }
 
@@ -584,20 +584,20 @@ final class AutoBuilderMacroClassTests: XCTestCase {
             """
             class RootClass {
                 @Buildable
-                class A {
+                final class A {
                     let b: RootClass.B
                 }
-                class B {
+                final class B {
                     let i: Int
                 }
             }
             """,
             expandedSource: """
             class RootClass {
-                class A {
+                final class A {
                     let b: RootClass.B
                 }
-                class B {
+                final class B {
                     let i: Int
                 }
             }
@@ -627,6 +627,31 @@ final class AutoBuilderMacroClassTests: XCTestCase {
                 }
             }
             """,
+            macros: testMacros)
+    }
+
+    func testNonFinalClass() {
+        assertMacroExpansion(
+            """
+            @Buildable
+            class Foo {
+            }
+            """,
+            expandedSource: """
+            class Foo {
+            }
+            """,
+            diagnostics: [
+                DiagnosticSpec(
+                    id: MessageID(domain: AutoBuilderDiagnostic.domain, id: "NonFinalClass"),
+                    message: "@Buildable can only be applied to classes that are declared as final.",
+                    line: 1,
+                    column: 1,
+                    severity: .error,
+                    fixIts: [
+                        FixItSpec(message: "Add \"final\"")
+                    ])
+            ],
             macros: testMacros)
     }
 }

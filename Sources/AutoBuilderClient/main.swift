@@ -15,3 +15,7 @@ enum Bar {
     case six(e: [String: Int], [String: Int])
     case seven(f: Set<Int>, Set<Int>)
 }
+
+//@Buildable
+//class Baz {
+//}
