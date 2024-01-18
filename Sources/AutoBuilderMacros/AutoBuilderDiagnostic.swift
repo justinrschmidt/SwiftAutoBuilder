@@ -39,17 +39,13 @@ public enum AutoBuilderDiagnostic: DiagnosticMessage {
     /// Supported types are defined in `AutoBuilderMacro.generators`.
     case invalidTypeForAutoBuilder
 
-    /// Diagnosed when `@Buildable` is attached to a non-final class.
-    case nonFinalClass
-
     public var severity: DiagnosticSeverity {
         switch self {
         case .impliedVariableType,
              .invalidTypeForAutoBuilder,
              .enumWithNoCases,
              .enumWithOverloadedCases,
-             .invalidEnumAssociatedValueLabel,
-             .nonFinalClass:
+             .invalidEnumAssociatedValueLabel:
             return .error
         case .noAssociatedValues:
             return .warning
@@ -70,8 +66,6 @@ public enum AutoBuilderDiagnostic: DiagnosticMessage {
             return "@Buildable enum associated value labels must not match \"^index_[0-9]+$\"."
         case .invalidTypeForAutoBuilder:
             return "@Buildable can only be applied to structs, enums, and classes"
-        case .nonFinalClass:
-            return "@Buildable can only be applied to classes that are declared as final."
         }
     }
 
@@ -89,8 +83,6 @@ public enum AutoBuilderDiagnostic: DiagnosticMessage {
             return MessageID(domain: Self.domain, id: "InvalidEnumAssociatedValueLabel")
         case .invalidTypeForAutoBuilder:
             return MessageID(domain: Self.domain, id: "InvalidTypeForAutoBuilder")
-        case .nonFinalClass:
-            return MessageID(domain: Self.domain, id: "NonFinalClass")
         }
     }
 }

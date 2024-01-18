@@ -8,39 +8,11 @@ struct ClassExtensionGenerator: AutoBuilderExtensionGenerator {
         let storedProperties = VariableInspector.getProperties(from: decl.memberBlock.members)
         let impliedTypeVariableProperties = storedProperties
             .filter({ $0.bindingKeyword == .var && $0.variableType.isImplicit })
-        var diagnostics = impliedTypeVariableProperties.map({ property in
+        let diagnostics = impliedTypeVariableProperties.map({ property in
             return Diagnostic(
                 node: property.identifierPattern.cast(Syntax.self),
                 message: AutoBuilderDiagnostic.impliedVariableType(identifierPattern: property.identifierPattern))
         })
-        if !decl.modifiers.contains(where: { $0.name.tokenKind == .keyword(.final) }) {
-//            var modifierName = TokenSyntax(.keyword(.final), trailingTrivia: .spaces(1), presence: .present)
-//            if decl.modifiers.isEmpty {
-////                finalModifier.leadingTrivia = .newlines(1)
-//                modifierName.leadingTrivia = .newlines(1)
-//            }
-            let modifierName = TokenSyntax(
-                .keyword(.final),
-                leadingTrivia: .newlines(1),
-                trailingTrivia: .spaces(1),
-                presence: .present)
-            let finalModifier: DeclModifierSyntax = DeclModifierSyntax(name: modifierName, trailingTrivia: .spaces(1))
-            var newModifiers = decl.modifiers
-//            decl.modifiers
-            newModifiers.append(finalModifier)
-            diagnostics.append(Diagnostic(
-                node: decl,
-                message: AutoBuilderDiagnostic.nonFinalClass,
-                fixIt: FixIt(
-                    message: AutoBuilderFixIt.appendFinalModifier,
-                    changes: [
-                        .replace(
-                            oldNode: decl.modifiers.cast(Syntax.self),
-                            newNode: newModifiers.cast(Syntax.self)),
-//                        .replaceLeadingTrivia(token: decl.classKeyword, newTrivia: Trivia(pieces: [])),
-                        .replaceLeadingTrivia(token: modifierName, newTrivia: decl.classKeyword.leadingTrivia)
-                    ])))
-        }
         if diagnostics.isEmpty {
             let propertiesToBuild = storedProperties
                 .filter({ $0.isStoredProperty && $0.isIVar && !$0.isInitializedConstant })
