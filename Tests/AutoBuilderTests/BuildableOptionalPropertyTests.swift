@@ -79,5 +79,9 @@ class BuildableOptionalPropertyTests: XCTestCase {
     @Buildable
     struct B {
         var i: Int
+
+        init(i: Int) {
+            self.i = i
+        }
     }
 }

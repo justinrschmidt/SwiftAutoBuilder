@@ -22,25 +22,26 @@ struct StructExtensionGenerator: AutoBuilderExtensionGenerator {
         }
     }
 
-    static func generateExtension(
+    static func generateMembers(
         from properties: [Property],
-        clientType: some TypeSyntaxProtocol,
+        clientDecl: StructDeclSyntax,
         isPublic: Bool,
         in context: some MacroExpansionContext
-    ) throws -> ExtensionDeclSyntax {
+    ) throws -> [DeclSyntax] {
         let accessModifier = isPublic ? "public " : ""
-        return try ExtensionDeclSyntax("extension \(clientType.trimmed): Buildable") {
+        let clientType = IdentifierTypeSyntax(name: clientDecl.name).trimmed
+        return [
             try InitializerDeclSyntax("\(raw: accessModifier)init(with builder: Builder) throws", bodyBuilder: {
                 for property in properties {
                     createPropertyInitializer(from: property)
                 }
-            }).cast(DeclSyntax.self)
-            try createToBuilderFunction(from: properties, isPublic: isPublic).cast(DeclSyntax.self)
+            }).cast(DeclSyntax.self),
+            try createToBuilderFunction(from: properties, isPublic: isPublic).cast(DeclSyntax.self),
             try createBuilderClass(
                 from: properties,
                 clientType: clientType
-            ).cast(DeclSyntax.self)
-        }
+            ).cast(DeclSyntax.self),
+        ]
     }
 
     private static func createPropertyInitializer(from property: Property) -> CodeBlockItemSyntax {

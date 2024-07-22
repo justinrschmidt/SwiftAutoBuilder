@@ -19,14 +19,29 @@ import SwiftDiagnostics
 /// the analysis phase to generate a builder class for the attached type.
 ///
 /// The analysis and generation are handled by types that conform to `AutoBuilderExtensionGenerator`.
-public struct AutoBuilderMacro: ExtensionMacro {
-
+public struct AutoBuilderMacro: MemberMacro, ExtensionMacro {
     /// The list of `AutoBuilderExtensionGenerator`s that can generate a builder class from a declaration.
     private static let generators: [any AutoBuilderExtensionGenerator.Type] = [
         EnumExtensionGenerator.self,
         StructExtensionGenerator.self,
         ClassExtensionGenerator.self,
     ]
+
+    public static func expansion(
+        of node: SwiftSyntax.AttributeSyntax,
+        providingMembersOf declaration: some DeclGroupSyntax,
+        in context: some MacroExpansionContext
+    ) throws -> [DeclSyntax] {
+        for generator in Self.generators {
+            if canExpand(declaration, with: generator) {
+                return try expand(declaration, with: generator, in: context)
+            }
+        }
+        context.diagnose(
+            Diagnostic(node: node.cast(Syntax.self), message: AutoBuilderDiagnostic.invalidTypeForAutoBuilder)
+        )
+        return []
+    }
 
     // TODO: Look at the types passed into conformingTo once issue #2031 is fixed.
     // Issue #2031 describes how `assertMacroExpansion()` always passes an empty array into the conformingTo parameter
@@ -39,14 +54,15 @@ public struct AutoBuilderMacro: ExtensionMacro {
         conformingTo protocols: [TypeSyntax],
         in context: some MacroExpansionContext
     ) throws -> [ExtensionDeclSyntax] {
-        for generator in Self.generators {
+        for generator in generators {
             if canExpand(declaration, with: generator) {
-                return try expand(declaration, with: generator, clientType: type, in: context)
+                if analysisSucceeds(declaration, with: generator) {
+                    return [try ExtensionDeclSyntax("extension \(type.trimmed): Buildable") {}]
+                } else {
+                    return []
+                }
             }
         }
-        context.diagnose(
-            Diagnostic(node: node.cast(Syntax.self), message: AutoBuilderDiagnostic.invalidTypeForAutoBuilder)
-        )
         return []
     }
 
@@ -60,20 +76,17 @@ public struct AutoBuilderMacro: ExtensionMacro {
     private static func expand<Generator>(
         _ declaration: DeclGroupSyntax,
         with generator: Generator.Type,
-        clientType: some TypeSyntaxProtocol,
         in context: some MacroExpansionContext
-    ) throws -> [ExtensionDeclSyntax] where Generator: AutoBuilderExtensionGenerator {
+    ) throws -> [DeclSyntax] where Generator: AutoBuilderExtensionGenerator {
         let decl = declaration.cast(Generator.DeclType.self)
         switch generator.analyze(decl: decl) {
         case let .success(analysisOutput, nonFatalDiagnostics):
             nonFatalDiagnostics.forEach(context.diagnose(_:))
             let isPublic = hasPublic(modifiers: decl.modifiers)
-            return try [
-                generator.generateExtension(
-                    from: analysisOutput,
-                    clientType: clientType.trimmed,
-                    isPublic: isPublic, in: context)
-            ]
+            return try generator.generateMembers(
+                from: analysisOutput,
+                clientDecl: decl,
+                isPublic: isPublic, in: context)
         case let .error(diagnostics):
             diagnostics.forEach(context.diagnose(_:))
             return []
@@ -84,6 +97,19 @@ public struct AutoBuilderMacro: ExtensionMacro {
         return modifiers.contains(where: { modifier in
             modifier.name.tokenKind == .keyword(.public) || modifier.name.tokenKind == .keyword(.open)
         })
+    }
+
+    private static func analysisSucceeds<Generator>(
+        _ declaration: DeclGroupSyntax,
+        with generator: Generator.Type
+    ) -> Bool where Generator: AutoBuilderExtensionGenerator {
+        let decl = declaration.cast(Generator.DeclType.self)
+        switch generator.analyze(decl: decl) {
+        case .success(_, _):
+            return true
+        case .error(_):
+            return false
+        }
     }
 }
 

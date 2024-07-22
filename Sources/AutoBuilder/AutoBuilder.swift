@@ -155,5 +155,6 @@
 ///     // prints "two(b: "2")"
 ///     print(foo)
 ///
-@attached(extension, conformances: Buildable, names: named(Builder), named(init(with:)), named(toBuilder))
+@attached(member, names: named(Builder), named(init(with:)), named(toBuilder))
+@attached(extension, conformances: Buildable)
 public macro Buildable() = #externalMacro(module: "AutoBuilderMacros", type: "AutoBuilderMacro")

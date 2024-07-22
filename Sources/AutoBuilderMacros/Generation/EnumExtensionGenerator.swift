@@ -72,20 +72,21 @@ struct EnumExtensionGenerator: AutoBuilderExtensionGenerator {
         return diagnostics
     }
 
-    static func generateExtension(
+    static func generateMembers(
         from cases: [EnumUnionCase],
-        clientType: some TypeSyntaxProtocol,
+        clientDecl: EnumDeclSyntax,
         isPublic: Bool,
         in context: some MacroExpansionContext
-    ) throws -> ExtensionDeclSyntax {
+    ) throws -> [DeclSyntax] {
         let accessModifier = isPublic ? "public " : ""
-        return try ExtensionDeclSyntax("extension \(clientType.trimmed): Buildable") {
+        let clientType = IdentifierTypeSyntax(name: clientDecl.name).trimmed
+        return [
             try InitializerDeclSyntax("\(raw: accessModifier)init(with builder: Builder) throws", bodyBuilder: {
                 "self = try builder.build()"
-            }).cast(DeclSyntax.self)
-            try createEnumToBuilderFunction(isPublic: isPublic).cast(DeclSyntax.self)
+            }).cast(DeclSyntax.self),
+            try createEnumToBuilderFunction(isPublic: isPublic).cast(DeclSyntax.self),
             try createEnumBuilderClass(from: cases, clientType: clientType, in: context).cast(DeclSyntax.self)
-        }
+        ]
     }
 
     private static func createEnumToBuilderFunction(isPublic: Bool) throws -> FunctionDeclSyntax {

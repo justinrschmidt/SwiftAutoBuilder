@@ -18,15 +18,15 @@ final class AutoBuilderMacroClassTests: XCTestCase {
             """,
             expandedSource: """
             final class Foo {
-            }
 
-            extension Foo: Buildable {
                 init(with builder: Builder) throws {
                 }
+
                 func toBuilder() -> Builder {
                     let builder = Builder()
                     return builder
                 }
+
                 public class Builder: BuilderProtocol {
                     public required init() {
                     }
@@ -34,6 +34,9 @@ final class AutoBuilderMacroClassTests: XCTestCase {
                         return try Foo(with: self)
                     }
                 }
+            }
+
+            extension Foo: Buildable {
             }
             """,
             macros: testMacros)
@@ -52,19 +55,19 @@ final class AutoBuilderMacroClassTests: XCTestCase {
             final class Foo {
                 let a: Int
                 let b: Double
-            }
 
-            extension Foo: Buildable {
                 init(with builder: Builder) throws {
                     a = try builder.a.build()
                     b = try builder.b.build()
                 }
+
                 func toBuilder() -> Builder {
                     let builder = Builder()
                     builder.set(a: a)
                     builder.set(b: b)
                     return builder
                 }
+
                 public class Builder: BuilderProtocol {
                     public let a: BuildableProperty<Int>
                     public let b: BuildableProperty<Double>
@@ -86,6 +89,9 @@ final class AutoBuilderMacroClassTests: XCTestCase {
                         return try Foo(with: self)
                     }
                 }
+            }
+
+            extension Foo: Buildable {
             }
             """,
             macros: testMacros)
@@ -118,17 +124,17 @@ final class AutoBuilderMacroClassTests: XCTestCase {
                         a = newValue
                     }
                 }
-            }
 
-            extension Foo: Buildable {
                 init(with builder: Builder) throws {
                     a = try builder.a.build()
                 }
+
                 func toBuilder() -> Builder {
                     let builder = Builder()
                     builder.set(a: a)
                     return builder
                 }
+
                 public class Builder: BuilderProtocol {
                     public let a: BuildableProperty<Int>
                     public required init() {
@@ -143,6 +149,9 @@ final class AutoBuilderMacroClassTests: XCTestCase {
                         return try Foo(with: self)
                     }
                 }
+            }
+
+            extension Foo: Buildable {
             }
             """,
             macros: testMacros)
@@ -161,17 +170,17 @@ final class AutoBuilderMacroClassTests: XCTestCase {
             final class Foo {
                 static var a: Double
                 var b: Int
-            }
 
-            extension Foo: Buildable {
                 init(with builder: Builder) throws {
                     b = try builder.b.build()
                 }
+
                 func toBuilder() -> Builder {
                     let builder = Builder()
                     builder.set(b: b)
                     return builder
                 }
+
                 public class Builder: BuilderProtocol {
                     public let b: BuildableProperty<Int>
                     public required init() {
@@ -186,6 +195,9 @@ final class AutoBuilderMacroClassTests: XCTestCase {
                         return try Foo(with: self)
                     }
                 }
+            }
+
+            extension Foo: Buildable {
             }
             """,
             macros: testMacros)
@@ -202,17 +214,17 @@ final class AutoBuilderMacroClassTests: XCTestCase {
             expandedSource: """
             final class Foo<T> {
                 let a: T
-            }
 
-            extension Foo: Buildable {
                 init(with builder: Builder) throws {
                     a = try builder.a.build()
                 }
+
                 func toBuilder() -> Builder {
                     let builder = Builder()
                     builder.set(a: a)
                     return builder
                 }
+
                 public class Builder: BuilderProtocol {
                     public let a: BuildableProperty<T>
                     public required init() {
@@ -227,6 +239,9 @@ final class AutoBuilderMacroClassTests: XCTestCase {
                         return try Foo(with: self)
                     }
                 }
+            }
+
+            extension Foo: Buildable {
             }
             """,
             macros: testMacros)
@@ -267,15 +282,15 @@ final class AutoBuilderMacroClassTests: XCTestCase {
             expandedSource: """
             final class Foo {
                 let a = 0
-            }
 
-            extension Foo: Buildable {
                 init(with builder: Builder) throws {
                 }
+
                 func toBuilder() -> Builder {
                     let builder = Builder()
                     return builder
                 }
+
                 public class Builder: BuilderProtocol {
                     public required init() {
                     }
@@ -283,6 +298,9 @@ final class AutoBuilderMacroClassTests: XCTestCase {
                         return try Foo(with: self)
                     }
                 }
+            }
+
+            extension Foo: Buildable {
             }
             """,
             macros: testMacros)
@@ -299,17 +317,17 @@ final class AutoBuilderMacroClassTests: XCTestCase {
             expandedSource: """
             final class Foo {
                 var a: [Int]
-            }
 
-            extension Foo: Buildable {
                 init(with builder: Builder) throws {
                     a = builder.a.build()
                 }
+
                 func toBuilder() -> Builder {
                     let builder = Builder()
                     builder.set(a: a)
                     return builder
                 }
+
                 public class Builder: BuilderProtocol {
                     public let a: BuildableArrayProperty<Int>
                     public required init() {
@@ -340,6 +358,9 @@ final class AutoBuilderMacroClassTests: XCTestCase {
                     }
                 }
             }
+
+            extension Foo: Buildable {
+            }
             """,
             macros: testMacros)
     }
@@ -355,17 +376,17 @@ final class AutoBuilderMacroClassTests: XCTestCase {
             expandedSource: """
             final class Foo {
                 var a: [String:Double]
-            }
 
-            extension Foo: Buildable {
                 init(with builder: Builder) throws {
                     a = builder.a.build()
                 }
+
                 func toBuilder() -> Builder {
                     let builder = Builder()
                     builder.set(a: a)
                     return builder
                 }
+
                 public class Builder: BuilderProtocol {
                     public let a: BuildableDictionaryProperty<String, Double>
                     public required init() {
@@ -396,6 +417,9 @@ final class AutoBuilderMacroClassTests: XCTestCase {
                     }
                 }
             }
+
+            extension Foo: Buildable {
+            }
             """,
             macros: testMacros)
     }
@@ -411,17 +435,17 @@ final class AutoBuilderMacroClassTests: XCTestCase {
             expandedSource: """
             final class Foo {
                 var a: Set<Int>
-            }
 
-            extension Foo: Buildable {
                 init(with builder: Builder) throws {
                     a = builder.a.build()
                 }
+
                 func toBuilder() -> Builder {
                     let builder = Builder()
                     builder.set(a: a)
                     return builder
                 }
+
                 public class Builder: BuilderProtocol {
                     public let a: BuildableSetProperty<Int>
                     public required init() {
@@ -452,6 +476,9 @@ final class AutoBuilderMacroClassTests: XCTestCase {
                     }
                 }
             }
+
+            extension Foo: Buildable {
+            }
             """,
             macros: testMacros)
     }
@@ -467,17 +494,17 @@ final class AutoBuilderMacroClassTests: XCTestCase {
             expandedSource: """
             final class Foo {
                 var a: Int?
-            }
 
-            extension Foo: Buildable {
                 init(with builder: Builder) throws {
                     a = try builder.a.build()
                 }
+
                 func toBuilder() -> Builder {
                     let builder = Builder()
                     builder.set(a: a)
                     return builder
                 }
+
                 public class Builder: BuilderProtocol {
                     public let a: BuildableOptionalProperty<Int>
                     public required init() {
@@ -492,6 +519,9 @@ final class AutoBuilderMacroClassTests: XCTestCase {
                         return try Foo(with: self)
                     }
                 }
+            }
+
+            extension Foo: Buildable {
             }
             """,
             macros: testMacros)
@@ -508,17 +538,17 @@ final class AutoBuilderMacroClassTests: XCTestCase {
             expandedSource: """
             public final class Foo {
                 let a: Int
-            }
 
-            extension Foo: Buildable {
                 public init(with builder: Builder) throws {
                     a = try builder.a.build()
                 }
+
                 public func toBuilder() -> Builder {
                     let builder = Builder()
                     builder.set(a: a)
                     return builder
                 }
+
                 public class Builder: BuilderProtocol {
                     public let a: BuildableProperty<Int>
                     public required init() {
@@ -533,6 +563,9 @@ final class AutoBuilderMacroClassTests: XCTestCase {
                         return try Foo(with: self)
                     }
                 }
+            }
+
+            extension Foo: Buildable {
             }
             """,
             macros: testMacros)
@@ -549,17 +582,17 @@ final class AutoBuilderMacroClassTests: XCTestCase {
             expandedSource: """
             open final class Foo {
                 let a: Int
-            }
 
-            extension Foo: Buildable {
                 public init(with builder: Builder) throws {
                     a = try builder.a.build()
                 }
+
                 public func toBuilder() -> Builder {
                     let builder = Builder()
                     builder.set(a: a)
                     return builder
                 }
+
                 public class Builder: BuilderProtocol {
                     public let a: BuildableProperty<Int>
                     public required init() {
@@ -574,6 +607,9 @@ final class AutoBuilderMacroClassTests: XCTestCase {
                         return try Foo(with: self)
                     }
                 }
+            }
+
+            extension Foo: Buildable {
             }
             """,
             macros: testMacros)
@@ -596,6 +632,31 @@ final class AutoBuilderMacroClassTests: XCTestCase {
             class RootClass {
                 final class A {
                     let b: RootClass.B
+
+                    init(with builder: Builder) throws {
+                        b = try builder.b.build()
+                    }
+
+                    func toBuilder() -> Builder {
+                        let builder = Builder()
+                        builder.set(b: b)
+                        return builder
+                    }
+            
+                    public class Builder: BuilderProtocol {
+                        public let b: BuildableProperty<RootClass.B>
+                        public required init() {
+                            b = BuildableProperty(name: "b")
+                        }
+                        @discardableResult
+                        public func set(b: RootClass.B) -> Builder {
+                            self.b.set(value: b)
+                            return self
+                        }
+                        public func build() throws -> A {
+                            return try A(with: self)
+                        }
+                    }
                 }
                 final class B {
                     let i: Int
@@ -603,28 +664,6 @@ final class AutoBuilderMacroClassTests: XCTestCase {
             }
 
             extension A: Buildable {
-                init(with builder: Builder) throws {
-                    b = try builder.b.build()
-                }
-                func toBuilder() -> Builder {
-                    let builder = Builder()
-                    builder.set(b: b)
-                    return builder
-                }
-                public class Builder: BuilderProtocol {
-                    public let b: BuildableProperty<RootClass.B>
-                    public required init() {
-                        b = BuildableProperty(name: "b")
-                    }
-                    @discardableResult
-                    public func set(b: RootClass.B) -> Builder {
-                        self.b.set(value: b)
-                        return self
-                    }
-                    public func build() throws -> A {
-                        return try A(with: self)
-                    }
-                }
             }
             """,
             macros: testMacros)

@@ -18,19 +18,22 @@ protocol AutoBuilderExtensionGenerator {
     /// error diagnostics if the declaration is not well formed.
     static func analyze(decl: DeclType) -> AnalysisResult<AnalysisOutput>
 
-    /// Generates the builder class for the declaration that the `@Buildable` macro is attached to.
+    /// Generates the builder class and builder related methods for the declaration that the `@Buildable` macro is
+    /// attached to.
     /// - Parameters:
     ///   - analysisOutput: The `AnalysisOutput` that was returned from `analyze(decl:)`.
     ///   - clientType: The type of the builder's client.
     ///   - isPublic: `true` if the client type was declared with the `public` or `open` access modifiers, `false`
     ///   otherwise.
     ///   - context: The macro expansion context.
-    static func generateExtension(
+    /// - Returns: The builder class for the declaration the macro is attached to, as well as the `init(with:)` and
+    /// `toBuilder()` methods.
+    static func generateMembers(
         from analysisOutput: AnalysisOutput,
-        clientType: some TypeSyntaxProtocol,
+        clientDecl: DeclType,
         isPublic: Bool,
         in context: some MacroExpansionContext
-    ) throws -> ExtensionDeclSyntax
+    ) throws -> [DeclSyntax]
 }
 
 /// The result of analyzing a declaration that has the `@Buildable` macro attached to it.

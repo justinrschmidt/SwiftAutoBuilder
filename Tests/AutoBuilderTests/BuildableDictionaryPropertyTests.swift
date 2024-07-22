@@ -98,6 +98,10 @@ class BuildableDictionaryPropertyTests: XCTestCase {
     @Buildable
     struct Foo {
         var a: [String: Int]
+
+        init(a: [String: Int]) {
+            self.a = a
+        }
     }
 
     @Buildable
