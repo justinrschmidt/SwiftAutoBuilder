@@ -23,6 +23,13 @@ class BuildableArrayPropertyTests: XCTestCase {
         XCTAssertEqual(bar.b, [1, 2, 3])
     }
 
+    func testSetArray_class() throws {
+        let baz = try Baz.Builder()
+            .set(a: [1, 2, 3])
+            .build()
+        XCTAssertEqual(baz.a, [1, 2, 3])
+    }
+
     func testAppendElement_struct() throws {
         let foo = try Foo.Builder()
             .appendTo(a: 1)
@@ -46,6 +53,15 @@ class BuildableArrayPropertyTests: XCTestCase {
             .appendTo(index_0: [1, 2, 3])
             .build()
         XCTAssertEqual(bar.b, [1, 2, 3])
+    }
+
+    func testAppendElement_class() throws {
+        let baz = try Baz.Builder()
+            .appendTo(a: 1)
+            .appendTo(a: 2)
+            .appendTo(a: 3)
+            .build()
+        XCTAssertEqual(baz.a, [1, 2, 3])
     }
 
     func testAppendCollection_struct() throws {
@@ -72,6 +88,14 @@ class BuildableArrayPropertyTests: XCTestCase {
         XCTAssertEqual(bar.b, [1, 2, 3, 4])
     }
 
+    func testAppendCollection_class() throws {
+        let baz = try Baz.Builder()
+            .appendTo(a: [1, 2])
+            .appendTo(a: [3, 4])
+            .build()
+        XCTAssertEqual(baz.a, [1, 2, 3, 4])
+    }
+
     func testRemoveAll_struct() throws {
         let foo = Foo(a: [1, 2, 3])
         let foo2 = try foo.toBuilder()
@@ -94,6 +118,14 @@ class BuildableArrayPropertyTests: XCTestCase {
             .removeAllFromIndex_0()
             .build()
         XCTAssertEqual(bar2.b, [])
+    }
+
+    func testRemoveAll_class() throws {
+        let baz = Baz(a: [1, 2, 3])
+        let baz2 = try baz.toBuilder()
+            .removeAllFromA()
+            .build()
+        XCTAssertEqual(baz2.a, [])
     }
 
     @Buildable
@@ -123,5 +155,14 @@ class BuildableArrayPropertyTests: XCTestCase {
 
         case one(a: [Int])
         case two([Int])
+    }
+
+    @Buildable
+    final class Baz {
+        var a: [Int]
+
+        init(a: [Int]) {
+            self.a = a
+        }
     }
 }

@@ -23,6 +23,13 @@ class BuildableSetPropertyTests: XCTestCase {
         XCTAssertEqual(bar.b, [1, 2, 3])
     }
 
+    func testSetSet_class() throws {
+        let baz = try Baz.Builder()
+            .set(a: [1, 2, 3])
+            .build()
+        XCTAssertEqual(baz.a, [1, 2, 3])
+    }
+
     func testInsertElement_struct() throws {
         let foo = try Foo.Builder()
             .insertInto(a: 1)
@@ -50,6 +57,15 @@ class BuildableSetPropertyTests: XCTestCase {
         XCTAssertEqual(bar.b, [1, 2, 3])
     }
 
+    func testInsertElement_class() throws {
+        let baz = try Baz.Builder()
+            .insertInto(a: 1)
+            .insertInto(a: 2)
+            .insertInto(a: 3)
+            .build()
+        XCTAssertEqual(baz.a, [1, 2, 3])
+    }
+
     func testFormUnion_struct() throws {
         let foo = try Foo.Builder()
             .formUnionWithA(other: [1, 2])
@@ -74,6 +90,14 @@ class BuildableSetPropertyTests: XCTestCase {
         XCTAssertEqual(bar.b, [1, 2, 3, 4])
     }
 
+    func testFormUnion_class() throws {
+        let baz = try Baz.Builder()
+            .formUnionWithA(other: [1, 2])
+            .formUnionWithA(other: [3, 4])
+            .build()
+        XCTAssertEqual(baz.a, [1, 2, 3, 4])
+    }
+
     func testRemoveAll_struct() throws {
         let foo = Foo(a: [1, 2, 3])
         let foo2 = try foo.toBuilder()
@@ -96,6 +120,14 @@ class BuildableSetPropertyTests: XCTestCase {
             .removeAllFromIndex_0()
             .build()
         XCTAssertEqual(bar2.b, [])
+    }
+
+    func testRemoveAll_class() throws {
+        let baz = Baz(a: [1, 2, 3])
+        let baz2 = try baz.toBuilder()
+            .removeAllFromA()
+            .build()
+        XCTAssertEqual(baz2.a, [])
     }
 
     @Buildable
@@ -125,5 +157,14 @@ class BuildableSetPropertyTests: XCTestCase {
 
         case one(a: Set<Int>)
         case two(Set<Int>)
+    }
+
+    @Buildable
+    final class Baz {
+        var a: Set<Int>
+
+        init(a: Set<Int>) {
+            self.a = a
+        }
     }
 }

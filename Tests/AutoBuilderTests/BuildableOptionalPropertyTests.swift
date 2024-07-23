@@ -39,11 +39,20 @@ class BuildableOptionalPropertyTests: XCTestCase {
         }
     }
 
+    func testSetOptional_class() throws {
+        let baz = try Baz.Builder()
+            .set(a: 1)
+            .set(b: nil)
+            .build()
+        XCTAssertEqual(baz.a, 1)
+        XCTAssertNil(baz.b)
+    }
+
     func testNestedOptional() throws {
-        let builder = Baz.Builder()
+        let builder = StructWithNestedOptional.Builder()
         builder.a.builder.wrappedValue.set(value: nil)
-        let baz = try builder.build()
-        XCTAssertEqual(baz.a, .some(.none))
+        let structWithNestedOptional = try builder.build()
+        XCTAssertEqual(structWithNestedOptional.a, .some(.none))
     }
 
     func testWrappedBuildable() throws {
@@ -67,7 +76,13 @@ class BuildableOptionalPropertyTests: XCTestCase {
     }
 
     @Buildable
-    struct Baz {
+    final class Baz {
+        var a: Int?
+        var b: String?
+    }
+
+    @Buildable
+    struct StructWithNestedOptional {
         var a: Int??
     }
 

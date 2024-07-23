@@ -23,6 +23,13 @@ class BuildableDictionaryPropertyTests: XCTestCase {
         XCTAssertEqual(bar.b, ["1": 1, "2": 2])
     }
 
+    func testSetDictionary_class() throws {
+        let baz = try Baz.Builder()
+            .set(a: ["1": 1, "2": 2])
+            .build()
+        XCTAssertEqual(baz.a, ["1": 1, "2": 2])
+    }
+
     func testInsertElement_struct() throws {
         let foo = try Foo.Builder()
             .insertInto(a: 1, forKey: "1")
@@ -45,6 +52,14 @@ class BuildableDictionaryPropertyTests: XCTestCase {
             .insertInto(index_0: 2, forKey: "2")
             .build()
         XCTAssertEqual(bar.b, ["1": 1, "2": 2])
+    }
+
+    func testInsertElement_class() throws {
+        let baz = try Baz.Builder()
+            .insertInto(a: 1, forKey: "1")
+            .insertInto(a: 2, forKey: "2")
+            .build()
+        XCTAssertEqual(baz.a, ["1": 1, "2": 2])
     }
 
     func testMergeDictionary_struct() throws {
@@ -71,6 +86,14 @@ class BuildableDictionaryPropertyTests: XCTestCase {
         XCTAssertEqual(bar.b, ["1": 1, "2": 2])
     }
 
+    func testMergeDictionary_class() throws {
+        let baz = try Baz.Builder()
+            .set(a: ["1": 1])
+            .mergeIntoA(other: ["2": 2], uniquingKeysWith: { $1 })
+            .build()
+        XCTAssertEqual(baz.a, ["1": 1, "2": 2])
+    }
+
     func testRemoveAll_struct() throws {
         let foo = Foo(a: ["1": 1, "2": 2])
         let foo2 = try foo.toBuilder()
@@ -93,6 +116,14 @@ class BuildableDictionaryPropertyTests: XCTestCase {
             .removeAllFromIndex_0()
             .build()
         XCTAssertEqual(bar2.b, [:])
+    }
+
+    func testRemoveAll_class() throws {
+        let baz = Baz(a: ["1": 1, "2": 2])
+        let baz2 = try baz.toBuilder()
+            .removeAllFromA()
+            .build()
+        XCTAssertEqual(baz2.a, [:])
     }
 
     @Buildable
@@ -122,5 +153,14 @@ class BuildableDictionaryPropertyTests: XCTestCase {
 
         case one(a: [String: Int])
         case two([String: Int])
+    }
+
+    @Buildable
+    final class Baz {
+        var a: [String: Int]
+
+        init(a: [String: Int]) {
+            self.a = a
+        }
     }
 }
