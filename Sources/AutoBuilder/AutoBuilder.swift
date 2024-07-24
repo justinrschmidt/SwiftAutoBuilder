@@ -158,3 +158,7 @@
 @attached(member, names: named(Builder), named(init(with:)), named(toBuilder))
 @attached(extension, conformances: Buildable)
 public macro Buildable() = #externalMacro(module: "AutoBuilderMacros", type: "AutoBuilderMacro")
+
+@attached(member, names: named(Builder), named(init(with:)), named(toBuilder))
+@attached(extension, conformances: Buildable)
+public macro Buildable<Superclass, each T>(superclassInitializer: (repeat each T) -> Superclass) = #externalMacro(module: "AutoBuilderMacros", type: "AutoBuilderMacro")
