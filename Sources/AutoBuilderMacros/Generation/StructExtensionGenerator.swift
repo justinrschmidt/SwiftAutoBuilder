@@ -8,11 +8,15 @@ struct StructExtensionGenerator: AutoBuilderExtensionGenerator {
         let storedProperties = VariableInspector.getProperties(from: decl.memberBlock.members)
         let impliedTypeVariableProperties = storedProperties
             .filter({ $0.bindingKeyword == .var && $0.variableType.isImplicit })
-        let diagnostics = impliedTypeVariableProperties.map({ property in
+        var diagnostics = impliedTypeVariableProperties.map({ property in
             return Diagnostic(
                 node: property.identifierPattern.cast(Syntax.self),
                 message: AutoBuilderDiagnostic.impliedVariableType(identifierPattern: property.identifierPattern))
         })
+        if SuperclassInspector.hasSuperclassArgument(in: decl.attributes) {
+            diagnostics.append(
+                AutoBuilderDiagnostic.createNonClassWithSuperclassInitialzierDiagnostic(from: decl.attributes))
+        }
         if diagnostics.isEmpty {
             let propertiesToBuild = storedProperties
                 .filter({ $0.isStoredProperty && $0.isIVar && !$0.isInitializedConstant })

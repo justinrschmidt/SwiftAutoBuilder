@@ -33,7 +33,11 @@ struct SuperclassInspector {
             parameterLabels: initExpr?.declName.argumentNames?.arguments.map({ $0.name }))
     }
 
-    private static func getBuildableAttribute(in attributeList: AttributeListSyntax) -> AttributeSyntax? {
+    /// Returns the `AttributeSyntax` of the `Buildable` attribute in the given attribute list, if it exists.
+    /// - Parameters:
+    ///   - attributeList: The list of attributes to search through for the `Buildable` attribute.
+    /// - Returns: The `Buildable` attribute, if it exists in the list, `nil` otherwise.
+    static func getBuildableAttribute(in attributeList: AttributeListSyntax) -> AttributeSyntax? {
         for listElement in attributeList {
             guard case let .attribute(attributeSyntax) = listElement else { continue }
             guard let identifier = attributeSyntax.attributeName.as(IdentifierTypeSyntax.self) else { continue }

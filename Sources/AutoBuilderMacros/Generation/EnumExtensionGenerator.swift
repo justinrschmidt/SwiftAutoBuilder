@@ -22,6 +22,10 @@ struct EnumExtensionGenerator: AutoBuilderExtensionGenerator {
                                             overloadedCases: overloadedCases)))
         }
         errorDiagnostics += getInvalidAssociatedValueLabelsDiagnostics(cases)
+        if SuperclassInspector.hasSuperclassArgument(in: decl.attributes) {
+            errorDiagnostics.append(
+                AutoBuilderDiagnostic.createNonClassWithSuperclassInitialzierDiagnostic(from: decl.attributes))
+        }
         if !errorDiagnostics.isEmpty {
             return .error(diagnostics: errorDiagnostics)
         }

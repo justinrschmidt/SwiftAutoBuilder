@@ -42,6 +42,10 @@ public enum AutoBuilderDiagnostic: DiagnosticMessage {
     /// Diagnosed when `@Buildable` is attached to a non-final class.
     case nonFinalClass
 
+    /// Diagnosed when `@Buildable` is attached to a type that is not a class and has a `superclassInitializer`
+    /// parameter.
+    case nonClassWithSuperclassInitializer
+
     public var severity: DiagnosticSeverity {
         switch self {
         case .impliedVariableType,
@@ -49,7 +53,8 @@ public enum AutoBuilderDiagnostic: DiagnosticMessage {
              .enumWithNoCases,
              .enumWithOverloadedCases,
              .invalidEnumAssociatedValueLabel,
-             .nonFinalClass:
+             .nonFinalClass,
+             .nonClassWithSuperclassInitializer:
             return .error
         case .noAssociatedValues:
             return .warning
@@ -72,6 +77,8 @@ public enum AutoBuilderDiagnostic: DiagnosticMessage {
             return "@Buildable can only be applied to structs, enums, and classes"
         case .nonFinalClass:
             return "@Buildable can only be applied to classes that are declared as final."
+        case .nonClassWithSuperclassInitializer:
+            return "The superclassInitializer parameter can only be used on class types."
         }
     }
 
@@ -91,6 +98,44 @@ public enum AutoBuilderDiagnostic: DiagnosticMessage {
             return MessageID(domain: Self.domain, id: "InvalidTypeForAutoBuilder")
         case .nonFinalClass:
             return MessageID(domain: Self.domain, id: "NonFinalClass")
+        case .nonClassWithSuperclassInitializer:
+            return MessageID(domain: Self.domain, id: "NonClassWithSuperclassInitializer")
         }
+    }
+
+    // MARK: - Factory Functions
+
+    /// Creates a compiler diagnostic with a `FixIt` for an error where the `superclassInitializer` parameter is used on
+    /// a type that is not a class.
+    /// - Parameters:
+    ///   - attributeList: The list of attributes that contains the `Buildable` attribute with the
+    ///   `superclassInitializer` parameter.
+    /// - Returns: The diagnostic with the `FixIt` for the `superclassInitializer` error. The `FixIt` is omitted if the
+    /// AST is malformed or has an unexpected structure.
+    public static func createNonClassWithSuperclassInitialzierDiagnostic(
+        from attributeList: AttributeListSyntax
+    ) -> Diagnostic {
+        guard let buildableAttribute = SuperclassInspector.getBuildableAttribute(in: attributeList),
+              let parameterSymbol = getSuperclassInitializerParameter(in: buildableAttribute)
+        else {
+            return Diagnostic(node: attributeList, message: Self.nonClassWithSuperclassInitializer)
+        }
+        return Diagnostic(
+            node: parameterSymbol,
+            message: AutoBuilderDiagnostic.nonClassWithSuperclassInitializer,
+            fixIt: FixIt(message: AutoBuilderFixIt.removeSuperclassInitializer, changes: [
+                .replace(
+                    oldNode: buildableAttribute.cast(Syntax.self),
+                    newNode: AttributeSyntax(attributeName: IdentifierTypeSyntax(name: "Buildable")).cast(Syntax.self))
+            ]))
+    }
+
+    private static func getSuperclassInitializerParameter(in attribute: AttributeSyntax) -> LabeledExprSyntax? {
+        guard case let .argumentList(arguments) = attribute.arguments else { return nil }
+        for labeledExpr in arguments {
+            guard labeledExpr.label?.text == "superclassInitializer" else { continue }
+            return labeledExpr
+        }
+        return nil
     }
 }

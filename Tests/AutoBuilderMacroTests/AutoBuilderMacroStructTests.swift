@@ -690,4 +690,29 @@ final class AutoBuilderMacroStructTests: XCTestCase {
             """,
             macros: testMacros)
     }
+
+    func testStructWithSuperclassInitializerParameter() {
+        assertMacroExpansion(
+            """
+            @Buildable<Bar>(superclassInitializer: Bar.init)
+            struct Foo {
+                let a: Int
+            }
+            """,
+            expandedSource: """
+            struct Foo {
+                let a: Int
+            }
+            """,
+            diagnostics: [
+                DiagnosticSpec(
+                    id: MessageID(domain: AutoBuilderDiagnostic.domain, id: "NonClassWithSuperclassInitializer"),
+                    message: "The superclassInitializer parameter can only be used on class types.",
+                    line: 1,
+                    column: 17,
+                    severity: .error,
+                    fixIts: [FixItSpec(message: "Remove superclass initializer")])
+            ],
+            macros: testMacros)
+    }
 }
