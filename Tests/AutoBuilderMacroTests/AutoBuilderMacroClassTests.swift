@@ -752,4 +752,72 @@ final class AutoBuilderMacroClassTests: XCTestCase {
             ],
             macros: testMacros)
     }
+
+    func testClassWithSuperclass_notInitMethod_plainFunction() {
+        assertMacroExpansion(
+            """
+            class FooSuperclass {
+                let a: Int
+                init(a: Int) {
+                    self.a = a
+                }
+            }
+            @Buildable<FooSuperclass, Int>(superclassInitializer: notInitMethod(a:))
+            final class Foo: FooSuperclass {
+                let b: Double
+            }
+            """,
+            expandedSource: """
+            class FooSuperclass {
+                let a: Int
+                init(a: Int) {
+                    self.a = a
+                }
+            }
+            final class Foo: FooSuperclass {
+                let b: Double
+            }
+            """,
+            diagnostics: [
+                DiagnosticSpec(
+                    message: "The superclassInitializer parameter must be an init method.",
+                    line: 7,
+                    column: 1)
+            ],
+            macros: testMacros)
+    }
+
+    func testClassWithSuperclass_notInitMethod_superclassMethod() {
+        assertMacroExpansion(
+            """
+            class FooSuperclass {
+                let a: Int
+                init(a: Int) {
+                    self.a = a
+                }
+            }
+            @Buildable<FooSuperclass, Int>(superclassInitializer: FooSuperclass.notInitMethod(a:))
+            final class Foo: FooSuperclass {
+                let b: Double
+            }
+            """,
+            expandedSource: """
+            class FooSuperclass {
+                let a: Int
+                init(a: Int) {
+                    self.a = a
+                }
+            }
+            final class Foo: FooSuperclass {
+                let b: Double
+            }
+            """,
+            diagnostics: [
+                DiagnosticSpec(
+                    message: "The superclassInitializer parameter must be an init method.",
+                    line: 7,
+                    column: 1)
+            ],
+            macros: testMacros)
+    }
 }

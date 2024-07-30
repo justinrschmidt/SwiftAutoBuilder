@@ -13,7 +13,13 @@ struct SuperclassInspector {
     /// parameter, `false` otherwise.
     static func hasSuperclassArgument(in attributeList: AttributeListSyntax) -> Bool {
         guard let buildableAttribute = getBuildableAttribute(in: attributeList) else { return false }
-        return getSuperclassInitializerExpr(in: buildableAttribute) != nil
+        guard case let .argumentList(arguments) = buildableAttribute.arguments else { return false }
+        for labeledExpr in arguments {
+            if labeledExpr.label?.tokenKind == .identifier("superclassInitializer") {
+                return true
+            }
+        }
+        return false
     }
 
     /// Returns a `SuperclassInitializer` that contains the declarations relating to a superclass's initializer.
@@ -25,9 +31,9 @@ struct SuperclassInspector {
     static func getSuperclassInitializer(from decl: ClassDeclSyntax) -> SuperclassInitializer? {
         guard let buildableAttribute = getBuildableAttribute(in: decl.attributes) else { return nil }
         guard let attributeName = buildableAttribute.attributeName.as(IdentifierTypeSyntax.self) else { return nil }
-        guard let initExpr = getSuperclassInitializerExpr(in: buildableAttribute) else { return nil }
+        let initExpr = getSuperclassInitializerExpr(in: buildableAttribute)
         let argumentTypes = attributeName.genericArgumentClause?.arguments.map({ $0.argument })
-        let parameterLabels = initExpr.declName.argumentNames?.arguments.map({ $0.name })
+        let parameterLabels = initExpr?.declName.argumentNames?.arguments.map({ $0.name })
         let parameters: [SuperclassInitializer.Parameter]?
         if let types = argumentTypes?.dropFirst(), let labels = parameterLabels, types.count == labels.count {
             parameters = zip(labels, types).map({ SuperclassInitializer.Parameter(label: $0, type: $1) })
@@ -37,8 +43,8 @@ struct SuperclassInspector {
         return SuperclassInitializer(
             buildableAttribute: buildableAttribute,
             genericArgumentTypes: argumentTypes,
-            initializerBase: initExpr.base,
-            initializerName: initExpr.declName.baseName,
+            initializerBase: initExpr?.base,
+            initializerName: initExpr?.declName.baseName,
             parameterLabels: parameterLabels,
             parameters: parameters)
     }

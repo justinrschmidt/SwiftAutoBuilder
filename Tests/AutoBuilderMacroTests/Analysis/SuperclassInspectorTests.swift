@@ -149,6 +149,21 @@ final class SuperclassInspectorTests: XCTestCase {
 
         let initializer = SuperclassInspector.getSuperclassInitializer(from: classDecl)
 
-        XCTAssertNil(initializer)
+        XCTAssertNotNil(initializer)
+
+        let types = initializer?.genericArgumentTypes
+        XCTAssertNotNil(types)
+        XCTAssertEqual(types?.count, 3)
+        XCTAssertEqual(types?[0].as(IdentifierTypeSyntax.self)?.name.tokenKind, .identifier("Foo"))
+        XCTAssertEqual(types?[1].as(IdentifierTypeSyntax.self)?.name.tokenKind, .identifier("Int"))
+        XCTAssertEqual(types?[2].as(IdentifierTypeSyntax.self)?.name.tokenKind, .identifier("Double"))
+
+        XCTAssertNil(initializer?.initializerBase)
+
+        XCTAssertNil(initializer?.initializerName)
+
+        XCTAssertNil(initializer?.parameterLabels)
+
+        XCTAssertNil(initializer?.parameters)
     }
 }

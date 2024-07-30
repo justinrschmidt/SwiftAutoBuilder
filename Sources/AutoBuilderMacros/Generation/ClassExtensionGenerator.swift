@@ -19,8 +19,10 @@ struct ClassExtensionGenerator: AutoBuilderExtensionGenerator {
                 message: AutoBuilderDiagnostic.nonFinalClass,
                 fixIts: createAddFinalFixIt(for: decl)))
         }
-        if let superclassInitializer = SuperclassInspector.getSuperclassInitializer(from: decl) {
-            diagnostics += analyze(superclassInitializer: superclassInitializer)
+        if SuperclassInspector.hasSuperclassArgument(in: decl.attributes) {
+            if let superclassInitializer = SuperclassInspector.getSuperclassInitializer(from: decl) {
+                diagnostics += analyze(superclassInitializer: superclassInitializer)
+            }
         }
         if diagnostics.isEmpty {
             let propertiesToBuild = storedProperties
@@ -83,6 +85,11 @@ struct ClassExtensionGenerator: AutoBuilderExtensionGenerator {
             diagnostics.append(Diagnostic(
                 node: superclassInitializer.buildableAttribute,
                 message: AutoBuilderDiagnostic.missingSuperclassInitializerGenericParameters))
+        }
+        if superclassInitializer.initializerName?.tokenKind != .keyword(.`init`) {
+            diagnostics.append(Diagnostic(
+                node: superclassInitializer.buildableAttribute,
+                message: AutoBuilderDiagnostic.superclassInitializerIsNotInitMethod))
         }
         return diagnostics
     }
