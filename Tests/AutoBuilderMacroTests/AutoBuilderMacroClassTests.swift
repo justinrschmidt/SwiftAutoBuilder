@@ -718,4 +718,38 @@ final class AutoBuilderMacroClassTests: XCTestCase {
             ],
             macros: testMacros)
     }
+
+    func testClassWithSuperclass_noGenericArguments() {
+        assertMacroExpansion(
+            """
+            class FooSuperclass {
+                let a: Int
+                init(a: Int) {
+                    self.a = a
+                }
+            }
+            @Buildable(superclassInitializer: FooSuperclass.init(a:))
+            final class Foo: FooSuperclass {
+                let b: Double
+            }
+            """,
+            expandedSource: """
+            class FooSuperclass {
+                let a: Int
+                init(a: Int) {
+                    self.a = a
+                }
+            }
+            final class Foo: FooSuperclass {
+                let b: Double
+            }
+            """,
+            diagnostics: [
+                DiagnosticSpec(
+                    message: "The generic parameters must be explicitly provided when using superclassInitializer.",
+                    line: 7,
+                    column: 1)
+            ],
+            macros: testMacros)
+    }
 }

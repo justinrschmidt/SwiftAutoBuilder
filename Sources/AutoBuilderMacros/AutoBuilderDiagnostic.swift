@@ -46,6 +46,10 @@ public enum AutoBuilderDiagnostic: DiagnosticMessage {
     /// parameter.
     case nonClassWithSuperclassInitializer
 
+    /// Diagnosed when `@Buildable` has a `superclassInitializer` but the generic parameters are not explicitly
+    /// provided.
+    case missingSuperclassInitializerGenericParameters
+
     public var severity: DiagnosticSeverity {
         switch self {
         case .impliedVariableType,
@@ -54,7 +58,8 @@ public enum AutoBuilderDiagnostic: DiagnosticMessage {
              .enumWithOverloadedCases,
              .invalidEnumAssociatedValueLabel,
              .nonFinalClass,
-             .nonClassWithSuperclassInitializer:
+             .nonClassWithSuperclassInitializer,
+             .missingSuperclassInitializerGenericParameters:
             return .error
         case .noAssociatedValues:
             return .warning
@@ -79,6 +84,8 @@ public enum AutoBuilderDiagnostic: DiagnosticMessage {
             return "@Buildable can only be applied to classes that are declared as final."
         case .nonClassWithSuperclassInitializer:
             return "The superclassInitializer parameter can only be used on class types."
+        case .missingSuperclassInitializerGenericParameters:
+            return "The generic parameters must be explicitly provided when using superclassInitializer."
         }
     }
 
@@ -100,6 +107,8 @@ public enum AutoBuilderDiagnostic: DiagnosticMessage {
             return MessageID(domain: Self.domain, id: "NonFinalClass")
         case .nonClassWithSuperclassInitializer:
             return MessageID(domain: Self.domain, id: "NonClassWithSuperclassInitializer")
+        case .missingSuperclassInitializerGenericParameters:
+            return MessageID(domain: Self.domain, id: "MissingSuperclassInitializerGenericParameters")
         }
     }
 

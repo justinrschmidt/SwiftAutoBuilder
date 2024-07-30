@@ -25,12 +25,13 @@ struct SuperclassInspector {
     static func getSuperclassInitializer(from decl: ClassDeclSyntax) -> SuperclassInitializer? {
         guard let buildableAttribute = getBuildableAttribute(in: decl.attributes) else { return nil }
         guard let attributeName = buildableAttribute.attributeName.as(IdentifierTypeSyntax.self) else { return nil }
-        let initExpr = getSuperclassInitializerExpr(in: buildableAttribute)
+        guard let initExpr = getSuperclassInitializerExpr(in: buildableAttribute) else { return nil }
         return SuperclassInitializer(
+            buildableAttribute: buildableAttribute,
             genericArgumentTypes: attributeName.genericArgumentClause?.arguments.map({ $0.argument }),
-            initializerBase: initExpr?.base,
-            initializerName: initExpr?.declName.baseName,
-            parameterLabels: initExpr?.declName.argumentNames?.arguments.map({ $0.name }))
+            initializerBase: initExpr.base,
+            initializerName: initExpr.declName.baseName,
+            parameterLabels: initExpr.declName.argumentNames?.arguments.map({ $0.name }))
     }
 
     /// Returns the `AttributeSyntax` of the `Buildable` attribute in the given attribute list, if it exists.
@@ -60,6 +61,8 @@ struct SuperclassInspector {
 
     /// Contains the declarations in a `Buildable` attribute for a superclass's initializer.
     struct SuperclassInitializer {
+
+        let buildableAttribute: AttributeSyntax
 
         /// The list of generic arguments for the attribute.
         let genericArgumentTypes: [TypeSyntax]?
