@@ -26,12 +26,21 @@ struct SuperclassInspector {
         guard let buildableAttribute = getBuildableAttribute(in: decl.attributes) else { return nil }
         guard let attributeName = buildableAttribute.attributeName.as(IdentifierTypeSyntax.self) else { return nil }
         guard let initExpr = getSuperclassInitializerExpr(in: buildableAttribute) else { return nil }
+        let argumentTypes = attributeName.genericArgumentClause?.arguments.map({ $0.argument })
+        let parameterLabels = initExpr.declName.argumentNames?.arguments.map({ $0.name })
+        let parameters: [SuperclassInitializer.Parameter]?
+        if let types = argumentTypes?.dropFirst(), let labels = parameterLabels, types.count == labels.count {
+            parameters = zip(labels, types).map({ SuperclassInitializer.Parameter(label: $0, type: $1) })
+        } else {
+            parameters = nil
+        }
         return SuperclassInitializer(
             buildableAttribute: buildableAttribute,
-            genericArgumentTypes: attributeName.genericArgumentClause?.arguments.map({ $0.argument }),
+            genericArgumentTypes: argumentTypes,
             initializerBase: initExpr.base,
             initializerName: initExpr.declName.baseName,
-            parameterLabels: initExpr.declName.argumentNames?.arguments.map({ $0.name }))
+            parameterLabels: parameterLabels,
+            parameters: parameters)
     }
 
     /// Returns the `AttributeSyntax` of the `Buildable` attribute in the given attribute list, if it exists.
@@ -77,5 +86,18 @@ struct SuperclassInspector {
 
         /// The parameter labels used in the initializer. Includes wildcards for parameters that do not have labels.
         let parameterLabels: [TokenSyntax]?
+
+        /// The parameters for the initializer.
+        let parameters: [Parameter]?
+
+        /// A parameter in a function.
+        struct Parameter {
+
+            /// The parameter's label.
+            let label: TokenSyntax
+
+            /// The parameter's type.
+            let type: TypeSyntax
+        }
     }
 }

@@ -47,24 +47,32 @@ final class SuperclassInspectorTests: XCTestCase {
 
         XCTAssertNotNil(initializer)
 
-        XCTAssertNotNil(initializer!.genericArgumentTypes)
-        let argumentTypes = initializer!.genericArgumentTypes!
-        XCTAssertEqual(argumentTypes.count, 3)
-        XCTAssertEqual(argumentTypes[0].as(IdentifierTypeSyntax.self)?.name.tokenKind, .identifier("Foo"))
-        XCTAssertEqual(argumentTypes[1].as(IdentifierTypeSyntax.self)?.name.tokenKind, .identifier("Int"))
-        XCTAssertEqual(argumentTypes[2].as(IdentifierTypeSyntax.self)?.name.tokenKind, .identifier("Double"))
+        XCTAssertNotNil(initializer?.genericArgumentTypes)
+        let argumentTypes = initializer?.genericArgumentTypes
+        XCTAssertEqual(argumentTypes?.count, 3)
+        XCTAssertEqual(argumentTypes?[0].as(IdentifierTypeSyntax.self)?.name.tokenKind, .identifier("Foo"))
+        XCTAssertEqual(argumentTypes?[1].as(IdentifierTypeSyntax.self)?.name.tokenKind, .identifier("Int"))
+        XCTAssertEqual(argumentTypes?[2].as(IdentifierTypeSyntax.self)?.name.tokenKind, .identifier("Double"))
 
-        XCTAssertNotNil(initializer!.initializerBase)
+        XCTAssertNotNil(initializer?.initializerBase)
         XCTAssertEqual(
-            initializer!.initializerBase!.as(DeclReferenceExprSyntax.self)?.baseName.tokenKind, .identifier("Foo"))
+            initializer?.initializerBase?.as(DeclReferenceExprSyntax.self)?.baseName.tokenKind, .identifier("Foo"))
 
-        XCTAssertNotNil(initializer!.initializerName)
-        XCTAssertEqual(initializer!.initializerName!.tokenKind, .keyword(.`init`))
+        XCTAssertNotNil(initializer?.initializerName)
+        XCTAssertEqual(initializer?.initializerName!.tokenKind, .keyword(.`init`))
 
-        XCTAssertNotNil(initializer!.parameterLabels)
-        XCTAssertEqual(initializer!.parameterLabels!.count, 2)
-        XCTAssertEqual(initializer!.parameterLabels![0].tokenKind, .identifier("a"))
-        XCTAssertEqual(initializer!.parameterLabels![1].tokenKind, .wildcard)
+        XCTAssertNotNil(initializer?.parameterLabels)
+        XCTAssertEqual(initializer?.parameterLabels?.count, 2)
+        XCTAssertEqual(initializer?.parameterLabels?[0].tokenKind, .identifier("a"))
+        XCTAssertEqual(initializer?.parameterLabels?[1].tokenKind, .wildcard)
+
+        let params = initializer?.parameters
+        XCTAssertNotNil(params)
+        XCTAssertEqual(params?.count, 2)
+        XCTAssertEqual(params?[0].label.tokenKind, .identifier("a"))
+        XCTAssertEqual(params?[0].type.as(IdentifierTypeSyntax.self)?.name.tokenKind, .identifier("Int"))
+        XCTAssertEqual(params?[1].label.tokenKind, .wildcard)
+        XCTAssertEqual(params?[1].type.as(IdentifierTypeSyntax.self)?.name.tokenKind, .identifier("Double"))
     }
 
     func testGetSuperclassInitializer_noArguments() throws {
@@ -74,19 +82,21 @@ final class SuperclassInspectorTests: XCTestCase {
 
         XCTAssertNotNil(initializer)
 
-        XCTAssertNotNil(initializer!.genericArgumentTypes)
-        XCTAssertEqual(initializer!.genericArgumentTypes!.count, 1)
+        XCTAssertNotNil(initializer?.genericArgumentTypes)
+        XCTAssertEqual(initializer?.genericArgumentTypes?.count, 1)
         XCTAssertEqual(
-            initializer!.genericArgumentTypes![0].as(IdentifierTypeSyntax.self)?.name.tokenKind, .identifier("Foo"))
+            initializer?.genericArgumentTypes?[0].as(IdentifierTypeSyntax.self)?.name.tokenKind, .identifier("Foo"))
 
-        XCTAssertNotNil(initializer!.initializerBase)
+        XCTAssertNotNil(initializer?.initializerBase)
         XCTAssertEqual(
-            initializer!.initializerBase!.as(DeclReferenceExprSyntax.self)?.baseName.tokenKind, .identifier("Foo"))
+            initializer?.initializerBase?.as(DeclReferenceExprSyntax.self)?.baseName.tokenKind, .identifier("Foo"))
 
-        XCTAssertNotNil(initializer!.initializerName)
-        XCTAssertEqual(initializer!.initializerName!.tokenKind, .keyword(.`init`))
+        XCTAssertNotNil(initializer?.initializerName)
+        XCTAssertEqual(initializer?.initializerName!.tokenKind, .keyword(.`init`))
 
-        XCTAssertNil(initializer!.parameterLabels)
+        XCTAssertNil(initializer?.parameterLabels)
+
+        XCTAssertNil(initializer?.parameters)
     }
 
     func testGetSuperclassInitializer_missingGenericArguments() throws {
@@ -96,16 +106,18 @@ final class SuperclassInspectorTests: XCTestCase {
 
         XCTAssertNotNil(initializer)
 
-        XCTAssertNil(initializer!.genericArgumentTypes)
+        XCTAssertNil(initializer?.genericArgumentTypes)
 
-        XCTAssertNotNil(initializer!.initializerBase)
+        XCTAssertNotNil(initializer?.initializerBase)
         XCTAssertEqual(
-            initializer!.initializerBase!.as(DeclReferenceExprSyntax.self)?.baseName.tokenKind, .identifier("Foo"))
+            initializer?.initializerBase?.as(DeclReferenceExprSyntax.self)?.baseName.tokenKind, .identifier("Foo"))
 
-        XCTAssertNotNil(initializer!.initializerName)
-        XCTAssertEqual(initializer!.initializerName!.tokenKind, .keyword(.`init`))
+        XCTAssertNotNil(initializer?.initializerName)
+        XCTAssertEqual(initializer?.initializerName?.tokenKind, .keyword(.`init`))
 
-        XCTAssertNil(initializer!.parameterLabels)
+        XCTAssertNil(initializer?.parameterLabels)
+
+        XCTAssertNil(initializer?.parameters)
     }
 
     func testGetSuperclassInitializer_functionNotInit() throws {
@@ -115,19 +127,21 @@ final class SuperclassInspectorTests: XCTestCase {
 
         XCTAssertNotNil(initializer)
 
-        XCTAssertNotNil(initializer!.genericArgumentTypes)
-        XCTAssertEqual(initializer!.genericArgumentTypes!.count, 1)
+        XCTAssertNotNil(initializer?.genericArgumentTypes)
+        XCTAssertEqual(initializer?.genericArgumentTypes!.count, 1)
         XCTAssertEqual(
-            initializer!.genericArgumentTypes![0].as(IdentifierTypeSyntax.self)?.name.tokenKind, .identifier("Foo"))
+            initializer?.genericArgumentTypes?[0].as(IdentifierTypeSyntax.self)?.name.tokenKind, .identifier("Foo"))
 
-        XCTAssertNotNil(initializer!.initializerBase)
+        XCTAssertNotNil(initializer?.initializerBase)
         XCTAssertEqual(
-            initializer!.initializerBase!.as(DeclReferenceExprSyntax.self)?.baseName.tokenKind, .identifier("Foo"))
+            initializer?.initializerBase?.as(DeclReferenceExprSyntax.self)?.baseName.tokenKind, .identifier("Foo"))
 
-        XCTAssertNotNil(initializer!.initializerName)
-        XCTAssertEqual(initializer!.initializerName!.tokenKind, .identifier("baz"))
+        XCTAssertNotNil(initializer?.initializerName)
+        XCTAssertEqual(initializer?.initializerName?.tokenKind, .identifier("baz"))
 
-        XCTAssertNil(initializer!.parameterLabels)
+        XCTAssertNil(initializer?.parameterLabels)
+
+        XCTAssertNil(initializer?.parameters)
     }
 
     func testGetSuperclassInitializer_withClosure() throws {
