@@ -22,6 +22,10 @@ struct ClassExtensionGenerator: AutoBuilderExtensionGenerator {
         if SuperclassInspector.hasSuperclassArgument(in: decl.attributes) {
             if let superclassInitializer = SuperclassInspector.getSuperclassInitializer(from: decl) {
                 diagnostics += analyze(superclassInitializer: superclassInitializer)
+            } else {
+                diagnostics.append(Diagnostic(
+                    node: decl.attributes,
+                    message: AutoBuilderDiagnostic.invalidSuperclassInitializerFormat))
             }
         }
         if diagnostics.isEmpty {

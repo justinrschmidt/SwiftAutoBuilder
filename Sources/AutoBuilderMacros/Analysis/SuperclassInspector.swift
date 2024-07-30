@@ -67,7 +67,7 @@ struct SuperclassInspector {
     private static func getSuperclassInitializerExpr(in attribute: AttributeSyntax) -> MemberAccessExprSyntax? {
         guard case let .argumentList(arguments) = attribute.arguments else { return nil }
         for labeledExpr in arguments {
-            guard labeledExpr.label?.text == "superclassInitializer" else { continue }
+            guard labeledExpr.label?.tokenKind == .identifier("superclassInitializer") else { continue }
             guard let expression = labeledExpr.expression.as(MemberAccessExprSyntax.self) else { continue }
             return expression
         }
